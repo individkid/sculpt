@@ -1,0 +1,2 @@
+clang -I ../gl3w/include/ -c ../gl3w/src/gl3w.c
+clang++ -I ../gl3w/include/ main.cpp gl3w.o -lglfw3 -framework Cocoa -framework IOKit -framework OpenGL -framework CoreVideo
