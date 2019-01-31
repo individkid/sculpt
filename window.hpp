@@ -1,5 +1,5 @@
 /*
-*    main.cpp start threads, allocate queues, glfw main loop
+*    window.hpp start start opengl, wait for buffer changes and feedback requests
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,26 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "window.hpp"
+#ifndef WINDOW_HPP
+#define WINDOW_HPP
 
-int main()
+#include <iostream>
+
+#include <GL/gl3w.h>
+#include <GLFW/glfw3.h>
+
+#include "message.hpp"
+
+class Window : public Thread
 {
-	Window *window = new Window();
-	window->wait();
-	return 0;
-}
+private:
+	GLFWwindow* window;
+	GLuint compileShader(GLenum type, const char *source);
+	GLuint compileProgram(const char *vertex, const char *geometry, const char *fragment);
+public:
+	Window() : Thread(true), window(0) {}
+	virtual void run();
+	virtual void wake();
+};
+
+#endif

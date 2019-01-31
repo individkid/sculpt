@@ -1,5 +1,5 @@
 /*
-*    main.cpp start threads, allocate queues, glfw main loop
+*    message.cpp c function for starting threads
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,13 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "window.hpp"
+#include "message.hpp"
 
-int main()
+extern "C" {
+void *threadFunc(void *arg)
 {
-	Window *window = new Window();
-	window->wait();
+	Thread *thread = (Thread *)arg;
+	thread->run();
 	return 0;
+}
 }
