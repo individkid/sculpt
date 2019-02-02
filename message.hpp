@@ -89,6 +89,30 @@ public:
 };
 
 template <class T>
+class Pool
+{
+private:
+	Next<T*> *full;
+	Next<T*> *free;
+public:
+	Pool() : full(0), free(0) {}
+	T *get()
+	{
+		if (!full) return new T();
+		Next<T*> *ptr = full; remove(full,ptr); insert(free,ptr);
+		return ptr->box;
+	}
+	void put(T *val)
+	{
+		Next<T*> *ptr;
+		if (free) {ptr = free; remove(free,ptr);}
+		else ptr = new Next<T*>();
+		ptr->box = val;
+		insert(full,ptr);
+	}
+};
+
+template <class T>
 class Message
 {
 private:
@@ -96,35 +120,19 @@ private:
 	Next<T> *head;
 	Next<T> *tail;
 	Next<T> *pool;
+	int wait;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 public:
-	Message() : thread(0), head(0), tail(0), pool(0)
+	Message() : thread(0), head(0), tail(0), pool(0), wait(0)
 	{
 		if (pthread_mutex_init(&mutex,NULL) != 0) {std::cerr << "message invalid mutex" << std::endl; exit(-1);}
 		if (pthread_cond_init(&cond,NULL) != 0) {std::cerr << "message invalid cond" << std::endl; exit(-1);}
 	}
-	Message(Thread *ptr) : thread(ptr), head(0), tail(0), pool(0)
+	Message(Thread *ptr) : thread(ptr), head(0), tail(0), pool(0), wait(0)
 	{
 		if (pthread_mutex_init(&mutex,NULL) != 0) {std::cerr << "message invalid mutex" << std::endl; exit(-1);}
 		if (pthread_cond_init(&cond,NULL) != 0) {std::cerr << "message invalid cond" << std::endl; exit(-1);}
-	}
-	void lock()
-	{
-		if (pthread_mutex_lock(&mutex) != 0) {std::cerr << "mutex invalid lock" << std::endl; exit(-1);}
-	}
-	void unlock()
-	{
-		if (pthread_mutex_unlock(&mutex) != 0) {std::cerr << "mutex invalid unlock" << std::endl; exit(-1);}
-	}
-	void wait()
-	{
-		if (pthread_cond_wait(&cond,&mutex) != 0) {std::cerr << "cond invalid wait" << std::endl; exit(-1);}
-	}
-	void unwait()
-	{
-		if (thread) {thread->wake(); return;}
-		if (pthread_cond_signal(&cond) != 0) {std::cerr << "cond invalid signal" << std::endl; exit(-1);}
 	}
 	void put(T val)
 	{
@@ -132,14 +140,25 @@ public:
 		if (pool) {ptr = pool; remove(pool,ptr);}
 		else ptr = new Next<T>();
 		ptr->box = val;
+		if (pthread_mutex_lock(&mutex) != 0) {std::cerr << "mutex invalid lock" << std::endl; exit(-1);}		
+		while (head && wait) 
+		if (pthread_cond_wait(&cond,&mutex) != 0) {std::cerr << "cond invalid wait" << std::endl; exit(-1);}
 		enque(head,tail,ptr);
+		if (thread) thread->wake();
+		if (pthread_mutex_unlock(&mutex) != 0) {std::cerr << "mutex invalid unlock" << std::endl; exit(-1);}
 	}
-	T get()
+	int get(T &val)
 	{
+		if (!head) return 0;
+		wait = 1;
+		if (pthread_mutex_lock(&mutex) != 0) {std::cerr << "mutex invalid lock" << std::endl; exit(-1);}		
 		Next<T> *ptr = deque(head,tail);
-		T val = ptr->box;
+		val = ptr->box;
 		insert(pool,ptr);
-		return val;
+		wait = 0;
+		if (pthread_cond_signal(&cond) != 0) {std::cerr << "cond invalid signal" << std::endl; exit(-1);}
+		if (pthread_mutex_unlock(&mutex) != 0) {std::cerr << "mutex invalid unlock" << std::endl; exit(-1);}
+		return 1;
 	}
 };
 
