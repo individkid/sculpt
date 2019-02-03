@@ -26,14 +26,65 @@
 
 #include "message.hpp"
 
+enum Buffer {
+	Plane, Point,
+	Face, Frame,
+	Buffers};
+struct Resize
+{
+	GLuint handle;
+	int size;
+};
+enum Program {
+    Diplane, Dipoint,
+    Coplane, Copoint,
+    Adplane, Adpoint,
+    Perplane, Perpoint,
+    Replane, Repoint,
+    Programs};
+struct Configure
+{
+	const char *vertex;
+	const char *geometry;
+	const char *fragment;
+	GLuint handle;
+	GLuint vao;
+	GLenum mode;
+	int indirect;
+	int display;
+};
+struct Subcmd
+{
+	enum Buffer buffer;
+	int offset;
+	int size;
+	char *data;
+};
+struct Command
+{
+	Next<Subcmd> *subcmd;
+	enum Program program;
+	GLuint handle;
+	GLuint vao;
+	GLenum mode;
+	int count;
+	int display;
+};
+
 class Window : public Thread
 {
 private:
 	GLFWwindow* window;
+	static Resize resize[Buffers];
+	static Configure configure[Programs];
+	static int once;
+	void configureDipoint(struct Configure *program);
 	GLuint compileShader(GLenum type, const char *source);
 	GLuint compileProgram(const char *vertex, const char *geometry, const char *fragment);
 public:
-	Window() : Thread(true), window(0) {}
+	Message<Command> *request;
+	Message<Command> *response;
+	Window() : Thread(1), window(0) {}
 	virtual void run();
 	virtual void wake();
 };

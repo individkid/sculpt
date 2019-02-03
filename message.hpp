@@ -28,9 +28,9 @@ class Thread
 {
 private:
 	pthread_t thread;
-	bool isMain;
+	int isMain;
 public:
-	Thread(bool m = false) : isMain(m)
+	Thread(int m = 0) : isMain(m)
 	{
 		if (!isMain && pthread_create(&thread,NULL,threadFunc,(void *)this)) {std::cerr << "cannot create thread" << std::endl; exit(-1);}
 	}
@@ -76,7 +76,7 @@ T *deque(T *&head, T *&tail)
 	if (head == 0) {std::cerr << "deque empty queue" << std::endl; exit(-1);}
 	if (tail->next != 0) {std::cerr << "deque invalid queue" << std::endl; exit(-1);}
 	T *rslt = head; head = head->next;
-	if (head == 0) tail == 0;
+	if (head == 0) tail = 0;
 	return rslt;
 }
 
