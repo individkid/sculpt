@@ -30,10 +30,6 @@ enum Buffer {
 	Plane, Point,
 	Face, Frame,
 	Buffers};
-struct Resize
-{
-	GLuint handle;
-};
 enum Program {
     Diplane, Dipoint,
     Coplane, Copoint,
