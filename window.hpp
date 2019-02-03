@@ -33,7 +33,6 @@ enum Buffer {
 struct Resize
 {
 	GLuint handle;
-	int size;
 };
 enum Program {
     Diplane, Dipoint,
@@ -50,8 +49,8 @@ struct Configure
 	GLuint handle;
 	GLuint vao;
 	GLenum mode;
-	int indirect;
-	int display;
+	GLuint feedback;
+	GLenum primitive;
 };
 struct Subcmd
 {
@@ -62,20 +61,19 @@ struct Subcmd
 };
 struct Command
 {
-	Next<Subcmd> *subcmd;
+	Next<Subcmd> *allocs;
+	Next<Subcmd> *writes;
+	Next<Subcmd> *reads;
 	enum Program program;
-	GLuint handle;
-	GLuint vao;
-	GLenum mode;
 	int count;
-	int display;
+	int size;
 };
 
 class Window : public Thread
 {
 private:
 	GLFWwindow* window;
-	static Resize resize[Buffers];
+	static GLuint handle[Buffers];
 	static Configure configure[Programs];
 	static int once;
 	void configureDipoint(struct Configure *program);

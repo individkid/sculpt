@@ -35,7 +35,7 @@ void displayKey(GLFWwindow* ptr, int key, int scancode, int action, int mods)
 
 }
 
-Resize Window::resize[Buffers] = {0};
+GLuint Window::handle[Buffers] = {0};
 Configure Window::configure[Programs] = {0};
 int Window::once = 0;
 
@@ -84,22 +84,25 @@ void Window::configureDipoint(struct Configure *program)
     program->handle = compileProgram(program->vertex,program->geometry,program->fragment);
 	glGenVertexArrays(1, &program->vao);
 	glBindVertexArray(program->vao);
-	glBindBuffer(GL_ARRAY_BUFFER,resize[Point].handle);
+	glBindBuffer(GL_ARRAY_BUFFER,handle[Point]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resize[Frame].handle);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle[Frame]);
 	glBindVertexArray(0);
 	program->mode = GL_TRIANGLES;
-	program->indirect = 1;
-	program->display = 1;
+	program->feedback = 0;
+	program->primitive = GL_POINTS;
 }
 
 GLuint Window::compileShader(GLenum type, const char *source)
 {
-    GLuint ident = glCreateShader(type); glShaderSource(ident, 1, &source, NULL); glCompileShader(ident);
+	const char *code[2] = {
+	"#version 330 core\n",
+	source};
+    GLuint ident = glCreateShader(type); glShaderSource(ident, 2, code, NULL); glCompileShader(ident);
     GLint status = GL_FALSE; glGetShaderiv(ident, GL_COMPILE_STATUS, &status);
     int length; glGetShaderiv(ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
-    GLchar info[length+1]; glGetShaderInfoLog(ident, length, NULL, info); std::cerr << info << std::endl;}
+    GLchar info[length+1]; glGetShaderInfoLog(ident, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
     return ident;
 }
 GLuint Window::compileProgram(const char *vertex, const char *geometry, const char *fragment)
@@ -109,9 +112,9 @@ GLuint Window::compileProgram(const char *vertex, const char *geometry, const ch
     GLuint geometryIdent = compileShader(GL_GEOMETRY_SHADER, geometry); glAttachShader(ident, geometryIdent);
     GLuint fragmentIdent = compileShader(GL_FRAGMENT_SHADER, fragment); glAttachShader(ident, fragmentIdent);
     glLinkProgram(ident);
-    GLint status = GL_FALSE; glGetShaderiv(ident, GL_LINK_STATUS, &status);
-    int length; glGetShaderiv(ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
-    GLchar info[length+1]; glGetProgramInfoLog(ident, length, NULL, info); std::cerr << info << std::endl;}
+    GLint status = GL_FALSE; glGetProgramiv(ident, GL_LINK_STATUS, &status);
+    int length; glGetProgramiv(ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
+    GLchar info[length+1]; glGetProgramInfoLog(ident, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
     glDetachShader(ident, vertexIdent); glDeleteShader(vertexIdent);
     glDeleteShader(geometryIdent); glDetachShader(ident, geometryIdent);
     glDetachShader(ident, fragmentIdent); glDeleteShader(fragmentIdent);
@@ -131,30 +134,45 @@ void Window::run()
     if (!window) {std::cerr << "Failed to open GLFW window" << std::endl; glfwTerminate(); exit(-1);}
     glfwSetKeyCallback(window, displayKey);
     glfwMakeContextCurrent(window);
-    if (gl3wInit()) {std::cerr << "Failed to initialize OpenGL" << std::endl; glfwTerminate(); glfwTerminate(); exit(-1);}
-    if (!gl3wIsSupported(3, 3)) {std::cerr << "OpenGL 3.3 not supported\n" << std::endl; glfwTerminate(); exit(-1);}
+    if (gl3wInit()) {std::cerr << "Failed to initialize OpenGL" << std::endl; exit(-1);}
+    if (!gl3wIsSupported(3, 3)) {std::cerr << "OpenGL 3.3 not supported\n" << std::endl; exit(-1);}
     std::cout << "OpenGL " << glGetString(GL_VERSION) << " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glfwSwapBuffers(window);
+    if (!once) {once = 1;
+    for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) glGenBuffers(1,&handle[b]);
+    configureDipoint(&configure[Dipoint]);}
     while (testGoon) {Command command;
-    if (request && request->get(command)) {Next<Subcmd> *next = command.subcmd;
-    while (next) {Subcmd subcmd = next->box; Resize *buffer = &resize[subcmd.buffer]; next = next->next;
-    int size = subcmd.offset+subcmd.size; if (size > buffer->size) {buffer->size = size;
-    glBindBuffer(GL_ARRAY_BUFFER,buffer->handle);
-    glBufferData(GL_ARRAY_BUFFER,size,NULL,GL_STATIC_DRAW);}
-    glBufferSubData(buffer->handle,subcmd.offset,subcmd.size,subcmd.data);}
+    if (request && request->get(command)) {
+    for (Next<Subcmd> *next = command.allocs; next; next = next->next) {
+    Subcmd subcmd = next->box; GLuint buffer = handle[subcmd.buffer];
+    glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    glBufferData(GL_ARRAY_BUFFER,subcmd.size,NULL,GL_STATIC_DRAW);}
+    for (Next<Subcmd> *next = command.writes; next; next = next->next) {
+    Subcmd subcmd = next->box; GLuint buffer = handle[subcmd.buffer];
+    glBufferSubData(buffer,subcmd.offset,subcmd.size,subcmd.data);}
+    for (Next<Subcmd> *next = command.reads; next; next = next->next) {
+    Subcmd subcmd = next->box; GLuint buffer = handle[subcmd.buffer];
+    glGetBufferSubData(buffer,subcmd.offset,subcmd.size,subcmd.data);}
     Configure program = configure[command.program];
     glUseProgram(program.handle);
     glBindVertexArray(program.vao);
-	if (program.indirect) glDrawElements(program.mode,command.count,GL_UNSIGNED_INT,NULL);
-	else glDrawArrays(program.mode,0,command.count);
+    if (program.feedback) {
+        glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, program.feedback);
+        glEnable(GL_RASTERIZER_DISCARD);
+        glBeginTransformFeedback(program.primitive);}
+	if (command.count) glDrawElements(program.mode,command.count,GL_UNSIGNED_INT,NULL);
+	if (command.size) glDrawArrays(program.mode,0,command.size);
+	if (program.feedback) {
+        glEndTransformFeedback();
+        glDisable(GL_RASTERIZER_DISCARD);
+        glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, program.feedback);}
 	glBindVertexArray(0);
 	glUseProgram(0);
-	if (program.display) glfwSwapBuffers(window);
-	// else glfwWaitEventsTimeout until query done and fill command.feedback
+	if (!program.feedback) glfwSwapBuffers(window);
 	if (response) response->put(command);}
     glfwWaitEvents();}
     glfwTerminate();
