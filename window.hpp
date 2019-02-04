@@ -27,9 +27,17 @@
 #include "message.hpp"
 
 enum Buffer {
-	Plane, Point,
+	Plane, Versor, Point, Pierce,
 	Face, Frame,
+	Construct, Dimension, Vertex,
+	Block, Incidence,
+	Uniform, Texture,
 	Buffers};
+struct Handle
+{
+	GLenum target;
+	GLuint handle;
+};
 enum Program {
     Diplane, Dipoint,
     Coplane, Copoint,
@@ -45,8 +53,8 @@ struct Configure
 	GLuint handle;
 	GLuint vao;
 	GLenum mode;
-	GLuint feedback;
 	GLenum primitive;
+	int feedback;
 };
 struct Subcmd
 {
@@ -69,12 +77,13 @@ class Window : public Thread
 {
 private:
 	GLFWwindow* window;
-	static GLuint handle[Buffers];
+	static Handle handle[Buffers];
 	static Configure configure[Programs];
 	static int once;
-	void configureDipoint(struct Configure *program);
-	GLuint compileShader(GLenum type, const char *source);
-	GLuint compileProgram(const char *vertex, const char *geometry, const char *fragment);
+	static GLuint compileShader(GLenum type, const char *source);
+	static GLuint compileProgram(const char *vertex, const char *geometry, const char *fragment);
+	static void configureDipoint();
+	static void initOnce();
 public:
 	Message<Command> *request;
 	Message<Command> *response;
