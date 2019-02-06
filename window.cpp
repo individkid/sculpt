@@ -131,6 +131,9 @@ void Window::initOnce()
     case (Texture): handle[b].target = GL_TEXTURE_BUFFER; break;
     default: handle[b].target = GL_ARRAY_BUFFER; break;}
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
+    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle[b].usage = GL_STATIC_READ; break;
+    default: handle[b].usage = GL_STATIC_DRAW; break;}
+    for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
     case (Construct): case (Vertex): case (Vector): case (Pierce): case (Side): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,handle[b].handle); break;
     case (Dimension): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,1,handle[b].handle); break;
     case (Uniform): glBindBufferBase(GL_UNIFORM_BUFFER,0,handle[b].handle); break;
@@ -165,7 +168,7 @@ void Window::run()
     for (Next<Subcmd> *next = command.allocs; next; next = next->next) {
     Subcmd subcmd = next->box; Handle buffer = handle[subcmd.buffer];
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferData(buffer.target,subcmd.size,NULL,(buffer.target==GL_TRANSFORM_FEEDBACK_BUFFER?GL_STATIC_READ:GL_STATIC_DRAW));}
+    glBufferData(buffer.target,subcmd.size,NULL,buffer.usage);}
     for (Next<Subcmd> *next = command.writes; next; next = next->next) {
     Subcmd subcmd = next->box; Handle buffer = handle[subcmd.buffer];
     glBindBuffer(buffer.target,buffer.handle);

@@ -36,6 +36,7 @@ struct Handle
 {
 	GLenum target;
 	GLuint handle;
+	GLenum usage;
 };
 enum Program {
     Diplane, // Plane,Versor,Face -> display
