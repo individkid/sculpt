@@ -57,26 +57,10 @@ GLuint Window::compileShader(GLenum type, const char *source)
     return ident;
 }
 
-GLuint Window::compileProgram(const char *vertex, const char *geometry, const char *fragment)
-{
-    GLuint ident = glCreateProgram();
-    GLuint vertexIdent = compileShader(GL_VERTEX_SHADER, vertex); glAttachShader(ident, vertexIdent);
-    GLuint geometryIdent = compileShader(GL_GEOMETRY_SHADER, geometry); glAttachShader(ident, geometryIdent);
-    GLuint fragmentIdent = compileShader(GL_FRAGMENT_SHADER, fragment); glAttachShader(ident, fragmentIdent);
-    glLinkProgram(ident);
-    GLint status = GL_FALSE; glGetProgramiv(ident, GL_LINK_STATUS, &status);
-    int length; glGetProgramiv(ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
-    GLchar info[length+1]; glGetProgramInfoLog(ident, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
-    glDetachShader(ident, vertexIdent); glDeleteShader(vertexIdent);
-    glDeleteShader(geometryIdent); glDetachShader(ident, geometryIdent);
-    glDetachShader(ident, fragmentIdent); glDeleteShader(fragmentIdent);
-    return ident;
-}
-
 void Window::configureDipoint()
 {
 	Configure *program = &configure[Dipoint];
-	program->vertex = "\
+	const char *vertex = "\
     layout (location = 0) in vec3 point;\n\
     out data {\n\
     vec3 point;\n\
@@ -85,7 +69,7 @@ void Window::configureDipoint()
     {\n\
     od.point = (affine*vec4(point,1.0)).xyz;\n\
     }\n";
-    program->geometry = "\
+    const char *geometry = "\
     layout (triangles) in;\n\
     layout (triangle_strip, max_vertices = 3) out;\n\
     in data {\n\
@@ -105,14 +89,25 @@ void Window::configureDipoint()
     EmitVertex();}\n\
     EndPrimitive();\n\
     }\n";
-    program->fragment = "\
+    const char *fragment = "\
     in vec3 normal;\n\
     out vec4 result;\n\
     void main()\n\
     {\n\
     result = vec4(normal, 1.0f);\n\
     }\n";
-    program->handle = compileProgram(program->vertex,program->geometry,program->fragment);
+    program->handle = glCreateProgram();
+    GLuint vertexIdent = compileShader(GL_VERTEX_SHADER, vertex); glAttachShader(program->handle, vertexIdent);
+    GLuint geometryIdent = compileShader(GL_GEOMETRY_SHADER, geometry); glAttachShader(program->handle, geometryIdent);
+    GLuint fragmentIdent = compileShader(GL_FRAGMENT_SHADER, fragment); glAttachShader(program->handle, fragmentIdent);
+    // glTransformFeedbackVaryings(program->handle,1or2,array-of-names,GL_SEPARATE_ATTRIBS);
+    glLinkProgram(program->handle);
+    GLint status = GL_FALSE; glGetProgramiv(program->handle, GL_LINK_STATUS, &status);
+    int length; glGetProgramiv(program->handle, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
+    GLchar info[length+1]; glGetProgramInfoLog(program->handle, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
+    glDetachShader(program->handle, vertexIdent); glDeleteShader(vertexIdent);
+    glDetachShader(program->handle, geometryIdent); glDeleteShader(geometryIdent);
+    glDetachShader(program->handle, fragmentIdent); glDeleteShader(fragmentIdent);
 	glGenVertexArrays(1, &program->vao);
 	glBindVertexArray(program->vao);
 	glBindBuffer(GL_ARRAY_BUFFER,handle[Point].handle);
@@ -122,7 +117,7 @@ void Window::configureDipoint()
 	glBindVertexArray(0);
 	program->mode = GL_TRIANGLES;
 	program->primitive = GL_POINTS;
-	program->feedback = 0;
+	program->feedback = 0; // or 1or2
     glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Uniform"),0);
 }
 
@@ -130,13 +125,13 @@ void Window::initOnce()
 {
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) glGenBuffers(1,&handle[b].handle);
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
-    case (Face): case (Frame): case (Coplane): case (Incidence): handle[b].target = GL_ELEMENT_ARRAY_BUFFER; break;
-    case (Construct): case (Vertex): case (Dimension): handle[b].target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
-    case (Texture): handle[b].target = GL_TEXTURE_BUFFER; break;
+    case (Face): case (Frame): case (Incidence): case (Block): handle[b].target = GL_ELEMENT_ARRAY_BUFFER; break;
+    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle[b].target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
     case (Uniform): handle[b].target = GL_UNIFORM_BUFFER; break;
+    case (Texture): handle[b].target = GL_TEXTURE_BUFFER; break;
     default: handle[b].target = GL_ARRAY_BUFFER; break;}
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
-    case (Construct): case (Vertex): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,handle[b].handle); break;
+    case (Construct): case (Vertex): case (Vector): case (Pierce): case (Side): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,handle[b].handle); break;
     case (Dimension): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,1,handle[b].handle); break;
     case (Uniform): glBindBufferBase(GL_UNIFORM_BUFFER,0,handle[b].handle); break;
     default: break;}
@@ -170,7 +165,7 @@ void Window::run()
     for (Next<Subcmd> *next = command.allocs; next; next = next->next) {
     Subcmd subcmd = next->box; Handle buffer = handle[subcmd.buffer];
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferData(buffer.target,subcmd.size,NULL,GL_STATIC_DRAW);}
+    glBufferData(buffer.target,subcmd.size,NULL,(buffer.target==GL_TRANSFORM_FEEDBACK_BUFFER?GL_STATIC_READ:GL_STATIC_DRAW));}
     for (Next<Subcmd> *next = command.writes; next; next = next->next) {
     Subcmd subcmd = next->box; Handle buffer = handle[subcmd.buffer];
     glBindBuffer(buffer.target,buffer.handle);

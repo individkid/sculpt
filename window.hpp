@@ -27,10 +27,9 @@
 #include "message.hpp"
 
 enum Buffer {
-	Plane, Versor, Point, Pierce,
-	Face, Frame,
-	Construct, Dimension, Vertex,
-	Block, Incidence,
+	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
+	Face, Frame, Incidence, Block,
+	Construct, Dimension, Vertex, Vector, Pierce, Side,
 	Uniform, Texture,
 	Buffers};
 struct Handle
@@ -39,11 +38,18 @@ struct Handle
 	GLuint handle;
 };
 enum Program {
-    Diplane, Dipoint,
-    Coplane, Copoint,
-    Adplane, Adpoint,
-    Perplane, Perpoint,
-    Replane, Repoint,
+    Diplane, // Plane,Versor,Face -> display
+    Dipoint, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
+    Coplane, // Plane,Versor,Incidence -> Vertex
+    Copoint, // Point,Block -> Construct,Dimension
+    Adplane, // Plane,Versor,Face -> Side
+    Adpoint, // Point,Frame -> Side
+    Perplane, // Plane,Versor,Face -> Pierce
+    Perpoint, // Point,Frame -> Pierce
+    Replane, // Plane,Versor -> Vertex
+    Repoint, // Point -> Construct,Dimension
+    Explane, // Plane,Versor -> Vector
+    Expoint, // Point -> Vector
     Programs};
 struct Configure
 {
@@ -81,7 +87,6 @@ private:
 	static Configure configure[Programs];
 	static int once;
 	static GLuint compileShader(GLenum type, const char *source);
-	static GLuint compileProgram(const char *vertex, const char *geometry, const char *fragment);
 	static void configureDipoint();
 	static void initOnce();
 public:
