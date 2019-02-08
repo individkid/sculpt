@@ -28,7 +28,7 @@
 
 enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
-	Face, Frame, Incidence, Block,
+	Face, Frame, Coface, Coframe, Incidence, Block,
 	Construct, Dimension, Vertex, Vector, Pierce, Side,
 	Uniform, Texture,
 	Buffers};
@@ -39,7 +39,7 @@ struct Handle
 	GLenum usage;
 };
 enum Program {
-    Diplane, // Plane,Versor,Face -> display
+    Diplane, // Plane,Versor,Coface -> display
     Dipoint, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
     Coplane, // Plane,Versor,Incidence -> Vertex
     Copoint, // Point,Block -> Construct,Dimension
@@ -54,46 +54,61 @@ enum Program {
     Programs};
 struct Configure
 {
-	const char *vertex;
-	const char *geometry;
-	const char *fragment;
 	GLuint handle;
-	GLuint vao;
 	GLenum mode;
 	GLenum primitive;
 	int feedback;
 };
-struct Subcmd
+struct Update
 {
 	enum Buffer buffer;
+	int file;
 	int offset;
 	int size;
 	char *data;
 };
-struct Command
+enum Space {
+	Small, // specified space
+	Large, // cospace
+	Spaces};
+struct Render
 {
-	Next<Subcmd> *allocs;
-	Next<Subcmd> *writes;
-	Next<Subcmd> *reads;
 	enum Program program;
+	enum Space space;
+	int base;
 	int count;
 	int size;
+	int file;
+};
+struct Command
+{
+	Next<Update> *allocs;
+	Next<Update> *writes;
+	Next<Update> *reads;
+	Next<Render> *renders;
+	Message<Command> *response;
+};
+struct File
+{
+	Handle handle[Buffers];
+	GLuint vao[Programs][Spaces];
+
 };
 
 class Window : public Thread
 {
 private:
 	GLFWwindow* window;
-	static Handle handle[Buffers];
+	File *file;
+	int argc;
 	static Configure configure[Programs];
-	static int once;
 	static GLuint compileShader(GLenum type, const char *source);
 	static void configureDipoint();
-	static void initOnce();
+	void initVao(File *file, enum Program program, enum Buffer buffer);
+	void initBuffer(Handle *handle);
 public:
 	Message<Command> *request;
-	Message<Command> *response;
-	Window() : Thread(1), window(0) {}
+	Window(int argc, char *argv[]) : Thread(1), window(0) {}
 	virtual void run();
 	virtual void wake();
 };

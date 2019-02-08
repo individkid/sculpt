@@ -35,9 +35,7 @@ void displayKey(GLFWwindow* ptr, int key, int scancode, int action, int mods)
 
 }
 
-Handle Window::handle[Buffers] = {0};
 Configure Window::configure[Programs] = {0};
-int Window::once = 0;
 
 GLuint Window::compileShader(GLenum type, const char *source)
 {
@@ -98,9 +96,10 @@ void Window::configureDipoint()
     }\n";
     program->handle = glCreateProgram();
     GLuint vertexIdent = compileShader(GL_VERTEX_SHADER, vertex); glAttachShader(program->handle, vertexIdent);
+    // TODO check for null geometry shader (as it should be for dipoint)
     GLuint geometryIdent = compileShader(GL_GEOMETRY_SHADER, geometry); glAttachShader(program->handle, geometryIdent);
     GLuint fragmentIdent = compileShader(GL_FRAGMENT_SHADER, fragment); glAttachShader(program->handle, fragmentIdent);
-    // glTransformFeedbackVaryings(program->handle,1or2,array-of-names,GL_SEPARATE_ATTRIBS);
+    // glTransformFeedbackVaryings(program->handle,feedback,array-of-names,GL_SEPARATE_ATTRIBS);
     glLinkProgram(program->handle);
     GLint status = GL_FALSE; glGetProgramiv(program->handle, GL_LINK_STATUS, &status);
     int length; glGetProgramiv(program->handle, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
@@ -108,20 +107,25 @@ void Window::configureDipoint()
     glDetachShader(program->handle, vertexIdent); glDeleteShader(vertexIdent);
     glDetachShader(program->handle, geometryIdent); glDeleteShader(geometryIdent);
     glDetachShader(program->handle, fragmentIdent); glDeleteShader(fragmentIdent);
-	glGenVertexArrays(1, &program->vao);
-	glBindVertexArray(program->vao);
-	glBindBuffer(GL_ARRAY_BUFFER,handle[Point].handle);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle[Frame].handle);
-	glBindVertexArray(0);
+    glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Uniform"),0);
 	program->mode = GL_TRIANGLES;
 	program->primitive = GL_POINTS;
-	program->feedback = 0; // or 1or2
-    glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Uniform"),0);
+	program->feedback = 0;
 }
 
-void Window::initOnce()
+void Window::initVao(File *file, enum Program program, enum Buffer buffer)
+{
+	glGenVertexArrays(1, &file->vao[program][Small]);
+	glBindVertexArray(file->vao[program][Small]);
+	glBindBuffer(GL_ARRAY_BUFFER,file->handle[buffer].handle);
+	// TODO enable other input buffers for dipoint shaders
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, file->handle[buffer].handle);
+	glBindVertexArray(0);
+}
+
+void Window::initBuffer(Handle *handle)
 {
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) glGenBuffers(1,&handle[b].handle);
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
@@ -162,37 +166,41 @@ void Window::run()
     glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glfwSwapBuffers(window);
-    if (!once) {once = 1; initOnce();}
+    // initialize programs and per file per argc
     while (testGoon) {Command command;
     if (request && request->get(command)) {
-    for (Next<Subcmd> *next = command.allocs; next; next = next->next) {
-    Subcmd subcmd = next->box; Handle buffer = handle[subcmd.buffer];
+    // TODO update textures and uniforms differently
+    for (Next<Update> *next = command.allocs; next; next = next->next) {
+    Update update = next->box; Handle buffer = file[update.file].handle[update.buffer];
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferData(buffer.target,subcmd.size,NULL,buffer.usage);}
-    for (Next<Subcmd> *next = command.writes; next; next = next->next) {
-    Subcmd subcmd = next->box; Handle buffer = handle[subcmd.buffer];
+    glBufferData(buffer.target,update.size,NULL,buffer.usage);}
+    for (Next<Update> *next = command.writes; next; next = next->next) {
+    Update update = next->box; Handle buffer = file[update.file].handle[update.buffer];
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferSubData(buffer.target,subcmd.offset,subcmd.size,subcmd.data);}
-    for (Next<Subcmd> *next = command.reads; next; next = next->next) {
-    Subcmd subcmd = next->box; Handle buffer = handle[subcmd.buffer];
+    glBufferSubData(buffer.target,update.offset,update.size,update.data);}
+    for (Next<Update> *next = command.reads; next; next = next->next) {
+    Update update = next->box; Handle buffer = file[update.file].handle[update.buffer];
     glBindBuffer(buffer.target,buffer.handle);
-    glGetBufferSubData(buffer.target,subcmd.offset,subcmd.size,subcmd.data);}
-    Configure program = configure[command.program];
+    glGetBufferSubData(buffer.target,update.offset,update.size,update.data);}
+    int feedback = 0; int display = 0;
+    for (Next<Render> *next = command.renders; next; next = next->next) {
+    Render render = next->box; Configure program = configure[render.program];
+    if (program.feedback) feedback = 1; else display = 1;
     glUseProgram(program.handle);
-    glBindVertexArray(program.vao);
+    glBindVertexArray(file[render.file].vao[render.program][render.space]);
     if (program.feedback) {
         glEnable(GL_RASTERIZER_DISCARD);
         glBeginTransformFeedback(program.primitive);}
-	if (command.count) glDrawElements(program.mode,command.count,GL_UNSIGNED_INT,NULL);
-	if (command.size) glDrawArrays(program.mode,0,command.size);
+	if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
+	if (render.size) glDrawArrays(program.mode,render.base,render.size);
 	if (program.feedback) {
         glEndTransformFeedback();
         glDisable(GL_RASTERIZER_DISCARD);}
 	glBindVertexArray(0);
-	glUseProgram(0);
-	if (program.feedback) glFlush();
-	else glfwSwapBuffers(window);
-	if (response) response->put(command);}
+	glUseProgram(0);}
+	if (feedback) glFlush();
+	if (display) glfwSwapBuffers(window);
+	if (command.response) command.response->put(command);}
     glfwWaitEvents();}
     glfwTerminate();
 }

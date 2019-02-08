@@ -18,9 +18,9 @@
 
 #include "window.hpp"
 
-int main()
+int main(int argc, char *argv[])
 {
-	Window *window = new Window();
+	Window *window = new Window(argc,argv);
 	window->wait();
 	return 0;
 }
