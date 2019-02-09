@@ -189,6 +189,28 @@ void Window::initVao2b(GLuint index, GLuint handle)
 	glEnableVertexAttribArray(index);
 }
 
+void Window::allocBuffer(Update update)
+{
+    // TODO update textures and uniforms differently
+    Handle buffer = file[update.file].handle[update.buffer];
+    glBindBuffer(buffer.target,buffer.handle);
+    glBufferData(buffer.target,update.size,NULL,buffer.usage);
+}
+
+void Window::readBuffer(Update update)
+{
+    Handle buffer = file[update.file].handle[update.buffer];
+    glBindBuffer(buffer.target,buffer.handle);
+    glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
+}
+
+void Window::writeBuffer(Update update)
+{
+    Handle buffer = file[update.file].handle[update.buffer];
+    glBindBuffer(buffer.target,buffer.handle);
+    glBufferSubData(buffer.target,update.offset,update.size,update.data);
+}
+
 void Window::run()
 {
 	glfwInit();
@@ -214,19 +236,9 @@ void Window::run()
     for (int f = 0; f < nfile; f++) initFile(file+f);
     while (testGoon) {Command command;
     if (request.get(command)) {
-    // TODO update textures and uniforms differently
-    for (Next<Update> *next = command.allocs; next; next = next->next) {
-    Update update = next->box; Handle buffer = file[update.file].handle[update.buffer];
-    glBindBuffer(buffer.target,buffer.handle);
-    glBufferData(buffer.target,update.size,NULL,buffer.usage);}
-    for (Next<Update> *next = command.writes; next; next = next->next) {
-    Update update = next->box; Handle buffer = file[update.file].handle[update.buffer];
-    glBindBuffer(buffer.target,buffer.handle);
-    glBufferSubData(buffer.target,update.offset,update.size,update.data);}
-    for (Next<Update> *next = command.reads; next; next = next->next) {
-    Update update = next->box; Handle buffer = file[update.file].handle[update.buffer];
-    glBindBuffer(buffer.target,buffer.handle);
-    glGetBufferSubData(buffer.target,update.offset,update.size,update.data);}
+    for (Next<Update> *next = command.allocs; next; next = next->next) allocBuffer(next->box);
+    for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(next->box);
+    for (Next<Update> *next = command.writes; next; next = next->next) writeBuffer(next->box);
     int feedback = 0; int display = 0;
     for (Next<Render> *next = command.renders; next; next = next->next) {
     Render render = next->box; Configure program = configure[render.program];

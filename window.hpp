@@ -116,6 +116,9 @@ private:
 	void initVao2f(GLuint index, GLuint handle);
 	void initVao4u(GLuint index, GLuint handle);
 	void initVao2b(GLuint index, GLuint handle);
+	void allocBuffer(Update update);
+	void readBuffer(Update update);
+	void writeBuffer(Update update);
 public:
 	Message<Command> request;
 	Window(int nfile, Read *read, Write *write) : Thread(1), window(0), nfile(nfile), file(new File[nfile]), request(this)
