@@ -25,6 +25,8 @@
 #include <GLFW/glfw3.h>
 
 #include "message.hpp"
+#include "read.hpp"
+#include "write.hpp"
 
 enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
@@ -39,7 +41,7 @@ struct Handle
 	GLenum usage;
 };
 enum Program {
-    Diplane, // Plane,Versor,Coface -> display
+    Diplane, // Plane,Versor,Face -> display
     Dipoint, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
     Coplane, // Plane,Versor,Incidence -> Vertex
     Copoint, // Point,Block -> Construct,Dimension
@@ -58,6 +60,7 @@ struct Configure
 	GLenum mode;
 	GLenum primitive;
 	int feedback;
+	Configure() : handle(0) {}
 };
 struct Update
 {
@@ -87,9 +90,12 @@ struct Command
 	Next<Update> *reads;
 	Next<Render> *renders;
 	Message<Command> *response;
+	void (*function)(Command*);
 };
 struct File
 {
+	Read *read;
+	Write *write;
 	Handle handle[Buffers];
 	GLuint vao[Programs][Spaces];
 
@@ -99,16 +105,21 @@ class Window : public Thread
 {
 private:
 	GLFWwindow* window;
-	File *file;
-	int argc;
-	static Configure configure[Programs];
-	static GLuint compileShader(GLenum type, const char *source);
-	static void configureDipoint();
-	void initVao(File *file, enum Program program, enum Buffer buffer);
-	void initBuffer(Handle *handle);
+	int nfile; File *file;
+	Configure configure[Programs];
+	GLuint compileShader(GLenum type, const char *source);
+	void initDipoint();
+	void initFile(File *file);
+	void initHandle(Handle *handle);
+	void initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle);
+	void initVao3f(GLuint index, GLuint handle);
+	void initVao2f(GLuint index, GLuint handle);
+	void initVao4u(GLuint index, GLuint handle);
+	void initVao2b(GLuint index, GLuint handle);
 public:
-	Message<Command> *request;
-	Window(int argc, char *argv[]) : Thread(1), window(0) {}
+	Message<Command> request;
+	Window(int nfile, Read *read, Write *write) : Thread(1), window(0), nfile(nfile), file(new File[nfile]), request(this)
+	{for (int f = 0; f < nfile; f++) {file[f].read = read+f; file[f].write = write+f;}}
 	virtual void run();
 	virtual void wake();
 };

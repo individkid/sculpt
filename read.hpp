@@ -1,5 +1,5 @@
 /*
-*    main.cpp start threads, allocate queues, glfw main loop
+*    read.hpp start start a thread to read from files
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,13 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "window.hpp"
+#ifndef READ_HPP
+#define READ_HPP
 
-int main(int argc, char *argv[])
+#include "message.hpp"
+
+class Read : public Thread
 {
-	Window *window = new Window(0,0,0);
-	window->wait();
-	return 0;
-}
+};
+
+#endif

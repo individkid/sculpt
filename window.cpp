@@ -35,8 +35,6 @@ void displayKey(GLFWwindow* ptr, int key, int scancode, int action, int mods)
 
 }
 
-Configure Window::configure[Programs] = {0};
-
 GLuint Window::compileShader(GLenum type, const char *source)
 {
 	const char *code[2] = {
@@ -55,7 +53,7 @@ GLuint Window::compileShader(GLenum type, const char *source)
     return ident;
 }
 
-void Window::configureDipoint()
+void Window::initDipoint()
 {
 	Configure *program = &configure[Dipoint];
 	const char *vertex = "\
@@ -113,19 +111,20 @@ void Window::configureDipoint()
 	program->feedback = 0;
 }
 
-void Window::initVao(File *file, enum Program program, enum Buffer buffer)
+void Window::initFile(File *file)
 {
-	glGenVertexArrays(1, &file->vao[program][Small]);
-	glBindVertexArray(file->vao[program][Small]);
-	glBindBuffer(GL_ARRAY_BUFFER,file->handle[buffer].handle);
-	// TODO enable other input buffers for dipoint shaders
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, file->handle[buffer].handle);
-	glBindVertexArray(0);
+	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
+	initHandle(&file->handle[b]);
+	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
+	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
+	glGenVertexArrays(1, &file->vao[p][s]);
+	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
+	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
+	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
+	initVao(b,p,s,file->vao[p][s],file->handle[b].handle);
 }
 
-void Window::initBuffer(Handle *handle)
+void Window::initHandle(Handle *handle)
 {
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) glGenBuffers(1,&handle[b].handle);
     for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
@@ -142,7 +141,52 @@ void Window::initBuffer(Handle *handle)
     case (Dimension): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,1,handle[b].handle); break;
     case (Uniform): glBindBufferBase(GL_UNIFORM_BUFFER,0,handle[b].handle); break;
     default: break;}
-    configureDipoint();
+}
+
+void Window::initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle)
+{
+	glBindVertexArray(vao);
+	switch (program) {
+	case (Dipoint): switch (buffer) {
+	case (Frame): if (space == Small) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+	case (Coframe): if (space == Large) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+	case (Point): initVao3f(0,handle); break;
+	case (Normal): for (int i = 1; i < 4; i++) initVao3f(i,handle); break;
+	case (Coordinate): for (int i = 4; i < 7; i++) initVao2f(i,handle); break;
+	case (Weight): for (int i = 7; i < 10; i++) initVao4u(i,handle); break;
+	case (Color): for (int i = 10; i < 13; i++) initVao3f(i,handle); break;
+	case (Tag): for (int i = 13; i < 16; i++) initVao2b(i,handle); break;
+	default: break;}
+	default: std::cerr << "invalid program" << std::endl; exit(-1);}
+	glBindVertexArray(0);
+}
+
+void Window::initVao3f(GLuint index, GLuint handle)
+{
+	glBindBuffer(GL_ARRAY_BUFFER,handle);
+	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(index);
+}
+
+void Window::initVao2f(GLuint index, GLuint handle)
+{
+	glBindBuffer(GL_ARRAY_BUFFER,handle);
+	glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(index);
+}
+
+void Window::initVao4u(GLuint index, GLuint handle)
+{
+	glBindBuffer(GL_ARRAY_BUFFER,handle);
+	glVertexAttribIPointer(index, 4, GL_UNSIGNED_INT, 4 * sizeof(unsigned), (void*)0);
+	glEnableVertexAttribArray(index);
+}
+
+void Window::initVao2b(GLuint index, GLuint handle)
+{
+	glBindBuffer(GL_ARRAY_BUFFER,handle);
+	glVertexAttribIPointer(index, 2, GL_UNSIGNED_BYTE, 2 * sizeof(char), (void*)0);
+	glEnableVertexAttribArray(index);
 }
 
 void Window::run()
@@ -166,9 +210,10 @@ void Window::run()
     glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glfwSwapBuffers(window);
-    // initialize programs and per file per argc
+    initDipoint();
+    for (int f = 0; f < nfile; f++) initFile(file+f);
     while (testGoon) {Command command;
-    if (request && request->get(command)) {
+    if (request.get(command)) {
     // TODO update textures and uniforms differently
     for (Next<Update> *next = command.allocs; next; next = next->next) {
     Update update = next->box; Handle buffer = file[update.file].handle[update.buffer];
