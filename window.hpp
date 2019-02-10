@@ -32,13 +32,13 @@ enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
 	Face, Frame, Coface, Coframe, Incidence, Block,
 	Construct, Dimension, Vertex, Vector, Pierce, Side,
-	Uniform, Texture,
-	Buffers};
+	Uniform, Buffers};
 struct Handle
 {
 	GLenum target;
 	GLuint handle;
 	GLenum usage;
+	GLuint index;
 };
 enum Program {
     Diplane, // Plane,Versor,Face -> display
@@ -59,8 +59,6 @@ struct Configure
 	GLuint handle;
 	GLenum mode;
 	GLenum primitive;
-	int feedback;
-	Configure() : handle(0) {}
 };
 struct Update
 {
@@ -87,6 +85,7 @@ struct Command
 {
 	Next<Update> *allocs;
 	Next<Update> *writes;
+	Next<Update> *binds;
 	Next<Update> *reads;
 	Next<Render> *renders;
 	Message<Command> *response;
@@ -110,15 +109,17 @@ private:
 	GLuint compileShader(GLenum type, const char *source);
 	void initDipoint();
 	void initFile(File *file);
-	void initHandle(Handle *handle);
+	void initHandle(enum Buffer buffer, Handle *handle);
 	void initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle);
 	void initVao3f(GLuint index, GLuint handle);
 	void initVao2f(GLuint index, GLuint handle);
 	void initVao4u(GLuint index, GLuint handle);
 	void initVao2b(GLuint index, GLuint handle);
 	void allocBuffer(Update update);
-	void readBuffer(Update update);
 	void writeBuffer(Update update);
+	void bindBuffer(Update update);
+	void unbindBuffer(Update update);
+	void readBuffer(Update update);
 public:
 	Message<Command> request;
 	Window(int nfile, Read *read, Write *write) : Thread(1), window(0), nfile(nfile), file(new File[nfile]), request(this)

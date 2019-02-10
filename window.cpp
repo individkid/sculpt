@@ -97,7 +97,7 @@ void Window::initDipoint()
     // TODO check for null geometry shader (as it should be for dipoint)
     GLuint geometryIdent = compileShader(GL_GEOMETRY_SHADER, geometry); glAttachShader(program->handle, geometryIdent);
     GLuint fragmentIdent = compileShader(GL_FRAGMENT_SHADER, fragment); glAttachShader(program->handle, fragmentIdent);
-    // glTransformFeedbackVaryings(program->handle,feedback,array-of-names,GL_SEPARATE_ATTRIBS);
+    // glTransformFeedbackVaryings(program->handle,array-of-names-count,array-of-names,GL_SEPARATE_ATTRIBS);
     glLinkProgram(program->handle);
     GLint status = GL_FALSE; glGetProgramiv(program->handle, GL_LINK_STATUS, &status);
     int length; glGetProgramiv(program->handle, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
@@ -108,13 +108,12 @@ void Window::initDipoint()
     glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Uniform"),0);
 	program->mode = GL_TRIANGLES;
 	program->primitive = GL_POINTS;
-	program->feedback = 0;
 }
 
 void Window::initFile(File *file)
 {
 	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
-	initHandle(&file->handle[b]);
+	initHandle(b,&file->handle[b]);
 	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
 	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
 	glGenVertexArrays(1, &file->vao[p][s]);
@@ -124,23 +123,21 @@ void Window::initFile(File *file)
 	initVao(b,p,s,file->vao[p][s],file->handle[b].handle);
 }
 
-void Window::initHandle(Handle *handle)
+void Window::initHandle(enum Buffer buffer, Handle *handle)
 {
-    for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) glGenBuffers(1,&handle[b].handle);
-    for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
-    case (Face): case (Frame): case (Incidence): case (Block): handle[b].target = GL_ELEMENT_ARRAY_BUFFER; break;
-    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle[b].target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
-    case (Uniform): handle[b].target = GL_UNIFORM_BUFFER; break;
-    case (Texture): handle[b].target = GL_TEXTURE_BUFFER; break;
-    default: handle[b].target = GL_ARRAY_BUFFER; break;}
-    for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
-    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle[b].usage = GL_STATIC_READ; break;
-    default: handle[b].usage = GL_STATIC_DRAW; break;}
-    for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1)) switch (b) {
-    case (Construct): case (Vertex): case (Vector): case (Pierce): case (Side): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,handle[b].handle); break;
-    case (Dimension): glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,1,handle[b].handle); break;
-    case (Uniform): glBindBufferBase(GL_UNIFORM_BUFFER,0,handle[b].handle); break;
-    default: break;}
+	switch (buffer) {
+    default: glGenBuffers(1,&handle->handle); break;}
+    switch (buffer) {
+    case (Face): case (Frame): case (Coface): case (Coframe): case (Incidence): case (Block): handle->target = GL_ELEMENT_ARRAY_BUFFER; break;
+    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
+    case (Uniform): handle->target = GL_UNIFORM_BUFFER; break;
+    default: handle->target = GL_ARRAY_BUFFER; break;}
+    switch (buffer) {
+    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->usage = GL_STATIC_READ; break;
+    default: handle->usage = GL_STATIC_DRAW; break;}
+    switch (buffer) {
+    case (Dimension): handle->index = 1;
+    default: handle->index = 0;}
 }
 
 void Window::initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle)
@@ -191,17 +188,9 @@ void Window::initVao2b(GLuint index, GLuint handle)
 
 void Window::allocBuffer(Update update)
 {
-    // TODO update textures and uniforms differently
     Handle buffer = file[update.file].handle[update.buffer];
     glBindBuffer(buffer.target,buffer.handle);
     glBufferData(buffer.target,update.size,NULL,buffer.usage);
-}
-
-void Window::readBuffer(Update update)
-{
-    Handle buffer = file[update.file].handle[update.buffer];
-    glBindBuffer(buffer.target,buffer.handle);
-    glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
 }
 
 void Window::writeBuffer(Update update)
@@ -209,6 +198,25 @@ void Window::writeBuffer(Update update)
     Handle buffer = file[update.file].handle[update.buffer];
     glBindBuffer(buffer.target,buffer.handle);
     glBufferSubData(buffer.target,update.offset,update.size,update.data);
+}
+
+void Window::bindBuffer(Update update)
+{
+    Handle buffer = file[update.file].handle[update.buffer];
+    glBindBufferBase(buffer.target,buffer.index,buffer.handle);
+}
+
+void Window::unbindBuffer(Update update)
+{
+    Handle buffer = file[update.file].handle[update.buffer];
+    glBindBufferBase(buffer.target,buffer.index,0);
+}
+
+void Window::readBuffer(Update update)
+{
+    Handle buffer = file[update.file].handle[update.buffer];
+    glBindBuffer(buffer.target,buffer.handle);
+    glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
 }
 
 void Window::run()
@@ -237,26 +245,26 @@ void Window::run()
     while (testGoon) {Command command;
     if (request.get(command)) {
     for (Next<Update> *next = command.allocs; next; next = next->next) allocBuffer(next->box);
-    for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(next->box);
     for (Next<Update> *next = command.writes; next; next = next->next) writeBuffer(next->box);
-    int feedback = 0; int display = 0;
     for (Next<Render> *next = command.renders; next; next = next->next) {
     Render render = next->box; Configure program = configure[render.program];
-    if (program.feedback) feedback = 1; else display = 1;
     glUseProgram(program.handle);
     glBindVertexArray(file[render.file].vao[render.program][render.space]);
-    if (program.feedback) {
+    if (command.binds) {
         glEnable(GL_RASTERIZER_DISCARD);
+    for (Next<Update> *next = command.binds; next; next = next->next) bindBuffer(next->box);
         glBeginTransformFeedback(program.primitive);}
 	if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
 	if (render.size) glDrawArrays(program.mode,render.base,render.size);
-	if (program.feedback) {
+	if (command.binds) {
         glEndTransformFeedback();
+    for (Next<Update> *next = command.binds; next; next = next->next) unbindBuffer(next->box);
         glDisable(GL_RASTERIZER_DISCARD);}
 	glBindVertexArray(0);
 	glUseProgram(0);}
-	if (feedback) glFlush();
-	if (display) glfwSwapBuffers(window);
+	if (command.binds) glFlush();
+	else glfwSwapBuffers(window);
+    for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(next->box);
 	if (command.response) command.response->put(command);}
     glfwWaitEvents();}
     glfwTerminate();
