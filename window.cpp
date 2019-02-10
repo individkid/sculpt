@@ -126,17 +126,19 @@ void Window::initFile(File *file)
 void Window::initHandle(enum Buffer buffer, Handle *handle)
 {
 	switch (buffer) {
-    default: glGenBuffers(1,&handle->handle); break;}
+	case (Texture): glGenTextures(1,&handle->handle); break;
+	default: glGenBuffers(1,&handle->handle); break;}
     switch (buffer) {
     case (Face): case (Frame): case (Coface): case (Coframe): case (Incidence): case (Block): handle->target = GL_ELEMENT_ARRAY_BUFFER; break;
     case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
-    case (Uniform): handle->target = GL_UNIFORM_BUFFER; break;
+    case (Uniform): case (Global): handle->target = GL_UNIFORM_BUFFER; break;
+    case (Texture): handle->target = GL_TEXTURE_2D; break;
     default: handle->target = GL_ARRAY_BUFFER; break;}
     switch (buffer) {
     case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->usage = GL_STATIC_READ; break;
     default: handle->usage = GL_STATIC_DRAW; break;}
     switch (buffer) {
-    case (Dimension): handle->index = 1;
+    case (Dimension): case (Global): handle->index = 1; break;
     default: handle->index = 0;}
 }
 
@@ -189,6 +191,14 @@ void Window::initVao2b(GLuint index, GLuint handle)
 void Window::allocBuffer(Update update)
 {
     Handle buffer = file[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) {
+    glActiveTexture(indexTexture(update.unit));
+    glBindTexture(GL_TEXTURE_2D,buffer.handle);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    return;}
     glBindBuffer(buffer.target,buffer.handle);
     glBufferData(buffer.target,update.size,NULL,buffer.usage);
 }
@@ -196,6 +206,12 @@ void Window::allocBuffer(Update update)
 void Window::writeBuffer(Update update)
 {
     Handle buffer = file[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) {
+    glActiveTexture(indexTexture(update.unit));
+    glBindTexture(GL_TEXTURE_2D,buffer.handle);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+    return;}
     glBindBuffer(buffer.target,buffer.handle);
     glBufferSubData(buffer.target,update.offset,update.size,update.data);
 }
@@ -203,20 +219,36 @@ void Window::writeBuffer(Update update)
 void Window::bindBuffer(Update update)
 {
     Handle buffer = file[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) {
+    glActiveTexture(indexTexture(update.unit));
+    glBindTexture(GL_TEXTURE_2D,buffer.handle);
+    return;}
     glBindBufferBase(buffer.target,buffer.index,buffer.handle);
 }
 
 void Window::unbindBuffer(Update update)
 {
     Handle buffer = file[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) {
+    glBindTexture(GL_TEXTURE_2D,0);
+    return;}
     glBindBufferBase(buffer.target,buffer.index,0);
 }
 
 void Window::readBuffer(Update update)
 {
     Handle buffer = file[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) return;
     glBindBuffer(buffer.target,buffer.handle);
     glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
+}
+
+GLenum Window::indexTexture(int unit)
+{
+	switch (unit) {
+	case (1): return GL_TEXTURE1;
+	default: break;}
+	return GL_TEXTURE0;
 }
 
 void Window::run()

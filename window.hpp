@@ -32,7 +32,7 @@ enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
 	Face, Frame, Coface, Coframe, Incidence, Block,
 	Construct, Dimension, Vertex, Vector, Pierce, Side,
-	Uniform, Buffers};
+	Uniform, Global, Texture, Buffers};
 struct Handle
 {
 	GLenum target;
@@ -63,9 +63,9 @@ struct Configure
 struct Update
 {
 	enum Buffer buffer;
-	int file;
-	int offset;
-	int size;
+	union {int file; int unit;};
+	union {int offset; int width;};
+	union {int size; int height;};
 	char *data;
 };
 enum Space {
@@ -120,6 +120,7 @@ private:
 	void bindBuffer(Update update);
 	void unbindBuffer(Update update);
 	void readBuffer(Update update);
+	GLenum indexTexture(int unit);
 public:
 	Message<Command> request;
 	Window(int nfile, Read *read, Write *write) : Thread(1), window(0), nfile(nfile), file(new File[nfile]), request(this)
