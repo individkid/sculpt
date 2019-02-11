@@ -35,22 +35,22 @@ void displayKey(GLFWwindow* ptr, int key, int scancode, int action, int mods)
 
 }
 
-GLuint Window::compileShader(GLenum type, const char *source)
+void Window::initProgram(Program program)
 {
-	const char *code[2] = {
-	"#version 330 core\n\
-	layout(std140) uniform Uniform {\n\
-    uniform mat4 affine;\n\
-    uniform float cutoff;\n\
-    uniform float slope;\n\
-    uniform float aspect;\n\
-	};",
-	source};
-    GLuint ident = glCreateShader(type); glShaderSource(ident, 2, code, NULL); glCompileShader(ident);
-    GLint status = GL_FALSE; glGetShaderiv(ident, GL_COMPILE_STATUS, &status);
-    int length; glGetShaderiv(ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
-    GLchar info[length+1]; glGetShaderInfoLog(ident, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
-    return ident;
+    switch (program) {
+    case (Diplane): break;
+    case (Dipoint): initDipoint(); break;
+    case (Coplane): break;
+    case (Copoint): break;
+    case (Adplane): break;
+    case (Adpoint): break;
+    case (Perplane): break;
+    case (Perpoint): break;
+    case (Replane): break;
+    case (Repoint): break;
+    case (Explane): break;
+    case (Expoint): break;
+    default: std::cerr << "invalid program" << std::endl; exit(-1);}
 }
 
 void Window::initDipoint()
@@ -58,56 +58,71 @@ void Window::initDipoint()
 	Configure *program = &configure[Dipoint];
 	const char *vertex = "\
     layout (location = 0) in vec3 point;\n\
-    out data {\n\
-    vec3 point;\n\
-    } od;\n\
+    layout (location = 1) in vec3 normal[3];\n\
+    layout (location = 4) in vec2 coordinate[3];\n\
+    layout (location = 7) in uvec4 weight[3];\n\
+    layout (location = 10) in vec3 color[3];\n\
+    layout (location = 13) in uvec2 tag[3];\n\
+    out vec4 vertexColor;\n\
     void main()\n\
     {\n\
-    od.point = (affine*vec4(point,1.0)).xyz;\n\
-    }\n";
-    const char *geometry = "\
-    layout (triangles) in;\n\
-    layout (triangle_strip, max_vertices = 3) out;\n\
-    in data {\n\
-    vec3 point;\n\
-    } id[3];\n\
-    out vec3 normal;\n\
-    void main()\n\
-    {\n\
-    for (int i = 0; i < 3; i++) {\n\
-    vec3 vector = id[i].point;\n\
+    vec3 vector = (affine*vec4(point,1.0)).xyz;\n\
     vector.x = vector.x/(vector.z*slope+1.0);\n\
     vector.y = vector.y/(vector.z*slope*aspect+aspect);\n\
     vector.z = vector.z/cutoff;\n\
     gl_Position = vec4(vector,1.0);\n\
-    normal = vec3(1.0,1.0,1.0);\n\
-    normal[i] = 0.0;\n\
-    EmitVertex();}\n\
-    EndPrimitive();\n\
+    if (taggraph == tag[0].x) vertexColor.xyz = color[0];\n\
+    else if (taggraph == tag[1].x) vertexColor.xyz = color[1];\n\
+    else if (taggraph == tag[2].x) vertexColor.xyz = color[2];\n\
+    else vertexColor.xyz = vec3(0.0,0.0,0.0);\n\
+    vertexColor.w = 1.0;\n\
     }\n";
     const char *fragment = "\
-    in vec3 normal;\n\
-    out vec4 result;\n\
+    out vec4 FragColor;\n\
+    in vec4 vertexColor;\n\
     void main()\n\
     {\n\
-    result = vec4(normal, 1.0f);\n\
+    FragColor = vertexColor;\n\
     }\n";
     program->handle = glCreateProgram();
-    GLuint vertexIdent = compileShader(GL_VERTEX_SHADER, vertex); glAttachShader(program->handle, vertexIdent);
-    // TODO check for null geometry shader (as it should be for dipoint)
-    GLuint geometryIdent = compileShader(GL_GEOMETRY_SHADER, geometry); glAttachShader(program->handle, geometryIdent);
-    GLuint fragmentIdent = compileShader(GL_FRAGMENT_SHADER, fragment); glAttachShader(program->handle, fragmentIdent);
+    GLuint vertexIdent; initShader(GL_VERTEX_SHADER, vertex, &vertexIdent); glAttachShader(program->handle, vertexIdent);
+    // GLuint geometryIdent; initShader(GL_GEOMETRY_SHADER, geometry, &geometryIdent); glAttachShader(program->handle, geometryIdent);
+    GLuint fragmentIdent; initShader(GL_FRAGMENT_SHADER, fragment, &fragmentIdent); glAttachShader(program->handle, fragmentIdent);
     // glTransformFeedbackVaryings(program->handle,array-of-names-count,array-of-names,GL_SEPARATE_ATTRIBS);
     glLinkProgram(program->handle);
     GLint status = GL_FALSE; glGetProgramiv(program->handle, GL_LINK_STATUS, &status);
     int length; glGetProgramiv(program->handle, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
     GLchar info[length+1]; glGetProgramInfoLog(program->handle, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
     glDetachShader(program->handle, vertexIdent); glDeleteShader(vertexIdent);
-    glDetachShader(program->handle, geometryIdent); glDeleteShader(geometryIdent);
+    // glDetachShader(program->handle, geometryIdent); glDeleteShader(geometryIdent);
     glDetachShader(program->handle, fragmentIdent); glDeleteShader(fragmentIdent);
     glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Uniform"),0);
+    glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Global"),1);
 	program->mode = GL_TRIANGLES;
 	program->primitive = GL_POINTS;
+}
+
+void Window::initShader(GLenum type, const char *source, GLuint *ident)
+{
+    const char *code[2] = {
+    "#version 330 core\n\
+    layout(std140) uniform Uniform {\n\
+    mat4 perfile;\n\
+    };\n\
+    layout(std140) uniform Global {\n\
+    mat4 affine;\n\
+    mat4 perplane;\n\
+    uint tagplane;\n\
+    uint taggraph;\n\
+    float cutoff;\n\
+    float slope;\n\
+    float aspect;\n\
+    };",
+    source};
+    *ident = glCreateShader(type); glShaderSource(*ident, 2, code, NULL); glCompileShader(*ident);
+    GLint status = GL_FALSE; glGetShaderiv(*ident, GL_COMPILE_STATUS, &status);
+    int length; glGetShaderiv(*ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
+    GLchar info[length+1]; glGetShaderInfoLog(*ident, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
 }
 
 void Window::initFile(File *file)
@@ -154,7 +169,7 @@ void Window::initVao(enum Buffer buffer, enum Program program, enum Space space,
 	case (Coordinate): for (int i = 4; i < 7; i++) initVao2f(i,handle); break;
 	case (Weight): for (int i = 7; i < 10; i++) initVao4u(i,handle); break;
 	case (Color): for (int i = 10; i < 13; i++) initVao3f(i,handle); break;
-	case (Tag): for (int i = 13; i < 16; i++) initVao2b(i,handle); break;
+	case (Tag): for (int i = 13; i < 16; i++) initVao2u(i,handle); break;
 	default: break;}
 	default: std::cerr << "invalid program" << std::endl; exit(-1);}
 	glBindVertexArray(0);
@@ -181,10 +196,10 @@ void Window::initVao4u(GLuint index, GLuint handle)
 	glEnableVertexAttribArray(index);
 }
 
-void Window::initVao2b(GLuint index, GLuint handle)
+void Window::initVao2u(GLuint index, GLuint handle)
 {
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
-	glVertexAttribIPointer(index, 2, GL_UNSIGNED_BYTE, 2 * sizeof(char), (void*)0);
+	glVertexAttribIPointer(index, 2, GL_UNSIGNED_INT, 2 * sizeof(unsigned), (void*)0);
 	glEnableVertexAttribArray(index);
 }
 
@@ -272,7 +287,7 @@ void Window::run()
     glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glfwSwapBuffers(window);
-    initDipoint();
+    for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) initProgram(p);
     for (int f = 0; f < nfile; f++) initFile(file+f);
     while (testGoon) {Command command;
     if (request.get(command)) {

@@ -106,15 +106,16 @@ private:
 	GLFWwindow* window;
 	int nfile; File *file;
 	Configure configure[Programs];
-	GLuint compileShader(GLenum type, const char *source);
+	void initProgram(Program program);
 	void initDipoint();
+	void initShader(GLenum type, const char *source, GLuint *handle);
 	void initFile(File *file);
 	void initHandle(enum Buffer buffer, Handle *handle);
 	void initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle);
 	void initVao3f(GLuint index, GLuint handle);
 	void initVao2f(GLuint index, GLuint handle);
 	void initVao4u(GLuint index, GLuint handle);
-	void initVao2b(GLuint index, GLuint handle);
+	void initVao2u(GLuint index, GLuint handle);
 	void allocBuffer(Update update);
 	void writeBuffer(Update update);
 	void bindBuffer(Update update);
