@@ -128,7 +128,7 @@ void Window::initShader(GLenum type, const char *source, GLuint *ident)
 void Window::initFile(File *file)
 {
 	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
-	initHandle(b,&file->handle[b]);
+	initHandle(b,(file==this->file),&file->handle[b]);
 	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
 	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
 	glGenVertexArrays(1, &file->vao[p][s]);
@@ -138,16 +138,18 @@ void Window::initFile(File *file)
 	initVao(b,p,s,file->vao[p][s],file->handle[b].handle);
 }
 
-void Window::initHandle(enum Buffer buffer, Handle *handle)
+void Window::initHandle(enum Buffer buffer, int first, Handle *handle)
 {
 	switch (buffer) {
-	case (Texture): glGenTextures(1,&handle->handle); break;
+	case (Texture0): handle->unit = GL_TEXTURE0; break;
+    case (Texture1): handle->unit = GL_TEXTURE1; break;
+    case (Uniform): case (Global): if (!first) handle->handle = 0; break;
 	default: glGenBuffers(1,&handle->handle); break;}
     switch (buffer) {
     case (Face): case (Frame): case (Coface): case (Coframe): case (Incidence): case (Block): handle->target = GL_ELEMENT_ARRAY_BUFFER; break;
     case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
     case (Uniform): case (Global): handle->target = GL_UNIFORM_BUFFER; break;
-    case (Texture): handle->target = GL_TEXTURE_2D; break;
+    case (Texture0): case (Texture1): handle->target = GL_TEXTURE_2D; break;
     default: handle->target = GL_ARRAY_BUFFER; break;}
     switch (buffer) {
     case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->usage = GL_STATIC_READ; break;
@@ -180,6 +182,7 @@ void Window::initVao3f(GLuint index, GLuint handle)
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(index);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
 void Window::initVao2f(GLuint index, GLuint handle)
@@ -187,6 +190,7 @@ void Window::initVao2f(GLuint index, GLuint handle)
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(index);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
 void Window::initVao4u(GLuint index, GLuint handle)
@@ -194,6 +198,7 @@ void Window::initVao4u(GLuint index, GLuint handle)
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribIPointer(index, 4, GL_UNSIGNED_INT, 4 * sizeof(unsigned), (void*)0);
 	glEnableVertexAttribArray(index);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
 void Window::initVao2u(GLuint index, GLuint handle)
@@ -201,69 +206,83 @@ void Window::initVao2u(GLuint index, GLuint handle)
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribIPointer(index, 2, GL_UNSIGNED_INT, 2 * sizeof(unsigned), (void*)0);
 	glEnableVertexAttribArray(index);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
-void Window::allocBuffer(Update update)
+void Window::allocBuffer(Update *update)
 {
-    Handle buffer = file[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) {
-    glActiveTexture(indexTexture(update.unit));
-    glBindTexture(GL_TEXTURE_2D,buffer.handle);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    return;}
+    Handle buffer = file[update->file].handle[update->buffer];
+    if (buffer.target == GL_TEXTURE_2D) {allocTexture2d(update); return;}
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferData(buffer.target,update.size,NULL,buffer.usage);
+    glBufferData(buffer.target,update->size,NULL,buffer.usage);
+    glBindBuffer(buffer.target,0);
 }
 
-void Window::writeBuffer(Update update)
+void Window::writeBuffer(Update *update)
 {
-    Handle buffer = file[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) {
-    glActiveTexture(indexTexture(update.unit));
-    glBindTexture(GL_TEXTURE_2D,buffer.handle);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-    return;}
+    Handle buffer = file[update->file].handle[update->buffer];
+    if (buffer.target == GL_TEXTURE_2D) {writeTexture2d(update); return;}
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferSubData(buffer.target,update.offset,update.size,update.data);
+    glBufferSubData(buffer.target,update->offset,update->size,update->data);
+    glBindBuffer(buffer.target,0);
 }
 
-void Window::bindBuffer(Update update)
+void Window::bindBuffer(Update *update)
 {
-    Handle buffer = file[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) {
-    glActiveTexture(indexTexture(update.unit));
-    glBindTexture(GL_TEXTURE_2D,buffer.handle);
-    return;}
+    Handle buffer = file[update->file].handle[update->buffer];
+    if (buffer.target == GL_TEXTURE_2D) {bindTexture2d(update); return;}
     glBindBufferBase(buffer.target,buffer.index,buffer.handle);
 }
 
-void Window::unbindBuffer(Update update)
+void Window::unbindBuffer(Update *update)
 {
-    Handle buffer = file[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) {
-    glBindTexture(GL_TEXTURE_2D,0);
-    return;}
+    Handle buffer = file[update->file].handle[update->buffer];
+    if (buffer.target == GL_TEXTURE_2D) {unbindTexture2d(); return;}
     glBindBufferBase(buffer.target,buffer.index,0);
 }
 
-void Window::readBuffer(Update update)
+void Window::readBuffer(Update *update)
 {
-    Handle buffer = file[update.file].handle[update.buffer];
+    Handle buffer = file[update->file].handle[update->buffer];
     if (buffer.target == GL_TEXTURE_2D) return;
     glBindBuffer(buffer.target,buffer.handle);
-    glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
+    glGetBufferSubData(buffer.target,update->offset,update->size,update->data);
+    glBindBuffer(buffer.target,0);
 }
 
-GLenum Window::indexTexture(int unit)
+void Window::allocTexture2d(Update *update)
 {
-	switch (unit) {
-	case (1): return GL_TEXTURE1;
-	default: break;}
-	return GL_TEXTURE0;
+    Handle buffer = file[update->file].handle[update->buffer];
+    glGenTextures(1,&update->handle);
+    glActiveTexture(buffer.unit);
+    glBindTexture(GL_TEXTURE_2D,update->handle);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D,0);
+}
+
+void Window::writeTexture2d(Update *update)
+{
+    Handle buffer = file[update->file].handle[update->buffer];
+    glActiveTexture(buffer.handle);
+    glBindTexture(GL_TEXTURE_2D,update->handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update->width, update->height, 0, GL_RGB, GL_UNSIGNED_BYTE, update->data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,0);
+}
+
+void Window::bindTexture2d(Update *update)
+{
+    Handle buffer = file[update->file].handle[update->buffer];
+    glActiveTexture(buffer.handle);
+    glBindTexture(GL_TEXTURE_2D,update->handle);
+}
+
+void Window::unbindTexture2d()
+{
+    glBindTexture(GL_TEXTURE_2D,0);
 }
 
 void Window::run()
@@ -291,27 +310,27 @@ void Window::run()
     for (int f = 0; f < nfile; f++) initFile(file+f);
     while (testGoon) {Command command;
     if (request.get(command)) {
-    for (Next<Update> *next = command.allocs; next; next = next->next) allocBuffer(next->box);
-    for (Next<Update> *next = command.writes; next; next = next->next) writeBuffer(next->box);
+    for (Next<Update> *next = command.allocs; next; next = next->next) allocBuffer(&next->box);
+    for (Next<Update> *next = command.writes; next; next = next->next) writeBuffer(&next->box);
     for (Next<Render> *next = command.renders; next; next = next->next) {
     Render render = next->box; Configure program = configure[render.program];
     glUseProgram(program.handle);
     glBindVertexArray(file[render.file].vao[render.program][render.space]);
     if (command.binds) {
         glEnable(GL_RASTERIZER_DISCARD);
-    for (Next<Update> *next = command.binds; next; next = next->next) bindBuffer(next->box);
+    for (Next<Update> *next = command.binds; next; next = next->next) bindBuffer(&next->box);
         glBeginTransformFeedback(program.primitive);}
 	if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
 	if (render.size) glDrawArrays(program.mode,render.base,render.size);
 	if (command.binds) {
         glEndTransformFeedback();
-    for (Next<Update> *next = command.binds; next; next = next->next) unbindBuffer(next->box);
+    for (Next<Update> *next = command.binds; next; next = next->next) unbindBuffer(&next->box);
         glDisable(GL_RASTERIZER_DISCARD);}
 	glBindVertexArray(0);
 	glUseProgram(0);}
 	if (command.binds) glFlush();
 	else glfwSwapBuffers(window);
-    for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(next->box);
+    for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(&next->box);
 	if (command.response) command.response->put(command);}
     glfwWaitEvents();}
     glfwTerminate();

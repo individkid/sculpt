@@ -32,10 +32,11 @@ enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
 	Face, Frame, Coface, Coframe, Incidence, Block,
 	Construct, Dimension, Vertex, Vector, Pierce, Side,
-	Uniform, Global, Texture, Buffers};
+	Uniform, Global, Texture0, Texture1, Buffers};
 struct Handle
 {
 	GLenum target;
+	GLenum unit;
 	GLuint handle;
 	GLenum usage;
 	GLuint index;
@@ -63,9 +64,10 @@ struct Configure
 struct Update
 {
 	enum Buffer buffer;
-	union {int file; int unit;};
+	int file;
 	union {int offset; int width;};
 	union {int size; int height;};
+	GLuint handle;
 	char *data;
 };
 enum Space {
@@ -93,8 +95,6 @@ struct Command
 };
 struct File
 {
-	Read *read;
-	Write *write;
 	Handle handle[Buffers];
 	GLuint vao[Programs][Spaces];
 
@@ -110,22 +110,24 @@ private:
 	void initDipoint();
 	void initShader(GLenum type, const char *source, GLuint *handle);
 	void initFile(File *file);
-	void initHandle(enum Buffer buffer, Handle *handle);
+	void initHandle(enum Buffer buffer, int first, Handle *handle);
 	void initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle);
 	void initVao3f(GLuint index, GLuint handle);
 	void initVao2f(GLuint index, GLuint handle);
 	void initVao4u(GLuint index, GLuint handle);
 	void initVao2u(GLuint index, GLuint handle);
-	void allocBuffer(Update update);
-	void writeBuffer(Update update);
-	void bindBuffer(Update update);
-	void unbindBuffer(Update update);
-	void readBuffer(Update update);
-	GLenum indexTexture(int unit);
+	void allocBuffer(Update *update);
+	void writeBuffer(Update *update);
+	void bindBuffer(Update *update);
+	void unbindBuffer(Update *update);
+	void readBuffer(Update *update);
+	void allocTexture2d(Update *update);
+	void writeTexture2d(Update *update);
+	void bindTexture2d(Update *update);
+	void unbindTexture2d();
 public:
 	Message<Command> request;
-	Window(int nfile, Read *read, Write *write) : Thread(1), window(0), nfile(nfile), file(new File[nfile]), request(this)
-	{for (int f = 0; f < nfile; f++) {file[f].read = read+f; file[f].write = write+f;}}
+	Window(int nfile) : Thread(1), window(0), nfile(nfile), file(new File[nfile]), request(this) {}
 	virtual void run();
 	virtual void wake();
 };
