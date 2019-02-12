@@ -25,8 +25,6 @@
 #include <GLFW/glfw3.h>
 
 #include "message.hpp"
-#include "read.hpp"
-#include "write.hpp"
 
 enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,

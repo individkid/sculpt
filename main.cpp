@@ -20,7 +20,7 @@
 
 int main(int argc, char *argv[])
 {
-	Window *window = new Window(0,0,0);
+	Window *window = new Window(0);
 	window->wait();
 	return 0;
 }
