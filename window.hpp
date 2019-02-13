@@ -85,11 +85,12 @@ struct Command
 {
 	Next<Update> *allocs;
 	Next<Update> *writes;
+	int feedback;
 	Next<Update> *binds;
 	Next<Update> *reads;
 	Next<Render> *renders;
 	Message<Command> *response;
-	void (*function)(Command*);
+	Command *command;
 };
 struct File
 {
@@ -106,22 +107,23 @@ private:
 	Configure configure[Programs];
 	void initProgram(Program program);
 	void initDipoint();
-	void initShader(GLenum type, const char *source, GLuint *handle);
-	void initFile(File *file);
-	void initHandle(enum Buffer buffer, int first, Handle *handle);
+	void initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback, Configure &program);
+	void initShader(GLenum type, const char *source, GLuint &handle);
+	void initFile(File &file);
+	void initHandle(enum Buffer buffer, int first, Handle &handle);
 	void initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle);
 	void initVao3f(GLuint index, GLuint handle);
 	void initVao2f(GLuint index, GLuint handle);
 	void initVao4u(GLuint index, GLuint handle);
 	void initVao2u(GLuint index, GLuint handle);
-	void allocBuffer(Update *update);
-	void writeBuffer(Update *update);
-	void bindBuffer(Update *update);
-	void unbindBuffer(Update *update);
-	void readBuffer(Update *update);
-	void allocTexture2d(Update *update);
-	void writeTexture2d(Update *update);
-	void bindTexture2d(Update *update);
+	void allocBuffer(Update &update);
+	void writeBuffer(Update &update);
+	void bindBuffer(Update &update);
+	void unbindBuffer(Update &update);
+	void readBuffer(Update &update);
+	void allocTexture2d(Update &update);
+	void writeTexture2d(Update &update);
+	void bindTexture2d(Update &update);
 	void unbindTexture2d();
 public:
 	Message<Command> request;

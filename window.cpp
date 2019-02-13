@@ -55,7 +55,6 @@ void Window::initProgram(Program program)
 
 void Window::initDipoint()
 {
-	Configure *program = &configure[Dipoint];
 	const char *vertex = "\
     layout (location = 0) in vec3 point;\n\
     layout (location = 1) in vec3 normal[3];\n\
@@ -84,25 +83,30 @@ void Window::initDipoint()
     {\n\
     FragColor = vertexColor;\n\
     }\n";
-    program->handle = glCreateProgram();
-    GLuint vertexIdent; initShader(GL_VERTEX_SHADER, vertex, &vertexIdent); glAttachShader(program->handle, vertexIdent);
-    // GLuint geometryIdent; initShader(GL_GEOMETRY_SHADER, geometry, &geometryIdent); glAttachShader(program->handle, geometryIdent);
-    GLuint fragmentIdent; initShader(GL_FRAGMENT_SHADER, fragment, &fragmentIdent); glAttachShader(program->handle, fragmentIdent);
-    // glTransformFeedbackVaryings(program->handle,array-of-names-count,array-of-names,GL_SEPARATE_ATTRIBS);
-    glLinkProgram(program->handle);
-    GLint status = GL_FALSE; glGetProgramiv(program->handle, GL_LINK_STATUS, &status);
-    int length; glGetProgramiv(program->handle, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
-    GLchar info[length+1]; glGetProgramInfoLog(program->handle, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
-    glDetachShader(program->handle, vertexIdent); glDeleteShader(vertexIdent);
-    // glDetachShader(program->handle, geometryIdent); glDeleteShader(geometryIdent);
-    glDetachShader(program->handle, fragmentIdent); glDeleteShader(fragmentIdent);
-    glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Uniform"),0);
-    glUniformBlockBinding(program->handle,glGetUniformBlockIndex(program->handle,"Global"),1);
-	program->mode = GL_TRIANGLES;
-	program->primitive = GL_POINTS;
+    initConfigure(vertex,0,fragment,0,0,configure[Dipoint]);
 }
 
-void Window::initShader(GLenum type, const char *source, GLuint *ident)
+void Window::initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback, Configure &program)
+{
+    program.handle = glCreateProgram();
+    GLuint vertexIdent; initShader(GL_VERTEX_SHADER, vertex, vertexIdent); glAttachShader(program.handle, vertexIdent);
+    GLuint geometryIdent; if (geometry) {initShader(GL_GEOMETRY_SHADER, geometry, geometryIdent); glAttachShader(program.handle, geometryIdent);}
+    GLuint fragmentIdent; initShader(GL_FRAGMENT_SHADER, fragment, fragmentIdent); glAttachShader(program.handle, fragmentIdent);
+    if (count) glTransformFeedbackVaryings(program.handle,count,feedback,GL_SEPARATE_ATTRIBS);
+    glLinkProgram(program.handle);
+    GLint status = GL_FALSE; glGetProgramiv(program.handle, GL_LINK_STATUS, &status);
+    int length; glGetProgramiv(program.handle, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
+    GLchar info[length+1]; glGetProgramInfoLog(program.handle, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
+    glDetachShader(program.handle, vertexIdent); glDeleteShader(vertexIdent);
+    if (geometry) {glDetachShader(program.handle, geometryIdent); glDeleteShader(geometryIdent);}
+    glDetachShader(program.handle, fragmentIdent); glDeleteShader(fragmentIdent);
+    glUniformBlockBinding(program.handle,glGetUniformBlockIndex(program.handle,"Uniform"),0);
+    glUniformBlockBinding(program.handle,glGetUniformBlockIndex(program.handle,"Global"),1);
+	program.mode = GL_TRIANGLES;
+	program.primitive = GL_POINTS;
+}
+
+void Window::initShader(GLenum type, const char *source, GLuint &ident)
 {
     const char *code[2] = {
     "#version 330 core\n\
@@ -119,44 +123,44 @@ void Window::initShader(GLenum type, const char *source, GLuint *ident)
     float aspect;\n\
     };",
     source};
-    *ident = glCreateShader(type); glShaderSource(*ident, 2, code, NULL); glCompileShader(*ident);
-    GLint status = GL_FALSE; glGetShaderiv(*ident, GL_COMPILE_STATUS, &status);
-    int length; glGetShaderiv(*ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
-    GLchar info[length+1]; glGetShaderInfoLog(*ident, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
+    ident = glCreateShader(type); glShaderSource(ident, 2, code, NULL); glCompileShader(ident);
+    GLint status = GL_FALSE; glGetShaderiv(ident, GL_COMPILE_STATUS, &status);
+    int length; glGetShaderiv(ident, GL_INFO_LOG_LENGTH, &length); if (length > 0) {
+    GLchar info[length+1]; glGetShaderInfoLog(ident, length, NULL, info); std::cerr << info << std::endl; exit(-1);}
 }
 
-void Window::initFile(File *file)
+void Window::initFile(File &file)
 {
 	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
-	initHandle(b,(file==this->file),&file->handle[b]);
+	initHandle(b,(&file==this->file),file.handle[b]);
 	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
 	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
-	glGenVertexArrays(1, &file->vao[p][s]);
+	glGenVertexArrays(1, &file.vao[p][s]);
 	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
 	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
 	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
-	initVao(b,p,s,file->vao[p][s],file->handle[b].handle);
+	initVao(b,p,s,file.vao[p][s],file.handle[b].handle);
 }
 
-void Window::initHandle(enum Buffer buffer, int first, Handle *handle)
+void Window::initHandle(enum Buffer buffer, int first, Handle &handle)
 {
 	switch (buffer) {
-	case (Texture0): handle->unit = GL_TEXTURE0; break;
-    case (Texture1): handle->unit = GL_TEXTURE1; break;
-    case (Uniform): case (Global): if (!first) handle->handle = 0; break;
-	default: glGenBuffers(1,&handle->handle); break;}
+	case (Texture0): handle.unit = GL_TEXTURE0; break;
+    case (Texture1): handle.unit = GL_TEXTURE1; break;
+    case (Uniform): case (Global): if (!first) handle.handle = 0; break;
+	default: glGenBuffers(1,&handle.handle); break;}
     switch (buffer) {
-    case (Face): case (Frame): case (Coface): case (Coframe): case (Incidence): case (Block): handle->target = GL_ELEMENT_ARRAY_BUFFER; break;
-    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
-    case (Uniform): case (Global): handle->target = GL_UNIFORM_BUFFER; break;
-    case (Texture0): case (Texture1): handle->target = GL_TEXTURE_2D; break;
-    default: handle->target = GL_ARRAY_BUFFER; break;}
+    case (Face): case (Frame): case (Coface): case (Coframe): case (Incidence): case (Block): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
+    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
+    case (Uniform): case (Global): handle.target = GL_UNIFORM_BUFFER; break;
+    case (Texture0): case (Texture1): handle.target = GL_TEXTURE_2D; break;
+    default: handle.target = GL_ARRAY_BUFFER; break;}
     switch (buffer) {
-    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle->usage = GL_STATIC_READ; break;
-    default: handle->usage = GL_STATIC_DRAW; break;}
+    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle.usage = GL_STATIC_READ; break;
+    default: handle.usage = GL_STATIC_DRAW; break;}
     switch (buffer) {
-    case (Dimension): case (Global): handle->index = 1; break;
-    default: handle->index = 0;}
+    case (Dimension): case (Global): handle.index = 1; break;
+    default: handle.index = 0;}
 }
 
 void Window::initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle)
@@ -209,53 +213,53 @@ void Window::initVao2u(GLuint index, GLuint handle)
     glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
-void Window::allocBuffer(Update *update)
+void Window::allocBuffer(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
+    Handle &buffer = file[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) {allocTexture2d(update); return;}
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferData(buffer.target,update->size,NULL,buffer.usage);
+    glBufferData(buffer.target,update.size,NULL,buffer.usage);
     glBindBuffer(buffer.target,0);
 }
 
-void Window::writeBuffer(Update *update)
+void Window::writeBuffer(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
+    Handle &buffer = file[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) {writeTexture2d(update); return;}
     glBindBuffer(buffer.target,buffer.handle);
-    glBufferSubData(buffer.target,update->offset,update->size,update->data);
+    glBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);
 }
 
-void Window::bindBuffer(Update *update)
+void Window::bindBuffer(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
+    Handle &buffer = file[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) {bindTexture2d(update); return;}
     glBindBufferBase(buffer.target,buffer.index,buffer.handle);
 }
 
-void Window::unbindBuffer(Update *update)
+void Window::unbindBuffer(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
+    Handle &buffer = file[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) {unbindTexture2d(); return;}
     glBindBufferBase(buffer.target,buffer.index,0);
 }
 
-void Window::readBuffer(Update *update)
+void Window::readBuffer(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
+    Handle &buffer = file[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) return;
     glBindBuffer(buffer.target,buffer.handle);
-    glGetBufferSubData(buffer.target,update->offset,update->size,update->data);
+    glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);
 }
 
-void Window::allocTexture2d(Update *update)
+void Window::allocTexture2d(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
-    glGenTextures(1,&update->handle);
+    Handle &buffer = file[update.file].handle[update.buffer];
+    glGenTextures(1,&update.handle);
     glActiveTexture(buffer.unit);
-    glBindTexture(GL_TEXTURE_2D,update->handle);
+    glBindTexture(GL_TEXTURE_2D,update.handle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -263,21 +267,21 @@ void Window::allocTexture2d(Update *update)
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void Window::writeTexture2d(Update *update)
+void Window::writeTexture2d(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
+    Handle &buffer = file[update.file].handle[update.buffer];
     glActiveTexture(buffer.handle);
-    glBindTexture(GL_TEXTURE_2D,update->handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update->width, update->height, 0, GL_RGB, GL_UNSIGNED_BYTE, update->data);
+    glBindTexture(GL_TEXTURE_2D,update.handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void Window::bindTexture2d(Update *update)
+void Window::bindTexture2d(Update &update)
 {
-    Handle buffer = file[update->file].handle[update->buffer];
+    Handle &buffer = file[update.file].handle[update.buffer];
     glActiveTexture(buffer.handle);
-    glBindTexture(GL_TEXTURE_2D,update->handle);
+    glBindTexture(GL_TEXTURE_2D,update.handle);
 }
 
 void Window::unbindTexture2d()
@@ -307,30 +311,30 @@ void Window::run()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glfwSwapBuffers(window);
     for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) initProgram(p);
-    for (int f = 0; f < nfile; f++) initFile(file+f);
+    for (int f = 0; f < nfile; f++) initFile(file[f]);
     while (testGoon) {Command command;
     if (request.get(command)) {
-    for (Next<Update> *next = command.allocs; next; next = next->next) allocBuffer(&next->box);
-    for (Next<Update> *next = command.writes; next; next = next->next) writeBuffer(&next->box);
+    for (Next<Update> *next = command.allocs; next; next = next->next) allocBuffer(next->box);
+    for (Next<Update> *next = command.writes; next; next = next->next) writeBuffer(next->box);
     for (Next<Render> *next = command.renders; next; next = next->next) {
     Render render = next->box; Configure program = configure[render.program];
     glUseProgram(program.handle);
     glBindVertexArray(file[render.file].vao[render.program][render.space]);
-    if (command.binds) {
+    for (Next<Update> *next = command.binds; next; next = next->next) bindBuffer(next->box);
+    if (command.feedback) {
         glEnable(GL_RASTERIZER_DISCARD);
-    for (Next<Update> *next = command.binds; next; next = next->next) bindBuffer(&next->box);
         glBeginTransformFeedback(program.primitive);}
 	if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
 	if (render.size) glDrawArrays(program.mode,render.base,render.size);
-	if (command.binds) {
+	if (command.feedback) {
         glEndTransformFeedback();
-    for (Next<Update> *next = command.binds; next; next = next->next) unbindBuffer(&next->box);
         glDisable(GL_RASTERIZER_DISCARD);}
+    for (Next<Update> *next = command.binds; next; next = next->next) unbindBuffer(next->box);
 	glBindVertexArray(0);
 	glUseProgram(0);}
-	if (command.binds) glFlush();
+	if (command.feedback) glFlush();
 	else glfwSwapBuffers(window);
-    for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(&next->box);
+    for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(next->box);
 	if (command.response) command.response->put(command);}
     glfwWaitEvents();}
     glfwTerminate();
