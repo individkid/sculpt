@@ -2,9 +2,9 @@
 
 The only arguments are filenames, usually with a .-- extension. Each given file contains commands, each started with a --. Double dash commands that expect arguments ignore any text that does not satisfy the next expected argument. If a -- occurs before all expected arguments are satisfied, the incomplete command is ignored. Each instance of the program opens one OpenGL window. The program reads commands appended to the given files. Commands can manipulate the orientation and topology of planes. Planes from a file are considered a polytope. User manipulation of the mouse can cause commands in the polytope's file to be modified or appended.
 
-Each file starts a Haskell thread whose IO is space, polytope, and decoration. An initial FFI C function maps enums by name to ints. One FFI C function returns characters read from the file; it blocks as readlocker until the file is appended to, or as writelocker until the file's pipe is readable. Other FFI C functions build a Command to send to the OpenGL thread. One sends the built Command, and waits for the response. And others consume the response Command. Another FFI C function sends a string to the file's output pipe, blocking until writable.
+Each file starts a polytope thread containing the topology, positions, and decorations of the planes in the file. An io thread per file reads to eof, sending text to the polytope thread, which sends buffer data to the window thread. The io thread waits on readlock, or if it gets a writelock, waits on read from the . prefixed named pipe. Mouse action can send messages from the window thread to the selected file's polytope thread. Thus, the polytope threads wait for either string or action messages. Action messages can cause the polytope thread to change or append to the named pipe.
 
-User manipulation of the mouse can cause transformation or additive or subtractive or refining or execution or revealing commands to be append to the pierced polytope's file, or to modify memory mapped planes and matrices in the file. Sending a -- with a pid command causes the process to wait for the write lock, but not send a command, change the memory mapped plane or matrix, and release the write lock without appended text, to indicate the matrix has changed.
+User manipulation of the mouse can cause transformation or additive or subtractive or refining or execution or revealing actions to be sent to the file's polytope thread. Sending a -- with a pid command causes the process to wait for the write lock, but not send a command, change the memory mapped plane or matrix, and release the write lock without appended text, to indicate the matrix has changed.
 
 The -- commands are as follows.  
 --additive change click mode to fill in region over clicked facet  
@@ -13,6 +13,8 @@ The -- commands are as follows.
 --transform change click mode to transform clicked target  
 --reveal change click mode to make clicked facet transparent  
 --hide change click mode to make clicked through facets opaque  
+--tweak change click mode to randomize target with fixed pierce point
+--randomize change click mode to randomize target without fixed point
 --cylinder change roller mode to rotate around rotate line  
 --clock change roller mode to rotate around normal to picture plane through pierce point  
 --normal change roller mode to rotate around normal to clicked facet through pierce point  
@@ -25,6 +27,9 @@ The -- commands are as follows.
 --session change transform target to all observed facets  
 --polytope change transform target to all facets in file of clicked facet  
 --facet change transform target to clicked facet  
+--numeric hold nothing invariant upon randomize or tweak
+--invariant hold polytope invariant upon randomize or tweak
+--symbolic hold space invariant upon randomize or tweak
 --plane "bname" versor and table leg lengths  
 --matrix floats for per-file transformation  
 --global floats for per-session transformation  
