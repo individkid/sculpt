@@ -20,20 +20,17 @@
 
 #include "message.hpp"
 
-extern "C" {
-
-void *threadFunc(void *arg)
+extern "C" void *threadFunc(void *arg)
 {
 	Thread *thread = (Thread *)arg;
 	thread->run();
 	return 0;
 }
 
-void signalFunc(int sig)
+extern "C" void signalFunc(int sig)
 {
 }
 
-}
 
 Thread::Thread(int m) : isMain(m), isDone(0)
 {
