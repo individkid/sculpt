@@ -13,8 +13,8 @@ The -- commands are as follows.
 --transform change click mode to transform clicked target  
 --reveal change click mode to make clicked facet transparent  
 --hide change click mode to make clicked through facets opaque  
---tweak change click mode to randomize target with fixed pierce point
---randomize change click mode to randomize target without fixed point
+--tweak change click mode to randomize target with fixed pierce point  
+--randomize change click mode to randomize target without fixed point  
 --cylinder change roller mode to rotate around rotate line  
 --clock change roller mode to rotate around normal to picture plane through pierce point  
 --normal change roller mode to rotate around normal to clicked facet through pierce point  
