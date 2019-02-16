@@ -33,5 +33,5 @@
 
 # Clutter
 *.--
-*.--.pipe
+*.--.fifo
 
