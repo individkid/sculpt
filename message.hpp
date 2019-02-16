@@ -23,7 +23,7 @@
 #include <pthread.h>
 #include <signal.h>
 
-#define STRING_ARRAY_SIZE
+#define STRING_ARRAY_SIZE 32
 
 template <class T> void error(const char *str, T wrt, const char *file, int line)
 {
