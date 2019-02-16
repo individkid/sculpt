@@ -25,6 +25,7 @@
 #include <GLFW/glfw3.h>
 
 #include "message.hpp"
+#include "write.hpp"
 
 enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
@@ -102,6 +103,7 @@ struct File
 class Window : public Thread
 {
 private:
+	Write **write;
 	GLFWwindow* window;
 	int nfile; File *file;
 	Configure configure[Programs];
@@ -126,8 +128,9 @@ private:
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
 public:
+	Message<char[STRING_ARRAY_SIZE]> data;
 	Message<Command> request;
-	Window(int nfile) : Thread(1), window(0), nfile(nfile), file(new File[nfile]), request(this) {}
+	Window(Write **w, int nfile) : Thread(1), write(w), window(0), nfile(nfile), file(new File[nfile]), request(this) {}
 	virtual void run();
 	virtual void wake();
 };

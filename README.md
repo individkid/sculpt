@@ -27,9 +27,11 @@ The -- commands are as follows.
 --session change transform target to all observed facets  
 --polytope change transform target to all facets in file of clicked facet  
 --facet change transform target to clicked facet  
---numeric hold nothing invariant upon randomize or tweak
---invariant hold polytope invariant upon randomize or tweak
---symbolic hold space invariant upon randomize or tweak
+--numeric hold nothing invariant upon randomize or tweak  
+--invariant hold polytope invariant upon randomize or tweak  
+--symbolic hold space invariant upon randomize or tweak  
+--include share boundaries with given file  
+--exclude stop sharing boundaries with last included file  
 --plane "bname" versor and table leg lengths  
 --matrix floats for per-file transformation  
 --global floats for per-session transformation  

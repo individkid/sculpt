@@ -22,6 +22,8 @@
 #include <iostream>
 #include <pthread.h>
 
+#define STRING_ARRAY_SIZE
+
 extern "C" void *threadFunc(void *thread);
 
 class Thread
