@@ -52,7 +52,7 @@ void Window::initProgram(Program program)
     case (Repoint): break;
     case (Explane): break;
     case (Expoint): break;
-    default: std::cerr << "invalid program" << std::endl; exit(-1);}
+    default: error("invalid program",program,__FILE__,__LINE__);}
 }
 
 void Window::initDipoint()
@@ -169,6 +169,7 @@ void Window::initVao(enum Buffer buffer, enum Program program, enum Space space,
 {
 	glBindVertexArray(vao);
 	switch (program) {
+    case (Diplane): break;
 	case (Dipoint): switch (buffer) {
 	case (Frame): if (space == Small) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
 	case (Coframe): if (space == Large) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
@@ -179,7 +180,17 @@ void Window::initVao(enum Buffer buffer, enum Program program, enum Space space,
 	case (Color): for (int i = 10; i < 13; i++) initVao3f(i,handle); break;
 	case (Tag): for (int i = 13; i < 16; i++) initVao2u(i,handle); break;
 	default: break;}
-	default: std::cerr << "invalid program" << std::endl; exit(-1);}
+    case (Coplane): break;
+    case (Copoint): break;
+    case (Adplane): break;
+    case (Adpoint): break;
+    case (Perplane): break;
+    case (Perpoint): break;
+    case (Replane): break;
+    case (Repoint): break;
+    case (Explane): break;
+    case (Expoint): break;
+	default: error("invalid program",program,__FILE__,__LINE__);}
 	glBindVertexArray(0);
 }
 

@@ -23,7 +23,6 @@ void Write::init()
 	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
 	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
 	if ((pipe = open(pname,O_WRONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);
-	message("open",pname,__FILE__,__LINE__);
 }
 
 void Write::call()

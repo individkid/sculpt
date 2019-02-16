@@ -24,7 +24,6 @@ void Read::init()
 	if ((file = open(name,O_RDWR)) < 0) error("cannot open",name,__FILE__,__LINE__);
 	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
 	if ((pipe = open(pname,O_RDONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);
-	message("open",pname,__FILE__,__LINE__);
 }
 
 void Read::call()
