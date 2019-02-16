@@ -25,11 +25,11 @@
 int main(int argc, char *argv[])
 {
 	argc--; argv++;
-	Window window(argc);
-	Write *write[argc]; for (int i = 0; i < argc; i++) write[i] = new Write(i,window,argv[i]);
-	Polytope *polytope[argc]; for (int i = 0; i < argc; i++) polytope[i] = new Polytope(i,window,*write[i]);
-	Read *read[argc]; for (int i = 0; i < argc; i++) read[i] = new Read(i,window,*polytope[i],argv[i]);
-	window.kill();
+	Window *window = new Window(argc);
+	Write *write[argc]; for (int i = 0; i < argc; i++) write[i] = new Write(i,*window,argv[i]);
+	Polytope *polytope[argc]; for (int i = 0; i < argc; i++) polytope[i] = new Polytope(i,*window,*write[i]);
+	Read *read[argc]; for (int i = 0; i < argc; i++) read[i] = new Read(i,*window,*polytope[i],argv[i]);
+	window->kill();
 	for (int i = 0; i < argc; i++) write[i]->kill();
 	for (int i = 0; i < argc; i++) polytope[i]->kill();
 	for (int i = 0; i < argc; i++) read[i]->kill();
