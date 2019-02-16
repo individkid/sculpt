@@ -16,6 +16,9 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <GL/gl3w.h>
+#include <GLFW/glfw3.h>
+
 #include "window.hpp"
 #include "write.hpp"
 #include "read.hpp"
@@ -87,9 +90,9 @@ void Window::initDipoint()
 void Window::initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback, Configure &program)
 {
     program.handle = glCreateProgram();
-    GLuint vertexIdent; initShader(GL_VERTEX_SHADER, vertex, vertexIdent); glAttachShader(program.handle, vertexIdent);
-    GLuint geometryIdent; if (geometry) {initShader(GL_GEOMETRY_SHADER, geometry, geometryIdent); glAttachShader(program.handle, geometryIdent);}
-    GLuint fragmentIdent; initShader(GL_FRAGMENT_SHADER, fragment, fragmentIdent); glAttachShader(program.handle, fragmentIdent);
+    MYuint vertexIdent; initShader(GL_VERTEX_SHADER, vertex, vertexIdent); glAttachShader(program.handle, vertexIdent);
+    MYuint geometryIdent; if (geometry) {initShader(GL_GEOMETRY_SHADER, geometry, geometryIdent); glAttachShader(program.handle, geometryIdent);}
+    MYuint fragmentIdent; initShader(GL_FRAGMENT_SHADER, fragment, fragmentIdent); glAttachShader(program.handle, fragmentIdent);
     if (count) glTransformFeedbackVaryings(program.handle,count,feedback,GL_SEPARATE_ATTRIBS);
     glLinkProgram(program.handle);
     GLint status = GL_FALSE; glGetProgramiv(program.handle, GL_LINK_STATUS, &status);
@@ -104,7 +107,7 @@ void Window::initConfigure(const char *vertex, const char *geometry, const char 
 	program.primitive = GL_POINTS;
 }
 
-void Window::initShader(GLenum type, const char *source, GLuint &ident)
+void Window::initShader(MYenum type, const char *source, MYuint &ident)
 {
     const char *code[2] = {
     "#version 330 core\n\
@@ -161,7 +164,7 @@ void Window::initHandle(enum Buffer buffer, int first, Handle &handle)
     default: handle.index = 0;}
 }
 
-void Window::initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle)
+void Window::initVao(enum Buffer buffer, enum Program program, enum Space space, MYuint vao, MYuint handle)
 {
 	glBindVertexArray(vao);
 	switch (program) {
@@ -190,7 +193,7 @@ void Window::initVao(enum Buffer buffer, enum Program program, enum Space space,
 	glBindVertexArray(0);
 }
 
-void Window::initVao3f(GLuint index, GLuint handle)
+void Window::initVao3f(MYuint index, MYuint handle)
 {
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -198,7 +201,7 @@ void Window::initVao3f(GLuint index, GLuint handle)
     glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
-void Window::initVao2f(GLuint index, GLuint handle)
+void Window::initVao2f(MYuint index, MYuint handle)
 {
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
@@ -206,7 +209,7 @@ void Window::initVao2f(GLuint index, GLuint handle)
     glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
-void Window::initVao4u(GLuint index, GLuint handle)
+void Window::initVao4u(MYuint index, MYuint handle)
 {
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribIPointer(index, 4, GL_UNSIGNED_INT, 4 * sizeof(unsigned), (void*)0);
@@ -214,7 +217,7 @@ void Window::initVao4u(GLuint index, GLuint handle)
     glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
-void Window::initVao2u(GLuint index, GLuint handle)
+void Window::initVao2u(MYuint index, MYuint handle)
 {
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribIPointer(index, 2, GL_UNSIGNED_INT, 2 * sizeof(unsigned), (void*)0);
@@ -300,6 +303,8 @@ void Window::unbindTexture2d()
 
 void Window::call()
 {
+    if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
+    if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
 	glfwInit();
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

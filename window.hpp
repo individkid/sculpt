@@ -19,16 +19,15 @@
 #ifndef WINDOW_HPP
 #define WINDOW_HPP
 
-#include <iostream>
-
-#include <GL/gl3w.h>
-#include <GLFW/glfw3.h>
-
 #include "message.hpp"
 
 class Write;
 class Polytope;
 class Read;
+class GLFWwindow;
+
+typedef unsigned MYenum;
+typedef unsigned MYuint;
 
 enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
@@ -37,11 +36,11 @@ enum Buffer {
 	Uniform, Global, Texture0, Texture1, Buffers};
 struct Handle
 {
-	GLenum target;
-	GLenum unit;
-	GLuint handle;
-	GLenum usage;
-	GLuint index;
+	MYenum target;
+	MYenum unit;
+	MYuint handle;
+	MYenum usage;
+	MYuint index;
 };
 enum Program {
     Diplane, // Plane,Versor,Face -> display
@@ -59,9 +58,9 @@ enum Program {
     Programs};
 struct Configure
 {
-	GLuint handle;
-	GLenum mode;
-	GLenum primitive;
+	MYuint handle;
+	MYenum mode;
+	MYenum primitive;
 };
 struct Update
 {
@@ -69,7 +68,7 @@ struct Update
 	int file;
 	union {int offset; int width;};
 	union {int size; int height;};
-	GLuint handle;
+	MYuint handle;
 	char *data;
 };
 enum Space {
@@ -102,7 +101,7 @@ struct Action
 struct File
 {
 	Handle handle[Buffers];
-	GLuint vao[Programs][Spaces];
+	MYuint vao[Programs][Spaces];
 
 };
 
@@ -118,14 +117,14 @@ private:
 	void initProgram(Program program);
 	void initDipoint();
 	void initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback, Configure &program);
-	void initShader(GLenum type, const char *source, GLuint &handle);
+	void initShader(MYenum type, const char *source, MYuint &handle);
 	void initFile(File &file);
 	void initHandle(enum Buffer buffer, int first, Handle &handle);
-	void initVao(enum Buffer buffer, enum Program program, enum Space space, GLuint vao, GLuint handle);
-	void initVao3f(GLuint index, GLuint handle);
-	void initVao2f(GLuint index, GLuint handle);
-	void initVao4u(GLuint index, GLuint handle);
-	void initVao2u(GLuint index, GLuint handle);
+	void initVao(enum Buffer buffer, enum Program program, enum Space space, MYuint vao, MYuint handle);
+	void initVao3f(MYuint index, MYuint handle);
+	void initVao2f(MYuint index, MYuint handle);
+	void initVao4u(MYuint index, MYuint handle);
+	void initVao2u(MYuint index, MYuint handle);
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
 	void bindBuffer(Update &update);
