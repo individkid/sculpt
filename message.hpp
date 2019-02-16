@@ -21,7 +21,6 @@
 
 #include <iostream>
 #include <pthread.h>
-#include <signal.h>
 
 #define STRING_ARRAY_SIZE 32
 

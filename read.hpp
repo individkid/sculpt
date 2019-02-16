@@ -19,10 +19,6 @@
 #ifndef READ_HPP
 #define READ_HPP
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include "message.hpp"
 #include "window.hpp"
 #include "polytope.hpp"

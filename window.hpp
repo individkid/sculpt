@@ -139,7 +139,7 @@ public:
 	Message<char[STRING_ARRAY_SIZE]> mode; // get -- from Read
 	Message<char[STRING_ARRAY_SIZE]> data; // get raw data from Read
 	Message<Command> request; // get Command from Polytope
-	Window(int n) : Thread(1), write(new Write *[n]), polytope(new Polytope *[n]), read(new Read *[n]), window(0), nfile(n), file(new File[n]), data(this), request(this) {}
+	Window(int n) : Thread(1), write(new Write *[n]), polytope(new Polytope *[n]), read(new Read *[n]), window(0), nfile(n), file(new File[n]), mode(this), data(this), request(this) {}
 	void connect(int i, Write *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); write[i] = ptr;}
 	void connect(int i, Polytope *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); polytope[i] = ptr;}
 	void connect(int i, Read *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); read[i] = ptr;}

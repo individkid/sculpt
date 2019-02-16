@@ -16,6 +16,10 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "write.hpp"
 
 void Write::init()

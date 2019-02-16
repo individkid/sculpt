@@ -16,6 +16,7 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <signal.h>
 #include <sys/select.h>
 
 #include "message.hpp"

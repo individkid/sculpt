@@ -19,10 +19,6 @@
 #ifndef WRITE_HPP
 #define WRITE_HPP
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include "message.hpp"
 #include "window.hpp"
 

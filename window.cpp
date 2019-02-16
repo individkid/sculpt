@@ -20,21 +20,17 @@
 #include "write.hpp"
 #include "read.hpp"
 
-extern "C" {
-
-void displayError(int error, const char *description)
+extern "C" void displayError(int error, const char *description)
 {
     std::cerr << "GLFW error " << error << ": " << description << std::endl;
 }
 
 int testGoon = 1;
-void displayKey(GLFWwindow* ptr, int key, int scancode, int action, int mods)
+extern "C" void displayKey(GLFWwindow* ptr, int key, int scancode, int action, int mods)
 {
     if (action == 1) std::cout << "GLFW key " << key << " " << scancode << " " << action << " " << mods << std::endl;
     if (key == 256 && action == 1 && testGoon == 1) testGoon = 2;
     if (key == 257 && action == 1 && testGoon == 2) testGoon = 0;
-}
-
 }
 
 void Window::initProgram(Program program)
