@@ -52,6 +52,7 @@ public:
 	virtual void call() = 0;
 	virtual void wake();
 	virtual void kill();
+	virtual void done() {}
 };
 
 template <class T>
