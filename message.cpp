@@ -53,7 +53,7 @@ void Thread::wake()
 	if (pthread_kill(thread,SIGUSR1) != 0) error("cannot kill thread",0,__FILE__,__LINE__);
 }
 
-void Thread::wait()
+void Thread::kill()
 {
 	if (isMain) call(); else {isDone = 1; wake();
 	if (pthread_join(thread,NULL) != 0) error("cannot join thread",0,__FILE__,__LINE__);}

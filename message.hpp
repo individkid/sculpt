@@ -51,7 +51,7 @@ public:
 	virtual void init() {}
 	virtual void call() = 0;
 	virtual void wake();
-	virtual void wait();
+	virtual void kill();
 };
 
 template <class T>
