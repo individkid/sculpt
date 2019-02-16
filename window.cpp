@@ -17,6 +17,8 @@
 */
 
 #include "window.hpp"
+#include "write.hpp"
+#include "read.hpp"
 
 extern "C" {
 
@@ -289,7 +291,7 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void Window::run()
+void Window::call()
 {
 	glfwInit();
     glfwWindowHint(GLFW_SAMPLES, 4);

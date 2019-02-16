@@ -19,6 +19,10 @@
 #ifndef READ_HPP
 #define READ_HPP
 
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "message.hpp"
 #include "window.hpp"
 #include "polytope.hpp"
@@ -26,13 +30,16 @@
 class Read : public Thread
 {
 private:
-	Window &data;
-	Polytope &read;
+	Window &data; // write mode and raw data to Window
+	Polytope &read; // write -- to Polytope
+	const char *name;
+	int file;
 	int pipe;
+	int self;
 public:
-	Read(Window &d, Polytope &r, int p) : Thread(), data(d), read(r), pipe(p) {}
-	virtual void run() {}
-	virtual void wake() {}
+	Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), name(n), file(-1), pipe(-1), self(i) {gl.connect(i,this);}
+	virtual void init();
+	virtual void call();
 };
 
 #endif

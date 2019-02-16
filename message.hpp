@@ -21,35 +21,44 @@
 
 #include <iostream>
 #include <pthread.h>
+#include <signal.h>
 
 #define STRING_ARRAY_SIZE
 
+template <class T> void error(const char *str, T wrt, const char *file, int line)
+{
+	std::cerr << "error:" << str << " wrt:" << wrt << " file:" << file << " line:" << line << std::endl;
+	exit(-1);
+}
+
+template <class T> void message(const char *str, T wrt, const char *file, int line)
+{
+	std::cerr << "message:" << str << " wrt:" << wrt << " file:" << file << " line:" << line << std::endl;
+}
+
 extern "C" void *threadFunc(void *thread);
+extern "C" void signalFunc(int sig);
 
 class Thread
 {
 private:
 	pthread_t thread;
 	int isMain;
+	int isDone;
 public:
-	Thread(int m = 0) : isMain(m)
-	{
-		if (!isMain && pthread_create(&thread,NULL,threadFunc,(void *)this)) {std::cerr << "cannot create thread" << std::endl; exit(-1);}
-	}
-	virtual void run() = 0;
-	virtual void wake() = 0;
-	void wait()
-	{
-		if (isMain) run();
-		else if (pthread_join(thread,NULL) != 0) {std::cerr << "cannot join thread" << std::endl; exit(-1);}
-	}
+	Thread(int m = 0);
+	virtual void run();
+	virtual void init() {}
+	virtual void call() = 0;
+	virtual void wake();
+	virtual void wait();
 };
 
 template <class T>
 void insert(T *&list, T *ptr)
 {
 	for (T *i = list; i; i = i->next)
-	if (i == ptr) {std::cerr << "insert duplicate ptr" << std::endl; exit(-1);}
+	if (i == ptr) error("insert duplicate ptr",0,__FILE__,__LINE__);
 	ptr->next = list; list = ptr;
 }
 template <class T>
@@ -60,23 +69,23 @@ void remove(T *&list, T *ptr)
 	if (i == ptr && last == 0) {list = ptr->next; return;}
 	else if (i == ptr) {last->next = ptr->next; return;}
 	else last = i;
-	std::cerr << "remove missing ptr" << std::endl; exit(-1);
+	error("remove missing ptr",0,__FILE__,__LINE__);
 }
 template <class T>
 void enque(T *&head, T *&tail, T *ptr)
 {
-	if ((head == 0) != (tail == 0)) {std::cerr << "enque invalid queue" << std::endl; exit(-1);}
+	if ((head == 0) != (tail == 0)) error("enque invalid queue",0,__FILE__,__LINE__);
 	ptr->next = 0;
 	if (head == 0) {head = tail = ptr; return;}
-	if (tail->next != 0) {std::cerr << "enque invalid queue" << std::endl; exit(-1);}
+	if (tail->next != 0) error("enque invalid queue",0,__FILE__,__LINE__);
 	tail->next = ptr; tail = ptr;
 }
 template <class T>
 T *deque(T *&head, T *&tail)
 {
-	if ((head == 0) != (tail == 0)) {std::cerr << "deque invalid queue" << std::endl; exit(-1);}
-	if (head == 0) {std::cerr << "deque empty queue" << std::endl; exit(-1);}
-	if (tail->next != 0) {std::cerr << "deque invalid queue" << std::endl; exit(-1);}
+	if ((head == 0) != (tail == 0)) error("deque invalid queue",0,__FILE__,__LINE__);
+	if (head == 0) error("deque empty queue",0,__FILE__,__LINE__);
+	if (tail->next != 0) error("deque invalid queue",0,__FILE__,__LINE__);
 	T *rslt = head; head = head->next;
 	if (head == 0) tail = 0;
 	return rslt;
@@ -115,56 +124,6 @@ public:
 };
 
 template <class T>
-class Message
-{
-private:
-	Thread *thread;
-	Next<T> *head;
-	Next<T> *tail;
-	Next<T> *pool;
-	int wait;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
-public:
-	Message() : thread(0), head(0), tail(0), pool(0), wait(0)
-	{
-		if (pthread_mutex_init(&mutex,NULL) != 0) {std::cerr << "message invalid mutex" << std::endl; exit(-1);}
-		if (pthread_cond_init(&cond,NULL) != 0) {std::cerr << "message invalid cond" << std::endl; exit(-1);}
-	}
-	Message(Thread *ptr) : thread(ptr), head(0), tail(0), pool(0), wait(0)
-	{
-		if (pthread_mutex_init(&mutex,NULL) != 0) {std::cerr << "message invalid mutex" << std::endl; exit(-1);}
-		if (pthread_cond_init(&cond,NULL) != 0) {std::cerr << "message invalid cond" << std::endl; exit(-1);}
-	}
-	void put(T val)
-	{
-		Next<T> *ptr;
-		if (pool) {ptr = pool; remove(pool,ptr);}
-		else ptr = new Next<T>();
-		ptr->box = val;
-		if (pthread_mutex_lock(&mutex) != 0) {std::cerr << "mutex invalid lock" << std::endl; exit(-1);}		
-		while (head && wait) 
-		if (pthread_cond_wait(&cond,&mutex) != 0) {std::cerr << "cond invalid wait" << std::endl; exit(-1);}
-		enque(head,tail,ptr);
-		if (thread) thread->wake();
-		if (pthread_mutex_unlock(&mutex) != 0) {std::cerr << "mutex invalid unlock" << std::endl; exit(-1);}
-	}
-	int get(T &val)
-	{
-		if (!head) return 0;
-		wait = 1;
-		if (pthread_mutex_lock(&mutex) != 0) {std::cerr << "mutex invalid lock" << std::endl; exit(-1);}		
-		Next<T> *ptr = deque(head,tail);
-		val = ptr->box;
-		insert(pool,ptr);
-		wait = 0;
-		if (pthread_cond_signal(&cond) != 0) {std::cerr << "cond invalid signal" << std::endl; exit(-1);}
-		if (pthread_mutex_unlock(&mutex) != 0) {std::cerr << "mutex invalid unlock" << std::endl; exit(-1);}
-		return 1;
-	}
-};
-
-template <class T>
 class Array
 {
 private:
@@ -195,6 +154,56 @@ public:
 	{
 		if (array[i] == 0) array[i] = new T();
 		return *array[i];
+	}
+};
+
+template <class T>
+class Message
+{
+private:
+	Thread *thread;
+	Next<T> *head;
+	Next<T> *tail;
+	Next<T> *pool;
+	int wait;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+public:
+	Message() : thread(0), head(0), tail(0), pool(0), wait(0)
+	{
+		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",0,__FILE__,__LINE__);
+		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",0,__FILE__,__LINE__);
+	}
+	Message(Thread *ptr) : thread(ptr), head(0), tail(0), pool(0), wait(0)
+	{
+		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",0,__FILE__,__LINE__);
+		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",0,__FILE__,__LINE__);
+	}
+	void put(T val)
+	{
+		Next<T> *ptr;
+		if (pool) {ptr = pool; remove(pool,ptr);}
+		else ptr = new Next<T>();
+		ptr->box = val;
+		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",0,__FILE__,__LINE__);		
+		while (head && wait) 
+		if (pthread_cond_wait(&cond,&mutex) != 0) error("cond invalid wait",0,__FILE__,__LINE__);
+		enque(head,tail,ptr);
+		if (thread) thread->wake();
+		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",0,__FILE__,__LINE__);
+	}
+	int get(T &val)
+	{
+		if (!head) return 0;
+		wait = 1;
+		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",0,__FILE__,__LINE__);		
+		Next<T> *ptr = deque(head,tail);
+		val = ptr->box;
+		insert(pool,ptr);
+		wait = 0;
+		if (pthread_cond_signal(&cond) != 0) error("cond invalid signal",0,__FILE__,__LINE__);
+		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",0,__FILE__,__LINE__);
+		return 1;
 	}
 };
 

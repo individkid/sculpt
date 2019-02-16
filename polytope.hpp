@@ -26,13 +26,14 @@
 class Polytope : public Thread
 {
 private:
-	Window &window;
-	Write &write;
+	Window &window; // send Command to Window
+	Write &write; // send -- to Write
 public:
-	Message<char[STRING_ARRAY_SIZE]> read;
-	Polytope(Window &gl, Write &w) : Thread(), window(gl), write(w) {}
-	virtual void run() {}
-	virtual void wake() {}
+	Message<char[STRING_ARRAY_SIZE]> read; // get -- from Read
+	Message<Command> response; // get Command from Window
+	Message<Action> action; // get Action from Window
+	Polytope(int i, Window &gl, Write &w) : Thread(), window(gl), write(w), read(this), response(this), action(this) {gl.connect(i,this);}
+	virtual void call() {}
 };
 
 #endif

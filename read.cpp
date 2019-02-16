@@ -1,5 +1,5 @@
 /*
-*    write.hpp thread for writing to pipe
+*    read.cpp thread for reading and appending file
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -16,27 +16,17 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef WRITE_HPP
-#define WRITE_HPP
+#include "read.hpp"
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#include "message.hpp"
-#include "window.hpp"
-
-class Write : public Thread
+void Read::init()
 {
-private:
-	const char *name;
-	int pipe;
-public:
-	Message<char[STRING_ARRAY_SIZE]> write; // get -- from Polytope
-	Message<char[STRING_ARRAY_SIZE]> data; // get raw data from Window
-	Write(int i, Window &gl, const char *n) : Thread(), name(n), pipe(-1), write(this), data(this) {gl.connect(i,this);}
-	virtual void init();
-	virtual void call();
-};
+	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
+	if ((file = open(name,O_RDWR)) < 0) error("cannot open",name,__FILE__,__LINE__);
+	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
+	if ((pipe = open(pname,O_RDONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);
+	message("open",pname,__FILE__,__LINE__);
+}
 
-#endif
+void Read::call()
+{
+}

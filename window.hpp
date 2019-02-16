@@ -25,7 +25,10 @@
 #include <GLFW/glfw3.h>
 
 #include "message.hpp"
-#include "write.hpp"
+
+class Write;
+class Polytope;
+class Read;
 
 enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
@@ -93,6 +96,9 @@ struct Command
 	Message<Command> *response;
 	Command *command;
 };
+struct Action
+{
+};
 struct File
 {
 	Handle handle[Buffers];
@@ -103,7 +109,9 @@ struct File
 class Window : public Thread
 {
 private:
-	Write **write;
+	Write **write; // send raw data to Write
+	Polytope **polytope; // send Action to Polytope
+	Read **read; // for completeness
 	GLFWwindow* window;
 	int nfile; File *file;
 	Configure configure[Programs];
@@ -128,10 +136,14 @@ private:
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
 public:
-	Message<char[STRING_ARRAY_SIZE]> data;
-	Message<Command> request;
-	Window(Write **w, int nfile) : Thread(1), write(w), window(0), nfile(nfile), file(new File[nfile]), request(this) {}
-	virtual void run();
+	Message<char[STRING_ARRAY_SIZE]> mode; // get -- from Read
+	Message<char[STRING_ARRAY_SIZE]> data; // get raw data from Read
+	Message<Command> request; // get Command from Polytope
+	Window(int n) : Thread(1), write(new Write *[n]), polytope(new Polytope *[n]), read(new Read *[n]), window(0), nfile(n), file(new File[n]), data(this), request(this) {}
+	void connect(int i, Write *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); write[i] = ptr;}
+	void connect(int i, Polytope *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); polytope[i] = ptr;}
+	void connect(int i, Read *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); read[i] = ptr;}
+	virtual void call();
 	virtual void wake();
 };
 
