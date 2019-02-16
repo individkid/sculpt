@@ -59,7 +59,7 @@ template <class T>
 void insert(T *&list, T *ptr)
 {
 	for (T *i = list; i; i = i->next)
-	if (i == ptr) error("insert duplicate ptr",0,__FILE__,__LINE__);
+	if (i == ptr) error("insert duplicate ptr",ptr,__FILE__,__LINE__);
 	ptr->next = list; list = ptr;
 }
 template <class T>
@@ -70,23 +70,23 @@ void remove(T *&list, T *ptr)
 	if (i == ptr && last == 0) {list = ptr->next; return;}
 	else if (i == ptr) {last->next = ptr->next; return;}
 	else last = i;
-	error("remove missing ptr",0,__FILE__,__LINE__);
+	error("remove missing ptr",ptr,__FILE__,__LINE__);
 }
 template <class T>
 void enque(T *&head, T *&tail, T *ptr)
 {
-	if ((head == 0) != (tail == 0)) error("enque invalid queue",0,__FILE__,__LINE__);
+	if ((head == 0) != (tail == 0)) error("enque invalid queue",head,__FILE__,__LINE__);
 	ptr->next = 0;
 	if (head == 0) {head = tail = ptr; return;}
-	if (tail->next != 0) error("enque invalid queue",0,__FILE__,__LINE__);
+	if (tail->next != 0) error("enque invalid queue",tail->next,__FILE__,__LINE__);
 	tail->next = ptr; tail = ptr;
 }
 template <class T>
 T *deque(T *&head, T *&tail)
 {
-	if ((head == 0) != (tail == 0)) error("deque invalid queue",0,__FILE__,__LINE__);
-	if (head == 0) error("deque empty queue",0,__FILE__,__LINE__);
-	if (tail->next != 0) error("deque invalid queue",0,__FILE__,__LINE__);
+	if ((head == 0) != (tail == 0)) error("deque invalid queue",head,__FILE__,__LINE__);
+	if (head == 0) error("deque empty queue",head,__FILE__,__LINE__);
+	if (tail->next != 0) error("deque invalid queue",tail->next,__FILE__,__LINE__);
 	T *rslt = head; head = head->next;
 	if (head == 0) tail = 0;
 	return rslt;
@@ -172,13 +172,13 @@ private:
 public:
 	Message() : thread(0), head(0), tail(0), pool(0), wait(0)
 	{
-		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",0,__FILE__,__LINE__);
-		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",0,__FILE__,__LINE__);
+		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",errno,__FILE__,__LINE__);
+		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",errno,__FILE__,__LINE__);
 	}
 	Message(Thread *ptr) : thread(ptr), head(0), tail(0), pool(0), wait(0)
 	{
-		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",0,__FILE__,__LINE__);
-		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",0,__FILE__,__LINE__);
+		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",errno,__FILE__,__LINE__);
+		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",errno,__FILE__,__LINE__);
 	}
 	void put(T val)
 	{
@@ -186,24 +186,24 @@ public:
 		if (pool) {ptr = pool; remove(pool,ptr);}
 		else ptr = new Next<T>();
 		ptr->box = val;
-		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",0,__FILE__,__LINE__);		
+		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",errno,__FILE__,__LINE__);		
 		while (head && wait) 
-		if (pthread_cond_wait(&cond,&mutex) != 0) error("cond invalid wait",0,__FILE__,__LINE__);
+		if (pthread_cond_wait(&cond,&mutex) != 0) error("cond invalid wait",errno,__FILE__,__LINE__);
 		enque(head,tail,ptr);
 		if (thread) thread->wake();
-		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",0,__FILE__,__LINE__);
+		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",errno,__FILE__,__LINE__);
 	}
 	int get(T &val)
 	{
 		if (!head) return 0;
 		wait = 1;
-		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",0,__FILE__,__LINE__);		
+		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",errno,__FILE__,__LINE__);		
 		Next<T> *ptr = deque(head,tail);
 		val = ptr->box;
 		insert(pool,ptr);
 		wait = 0;
-		if (pthread_cond_signal(&cond) != 0) error("cond invalid signal",0,__FILE__,__LINE__);
-		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",0,__FILE__,__LINE__);
+		if (pthread_cond_signal(&cond) != 0) error("cond invalid signal",errno,__FILE__,__LINE__);
+		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",errno,__FILE__,__LINE__);
 		return 1;
 	}
 };
