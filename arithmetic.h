@@ -22,6 +22,7 @@ float dotvec(float *u, float *v, int n);
 float *plusvec(float *u, float *v, int n);
 float *scalevec(float *u, float s, int n);
 float *jumpvec(float *u, float *v, int n);
+float *zerovec(float *u, int n);
 float *unitvec(float *u, int n, int m);
 float *timesmat(float *u, float *v, int n);
 float *jumpmat(float *u, float *v, int n);

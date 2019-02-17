@@ -22,6 +22,9 @@
 #include "window.hpp"
 #include "write.hpp"
 #include "read.hpp"
+extern "C" {
+#include "arithmetic.h"
+}
 
 extern "C" void displayError(int error, const char *description)
 {
@@ -36,31 +39,38 @@ extern "C" void displayKey(GLFWwindow* ptr, int key, int scancode, int action, i
     if (key == 257 && action == 1 && testGoon == 2) testGoon = 0;
 }
 
+int pierceInit = 0;
 float piercePoint[3];
 int piercePlane;
 int pierceFile;
 float pierceCursor[2];
 float cursorPoint[2];
-float rollerDelta;
-int transformToggle;
-TargetMode targetMode;
-FixedMode fixedMode;
-int clickToggle;
-ClickMode clickMode;
-MouseMode mouseMode;
-RollerMode rollerMode;
+float rollerDelta = 0;
+int transformToggle = 0;
+TargetMode targetMode = SessionMode;
+FixedMode fixedMode = NumericMode;
+int clickToggle = 0;
+ClickMode clickMode = TransformMode;
+MouseMode mouseMode = RotateMode;
+RollerMode rollerMode = CylinderMode;
+int sessionInit = 0;
 float sessionMatrix[16];
-int fileCount;
-float (*fileMatrix)[16];
+int fileCount = 0;
+int *fileInit = 0;
+float (*fileMatrix)[16] = 0;
+int planeInit = 0;
 float planeMatrix[16];
 int planeSelect;
 int fileSelect;
-float lastSession[16];
-float (*lastMatrices)[16];
-float lastMatrix[16];
-int lastPlane;
-int lastFile;
-Command *redrawCommand;
+int lastSessionInit = 0;
+float lastSessionMatrix[16];
+int *lastFileInit = 0;
+float (*lastFileMatrix)[16] = 0;
+int lastPlaneInit = 0;
+float lastPlaneMatrix[16];
+int lastPlaneSelect = 0;
+int lastFileSelect = 0;
+Command *redrawCommand = 0;
 
 void Window::initProgram(Program program)
 {
@@ -337,6 +347,11 @@ void Window::call()
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
     if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
     if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
+    fileCount = nfile;
+    fileInit = new int[nfile]; for (int i = 0; i < nfile; i++) fileInit[i] = 0;
+    fileMatrix = new float[nfile][16];
+    lastFileInit = new int[nfile]; for (int i = 0; i < nfile; i++) lastFileInit[i] = 0;
+    lastFileMatrix = new float[nfile][16];
 	glfwInit();
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

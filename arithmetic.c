@@ -51,6 +51,12 @@ float *jumpvec(float *u, float *v, int n)
     return u;
 }
 
+float *zerovec(float *u, int n)
+{
+    for (int i = 0; i < n; i++) u[i] = 0.0;
+    return u;
+}
+
 float *unitvec(float *u, int n, int m)
 {
     for (int i = 0; i < n; i++) u[i] = (i == m ? 1.0 : 0.0);
