@@ -124,40 +124,6 @@ public:
 };
 
 template <class T>
-class Array
-{
-private:
-	int size;
-	T *array;
-public:
-	Array() : size(1), array(new T[1]) {*array = T();}
-	T &operator[](int i)
-	{
-		while (size <= i) {
-			int size2 = size*2;
-			T *temp = new T[size2];
-			for (int i = 0; i < size; i++) temp[i] = array[i];
-			for (int i = size; i < size2; i++) temp[i] = T();
-			delete[] array; array = temp; size = size2;}
-		return array[i];
-	}
-};
-
-template <class T>
-class Pointer
-{
-private:
-	Array<T*> array;
-public:
-	Pointer() : array() {}
-	T &operator[](int i)
-	{
-		if (array[i] == 0) array[i] = new T();
-		return *array[i];
-	}
-};
-
-template <class T>
 class Message
 {
 private:
