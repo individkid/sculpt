@@ -20,8 +20,9 @@
 #define READ_HPP
 
 #include "message.hpp"
-#include "window.hpp"
-#include "polytope.hpp"
+
+class Window;
+class Polytope;
 
 class Read : public Thread
 {
@@ -33,7 +34,7 @@ private:
 	int pipe;
 	int self;
 public:
-	Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), name(n), file(-1), pipe(-1), self(i) {gl.connect(i,this);}
+	Read(int i, Window &gl, Polytope &r, const char *n);
 	virtual void init();
 	virtual void call();
 };

@@ -1,5 +1,5 @@
 /*
-*    read.cpp thread for reading and appending file
+*    polytope.cpp thread for sample and classify
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -16,27 +16,15 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#include "read.hpp"
-#include "window.hpp"
 #include "polytope.hpp"
+#include "window.hpp"
+#include "write.hpp"
 
-Read::Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), name(n), file(-1), pipe(-1), self(i)
+Polytope::Polytope(int i, Window &gl, Write &w) : Thread(), window(gl), write(w), read(this), response(this), action(this)
 {
 	gl.connect(i,this);
 }
 
-void Read::init()
-{
-	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
-	if ((file = open(name,O_RDWR)) < 0) error("cannot open",name,__FILE__,__LINE__);
-	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
-	if ((pipe = open(pname,O_RDONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);
-}
-
-void Read::call()
+void Polytope::call()
 {
 }

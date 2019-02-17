@@ -21,6 +21,12 @@
 #include <sys/stat.h>
 
 #include "write.hpp"
+#include "window.hpp"
+
+Write::Write(int i, Window &gl, const char *n) : Thread(), name(n), pipe(-1), write(this), data(this)
+{
+	gl.connect(i,this);
+}
 
 void Write::init()
 {

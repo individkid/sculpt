@@ -20,8 +20,9 @@
 #define POLYTOPE_HPP
 
 #include "message.hpp"
-#include "window.hpp"
-#include "write.hpp"
+
+class Window;
+class Write;
 
 class Polytope : public Thread
 {
@@ -32,8 +33,8 @@ public:
 	Message<char[STRING_ARRAY_SIZE]> read; // get -- from Read
 	Message<Command> response; // get Command from Window
 	Message<Action> action; // get Action from Window
-	Polytope(int i, Window &gl, Write &w) : Thread(), window(gl), write(w), read(this), response(this), action(this) {gl.connect(i,this);}
-	virtual void call() {}
+	Polytope(int i, Window &gl, Write &w);
+	virtual void call();
 };
 
 #endif

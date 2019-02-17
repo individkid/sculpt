@@ -207,4 +207,62 @@ public:
 	}
 };
 
+typedef unsigned MYenum;
+typedef unsigned MYuint;
+enum Buffer {
+	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
+	Face, Frame, Coface, Coframe, Incidence, Block,
+	Construct, Dimension, Vertex, Vector, Pierce, Side,
+	Uniform, Global, Texture0, Texture1, Buffers};
+enum Program {
+    Diplane, // Plane,Versor,Face -> display
+    Dipoint, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
+    Coplane, // Plane,Versor,Incidence -> Vertex
+    Copoint, // Point,Block -> Construct,Dimension
+    Adplane, // Plane,Versor,Face -> Side
+    Adpoint, // Point,Frame -> Side
+    Perplane, // Plane,Versor,Face -> Pierce
+    Perpoint, // Point,Frame -> Pierce
+    Replane, // Plane,Versor -> Vertex
+    Repoint, // Point -> Construct,Dimension
+    Explane, // Plane,Versor -> Vector
+    Expoint, // Point -> Vector
+    Programs};
+enum Space {
+	Small, // specified space
+	Large, // cospace
+	Spaces};
+struct Update
+{
+	enum Buffer buffer;
+	int file;
+	union {int offset; int width;};
+	union {int size; int height;};
+	MYuint handle;
+	char *data;
+};
+struct Render
+{
+	enum Program program;
+	enum Space space;
+	int base;
+	int count;
+	int size;
+	int file;
+};
+struct Command
+{
+	Next<Update> *allocs;
+	Next<Update> *writes;
+	int feedback;
+	Next<Update> *binds;
+	Next<Update> *reads;
+	Next<Render> *renders;
+	Message<Command> *response;
+	Command *command;
+};
+struct Action
+{
+};
+
 #endif
