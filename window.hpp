@@ -26,6 +26,39 @@ class Polytope;
 class Read;
 class GLFWwindow;
 
+enum ClickMode {
+	AdditiveMode,
+	SubtractiveMode,
+	RefineMode,
+	TransformMode,
+	RevealMode,
+	HideMode,
+	TweakMode,
+	RandomizeMode,
+	ClickModes};
+enum MouseMode {
+	RotateMode,
+	LookMode,
+	TangentMode,
+	TranslateMode,
+	MouseModes};
+enum RollerMode {
+	CylinderMode,
+	ClockMode,
+	NormalMode,
+	ScaleMode,
+	DriveMode,
+	RollerModes};
+enum TargetMode {
+	SessionMode,
+	PolytopeMode,
+	FacetMode,
+	TargetModes};
+enum FixedMode {
+	NumericMode,
+	InvariantMode,
+	SymbolicMode,
+	FixedModes};
 struct Handle
 {
 	MYenum target;

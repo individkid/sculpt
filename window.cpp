@@ -36,6 +36,32 @@ extern "C" void displayKey(GLFWwindow* ptr, int key, int scancode, int action, i
     if (key == 257 && action == 1 && testGoon == 2) testGoon = 0;
 }
 
+float piercePoint[3];
+int piercePlane;
+int pierceFile;
+float pierceCursor[2];
+float cursorPoint[2];
+float rollerDelta;
+int transformToggle;
+TargetMode targetMode;
+FixedMode fixedMode;
+int clickToggle;
+ClickMode clickMode;
+MouseMode mouseMode;
+RollerMode rollerMode;
+float sessionMatrix[16];
+int fileCount;
+float (*fileMatrix)[16];
+float planeMatrix[16];
+int planeSelect;
+int fileSelect;
+float lastSession[16];
+float (*lastMatrices)[16];
+float lastMatrix[16];
+int lastPlane;
+int lastFile;
+Command *redrawCommand;
+
 void Window::initProgram(Program program)
 {
     switch (program) {
@@ -310,6 +336,7 @@ void Window::call()
 {
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
     if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
+    if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
 	glfwInit();
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
