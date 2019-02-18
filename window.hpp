@@ -110,8 +110,7 @@ private:
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
 public:
-	Message<char[STRING_ARRAY_SIZE]> mode; // get -- from Read
-	Message<char[STRING_ARRAY_SIZE]> data; // get raw data from Read
+	Message<std::string> data; // get mode change and raw data from Read
 	Message<Command> request; // get Command from Polytope
 	Window(int n);
 	void connect(int i, Write *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); write[i] = ptr;}
@@ -119,6 +118,8 @@ public:
 	void connect(int i, Read *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); read[i] = ptr;}
 	virtual void call();
 	virtual void wake();
+	int processData(std::string cmdstr);
+	void processCommand(Command &command);
 };
 
 #endif

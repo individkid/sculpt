@@ -33,10 +33,13 @@ private:
 	int file;
 	int pipe;
 	int self;
+	off_t fpos;
 public:
 	Read(int i, Window &gl, Polytope &r, const char *n);
 	virtual void init();
 	virtual void call();
+	virtual void wait();
+	virtual void done();
 };
 
 #endif

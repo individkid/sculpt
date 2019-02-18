@@ -21,6 +21,21 @@
 
 #include "message.hpp"
 
+int cmpstr(std::string str, const char *cstr)
+{
+	int len = strlen(cstr);
+	int cmp = str.compare(0,std::string::npos,cstr,len);
+	if (cmp == 0) return len;
+	return 0;
+}
+
+int prestr(std::string str, const char *cstr)
+{
+	size_t len = str.find(cstr);
+	if (len == std::string::npos) return str.size();
+	return len;
+}
+
 extern "C" void *threadFunc(void *arg)
 {
 	Thread *thread = (Thread *)arg;
@@ -44,9 +59,13 @@ void Thread::run()
 {
     struct sigaction sigact; sigemptyset(&sigact.sa_mask); sigact.sa_handler = signalFunc;
     if (sigaction(SIGUSR1, &sigact, 0) < 0) error("sigaction faile",errno,__FILE__,__LINE__);
-	init(); while (!isDone) {call();
+	init(); while (!isDone) {call(); wait();} done();
+}
+
+void Thread::wait()
+{
 	sigset_t unblock; if (pthread_sigmask(SIG_SETMASK,0,&unblock)) error ("cannot get mask",errno,__FILE__,__LINE__); sigdelset(&unblock, SIGUSR1);
-   	if (pselect(0, 0, 0, 0, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);} done();
+   	if (pselect(0, 0, 0, 0, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
 }
 
 void Thread::wake()

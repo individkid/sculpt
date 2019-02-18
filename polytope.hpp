@@ -30,7 +30,7 @@ private:
 	Window &window; // send Command to Window
 	Write &write; // send -- to Write
 public:
-	Message<char[STRING_ARRAY_SIZE]> read; // get -- from Read
+	Message<std::string> read; // get -- from Read
 	Message<Command> response; // get Command from Window
 	Message<Action> action; // get Action from Window
 	Polytope(int i, Window &gl, Write &w);

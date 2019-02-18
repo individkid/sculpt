@@ -55,22 +55,22 @@ MouseMode mouseMode = RotateMode;
 RollerMode rollerMode = CylinderMode;
 int sessionInit = 0;
 float sessionMatrix[16];
-int fileCount = 0;
-int *fileInit = 0;
-float (*fileMatrix)[16] = 0;
+int fileCount;
+int *fileInit;
+float (*fileMatrix)[16];
 int planeInit = 0;
 float planeMatrix[16];
 int planeSelect;
 int fileSelect;
 int lastSessionInit = 0;
 float lastSessionMatrix[16];
-int *lastFileInit = 0;
-float (*lastFileMatrix)[16] = 0;
+int *lastFileInit;
+float (*lastFileMatrix)[16];
 int lastPlaneInit = 0;
 float lastPlaneMatrix[16];
-int lastPlaneSelect = 0;
-int lastFileSelect = 0;
-Command *redrawCommand = 0;
+int lastPlaneSelect;
+int lastFileSelect;
+Command redrawCommand = {0};
 
 void Window::initProgram(Program program)
 {
@@ -337,7 +337,7 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-Window::Window(int n) : Thread(1), write(new Write *[n]), polytope(new Polytope *[n]), read(new Read *[n]), window(0), nfile(n), file(new File[n]), mode(this), data(this), request(this)
+Window::Window(int n) : Thread(1), write(new Write *[n]), polytope(new Polytope *[n]), read(new Read *[n]), window(0), nfile(n), file(new File[n]), data(this), request(this)
 {
 }
 
@@ -373,8 +373,25 @@ void Window::call()
     glfwSwapBuffers(window);
     for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) initProgram(p);
     for (int f = 0; f < nfile; f++) initFile(file[f]);
-    while (testGoon) {Command command;
-    if (request.get(command)) {
+    while (testGoon) {
+    std::string cmdstr; while (data.get(cmdstr)) while (processData(cmdstr)) glfwPollEvents();
+    Command command; while (request.get(command)) {processCommand(command); glfwPollEvents();}
+    glfwWaitEvents();}
+    glfwTerminate();
+}
+
+void Window::wake()
+{
+	glfwPostEmptyEvent();
+}
+
+int Window::processData(std::string cmdstr)
+{
+    return 0;
+}
+
+void Window::processCommand(Command &command)
+{
     for (Next<Update> *next = command.allocs; next; next = next->next) allocBuffer(next->box);
     for (Next<Update> *next = command.writes; next; next = next->next) writeBuffer(next->box);
     for (Next<Render> *next = command.renders; next; next = next->next) {
@@ -385,24 +402,17 @@ void Window::call()
     if (command.feedback) {
         glEnable(GL_RASTERIZER_DISCARD);
         glBeginTransformFeedback(program.primitive);}
-	if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
-	if (render.size) glDrawArrays(program.mode,render.base,render.size);
-	if (command.feedback) {
+    if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
+    if (render.size) glDrawArrays(program.mode,render.base,render.size);
+    if (command.feedback) {
         glEndTransformFeedback();
         glDisable(GL_RASTERIZER_DISCARD);}
     for (Next<Update> *next = command.binds; next; next = next->next) unbindBuffer(next->box);
-	glBindVertexArray(0);
-	glUseProgram(0);}
-	if (command.feedback) glFlush();
-	else glfwSwapBuffers(window);
+    glBindVertexArray(0);
+    glUseProgram(0);}
+    if (command.feedback) glFlush();
+    else glfwSwapBuffers(window);
     for (Next<Update> *next = command.reads; next; next = next->next) readBuffer(next->box);
-	if (command.response) command.response->put(command);}
-    glfwWaitEvents();}
-    glfwTerminate();
+    if (command.command) {Command temp = redrawCommand; redrawCommand = *command.command; *command.command = temp;}
+    if (command.response) command.response->put(command);
 }
-
-void Window::wake()
-{
-	glfwPostEmptyEvent();
-}
-

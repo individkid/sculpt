@@ -19,12 +19,14 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "read.hpp"
 #include "window.hpp"
 #include "polytope.hpp"
 
-Read::Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), name(n), file(-1), pipe(-1), self(i)
+Read::Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), name(n), file(-1), pipe(-1), self(i), fpos(0)
 {
 	gl.connect(i,this);
 }
@@ -39,4 +41,36 @@ void Read::init()
 
 void Read::call()
 {
+	std::string cmdstr; int pos,len,num; char chr;
+	// read to eof
+	while ((num = ::read(file, &chr, 1)) == 1) {cmdstr += chr; fpos++;}
+	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
+	if (num <= 0) return;
+	if ((pos = cmpstr(cmdstr,"--test")) > 0) {
+	len = prestr(cmdstr.substr(pos,std::string::npos),"--");
+	data.data.put(cmdstr.substr(0,pos+len));}
+	else read.read.put(cmdstr);
+}
+
+void Read::wait()
+{
+	int num; char chr; struct flock lock; struct stat size;
+	// try to get writelock at eof to infinity, and block on read from pipe if successful and still at end, releasing after appending to file from pipe
+	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET; num = fcntl(file,F_GETLK,&lock); lock.l_type = F_UNLCK;
+	if (num < 0) {if (errno == EAGAIN) return; else error("fcntl failed",errno,__FILE__,__LINE__);}
+	if (fstat(file, &size) < 0) error("fstat failed",errno,__FILE__,__LINE__);
+	if (size.st_size > fpos) {if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}
+	while ((num = ::read(pipe, &chr, 1)) == 1) {fpos++; if (write(file, &chr, 1) < 0) error("write failed",errno,__FILE__,__LINE__);}
+	if (num < 0 && errno != EINTR) error("read failed",errno,__FILE__,__LINE__);
+	if (num == 0) {Thread::wait(); return;}
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;
+	// otherwise wait for readlock and release when acquired
+	lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET; num = fcntl(file,F_SETLKW,&lock); lock.l_type = F_UNLCK;
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;
+}
+
+void Read::done()
+{
+	if (close(file) < 0) error("close failed",errno,__FILE__,__LINE__);
+	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
 }

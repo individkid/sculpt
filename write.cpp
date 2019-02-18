@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "write.hpp"
 #include "window.hpp"
@@ -38,4 +39,9 @@ void Write::init()
 void Write::call()
 {
     // read from write and data; write to pipe
+}
+
+void Write::done()
+{
+	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
 }

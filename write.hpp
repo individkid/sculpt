@@ -29,11 +29,12 @@ private:
 	const char *name;
 	int pipe;
 public:
-	Message<char[STRING_ARRAY_SIZE]> write; // get -- from Polytope
-	Message<char[STRING_ARRAY_SIZE]> data; // get raw data from Window
+	Message<std::string> write; // get -- from Polytope
+	Message<std::string> data; // get raw data from Window
 	Write(int i, Window &gl, const char *n);
 	virtual void init();
 	virtual void call();
+	virtual void done();
 };
 
 #endif

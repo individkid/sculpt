@@ -21,8 +21,9 @@
 
 #include <iostream>
 #include <pthread.h>
+#include <string>
 
-#define STRING_ARRAY_SIZE 32
+#define INFINITE 1000000
 
 template <class T> void error(const char *str, T wrt, const char *file, int line)
 {
@@ -34,6 +35,9 @@ template <class T> void message(const char *str, T wrt, const char *file, int li
 {
 	std::cerr << "message:" << str << " wrt:" << wrt << " file:" << file << " line:" << line << std::endl;
 }
+
+int cmpstr(std::string str, const char *cstr);
+int prestr(std::string str, const char *cstr);
 
 extern "C" void *threadFunc(void *thread);
 extern "C" void signalFunc(int sig);
@@ -49,6 +53,7 @@ public:
 	virtual void run();
 	virtual void init() {}
 	virtual void call() = 0;
+	virtual void wait();
 	virtual void wake();
 	virtual void kill();
 	virtual void done() {}
