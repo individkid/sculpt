@@ -118,7 +118,7 @@ public:
 	void connect(int i, Read *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); read[i] = ptr;}
 	virtual void call();
 	virtual void wake();
-	int processData(std::string cmdstr);
+	void processData(std::string cmdstr);
 	void processCommand(Command &command);
 };
 

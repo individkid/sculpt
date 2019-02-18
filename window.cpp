@@ -374,9 +374,9 @@ void Window::call()
     for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) initProgram(p);
     for (int f = 0; f < nfile; f++) initFile(file[f]);
     while (testGoon) {
-    std::string cmdstr; while (data.get(cmdstr)) while (processData(cmdstr)) glfwPollEvents();
-    Command command; while (request.get(command)) {processCommand(command); glfwPollEvents();}
-    glfwWaitEvents();}
+    glfwWaitEvents();
+    std::string cmdstr; while (data.get(cmdstr)) {processData(cmdstr); glfwPollEvents();}
+    Command command; while (request.get(command)) {processCommand(command); glfwPollEvents();}}
     glfwTerminate();
 }
 
@@ -385,10 +385,9 @@ void Window::wake()
 	glfwPostEmptyEvent();
 }
 
-int Window::processData(std::string cmdstr)
+void Window::processData(std::string cmdstr)
 {
     std::cout << cmdstr;
-    return 0;
 }
 
 void Window::processCommand(Command &command)
