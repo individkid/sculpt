@@ -387,6 +387,7 @@ void Window::wake()
 
 int Window::processData(std::string cmdstr)
 {
+    std::cout << cmdstr;
     return 0;
 }
 

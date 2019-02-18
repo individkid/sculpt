@@ -41,15 +41,16 @@ void Read::init()
 
 void Read::call()
 {
-	std::string cmdstr; int pos,len,num; char chr;
 	// read to eof
+	std::string cmdstr; int num; char chr;
 	while ((num = ::read(file, &chr, 1)) == 1) {cmdstr += chr; fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
-	if (num <= 0) return;
-	if ((pos = cmpstr(cmdstr,"--test")) > 0) {
-	len = prestr(cmdstr.substr(pos,std::string::npos),"--");
-	data.data.put(cmdstr.substr(0,pos+len));}
-	else read.read.put(cmdstr);
+	while (cmdstr.size()) {
+	int pre = prestr(cmdstr.substr(2,std::string::npos),"--");
+	int len = 2+pre;
+	std::string substr = cmdstr.substr(0,len);
+	cmdstr = cmdstr.substr(len,std::string::npos);
+	if (cmpstr(substr,"--test") > 0) data.data.put(substr); else read.read.put(substr);}
 }
 
 void Read::wait()

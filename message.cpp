@@ -23,17 +23,19 @@
 
 int cmpstr(std::string str, const char *cstr)
 {
-	int len = strlen(cstr);
-	int cmp = str.compare(0,std::string::npos,cstr,len);
-	if (cmp == 0) return len;
-	return 0;
+	int i;
+	for (i = 0; cstr[i]; i++)
+	if (str[i] != cstr[i]) return 0;
+	return i;
 }
 
 int prestr(std::string str, const char *cstr)
 {
-	size_t len = str.find(cstr);
-	if (len == std::string::npos) return str.size();
-	return len;
+	int i;
+	for (i = 0; i < str.size(); i++) {
+	std::string substr = str.substr(i,std::string::npos);
+	if (cmpstr(substr,cstr)) break;}
+	return i;
 }
 
 extern "C" void *threadFunc(void *arg)
