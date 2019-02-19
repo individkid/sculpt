@@ -20,10 +20,10 @@
 #include <GLFW/glfw3.h>
 
 #include "window.hpp"
+#include "object.hpp"
 #include "write.hpp"
 #include "polytope.hpp"
 #include "read.hpp"
-#include "object.hpp"
 extern "C" {
 #include "arithmetic.h"
 #include "callback.h"
@@ -43,6 +43,7 @@ void Window::writeBuffer(int file, Update &update)
     Handle &buffer = object[file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) {writeTexture2d(file,update); return;}
     glBindBuffer(buffer.target,buffer.handle);
+    if (update.function) update.function(update.data);
     glBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);
 }
@@ -88,6 +89,7 @@ void Window::writeTexture2d(int file, Update &update)
     Handle &buffer = object[file].handle[update.buffer];
     glActiveTexture(buffer.handle);
     glBindTexture(GL_TEXTURE_2D,update.handle);
+    if (update.function) update.function(update.data);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D,0);
@@ -105,8 +107,26 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-Window::Window(int n) : Thread(1), write(new Write *[n]), polytope(new Polytope *[n]), read(new Read *[n]), window(0), nfile(n), object(new Object[n]), data(this), request(this)
+Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), data(this), request(this)
 {
+}
+
+void Window::connect(int i, Write *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    object[i].write = ptr;
+}
+
+void Window::connect(int i, Polytope *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    object[i].polytope = ptr;
+}
+
+void Window::connect(int i, Read *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    object[i].read = ptr;
 }
 
 void Window::call()
@@ -181,5 +201,5 @@ void Window::processCommand(Command &command)
     else glfwSwapBuffers(window);
     for (Update *next = command.reads; next; next = next->next) readBuffer(command.file,*next);
     if (command.command) {Command temp = redrawCommand; redrawCommand = *command.command; *command.command = temp;}
-    if (command.response) polytope[command.file]->response.put(command);
+    if (command.response) object[command.file].polytope->response.put(command);
 }

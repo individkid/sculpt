@@ -23,6 +23,9 @@ extern "C" {
 #include "types.h"
 }
 
+class Write;
+class Polytope;
+class Read;
 struct Handle
 {
 	MYenum target;
@@ -31,8 +34,12 @@ struct Handle
 	MYenum usage;
 	MYuint index;
 };
+
 struct Object
 {
+	Write *write; // send raw data to Write
+	Polytope *polytope; // send Action and response Command to Polytope
+	Read *read; // for completeness
 	Handle handle[Buffers];
 	MYuint vao[Programs][Spaces];
 	void initFile(int first);

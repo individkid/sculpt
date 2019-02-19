@@ -1,5 +1,5 @@
 /*
-*    microcode.cpp initialize microcode
+*    object.cpp initialize per file information
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,9 @@
 
 #include "object.hpp"
 #include "message.hpp"
+#include "write.hpp"
+#include "polytope.hpp"
+#include "read.hpp"
 
 void Object::initFile(int first)
 {

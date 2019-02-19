@@ -56,6 +56,7 @@ struct Update
 	union {int size; int height;};
 	MYuint handle;
 	char *data;
+	void (*function)(char *);
 };
 struct Render
 {

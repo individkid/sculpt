@@ -22,18 +22,15 @@
 #include "message.hpp"
 #include "microcode.hpp"
 
+class GLFWwindow;
+class Object;
 class Write;
 class Polytope;
 class Read;
-class Object;
-class GLFWwindow;
 
 class Window : public Thread
 {
 private:
-	Write **write; // send raw data to Write
-	Polytope **polytope; // send Action and response Command to Polytope
-	Read **read; // for completeness
 	GLFWwindow *window;
 	int nfile; Object *object;
 	Microcode microcode[Programs];
@@ -51,9 +48,9 @@ public:
 	Message<Command> request; // get Command from Polytope
 	Message<Command> response; // send Command back to Polytope
 	Window(int n);
-	void connect(int i, Write *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); write[i] = ptr;}
-	void connect(int i, Polytope *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); polytope[i] = ptr;}
-	void connect(int i, Read *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); read[i] = ptr;}
+	void connect(int i, Write *ptr);
+	void connect(int i, Polytope *ptr);
+	void connect(int i, Read *ptr);
 	virtual void call();
 	virtual void wake();
 	void processData(std::string cmdstr);
