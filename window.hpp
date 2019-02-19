@@ -20,98 +20,36 @@
 #define WINDOW_HPP
 
 #include "message.hpp"
+#include "microcode.hpp"
 
 class Write;
 class Polytope;
 class Read;
+class Object;
 class GLFWwindow;
-
-enum ClickMode {
-	AdditiveMode,
-	SubtractiveMode,
-	RefineMode,
-	TransformMode,
-	RevealMode,
-	HideMode,
-	TweakMode,
-	RandomizeMode,
-	ClickModes};
-enum MouseMode {
-	RotateMode,
-	LookMode,
-	TangentMode,
-	TranslateMode,
-	MouseModes};
-enum RollerMode {
-	CylinderMode,
-	ClockMode,
-	NormalMode,
-	ScaleMode,
-	DriveMode,
-	RollerModes};
-enum TargetMode {
-	SessionMode,
-	PolytopeMode,
-	FacetMode,
-	TargetModes};
-enum FixedMode {
-	NumericMode,
-	InvariantMode,
-	SymbolicMode,
-	FixedModes};
-struct Handle
-{
-	MYenum target;
-	MYenum unit;
-	MYuint handle;
-	MYenum usage;
-	MYuint index;
-};
-struct Configure
-{
-	MYuint handle;
-	MYenum mode;
-	MYenum primitive;
-};
-struct File
-{
-	Handle handle[Buffers];
-	MYuint vao[Programs][Spaces];
-
-};
 
 class Window : public Thread
 {
 private:
 	Write **write; // send raw data to Write
-	Polytope **polytope; // send Action to Polytope
+	Polytope **polytope; // send Action and response Command to Polytope
 	Read **read; // for completeness
 	GLFWwindow *window;
-	int nfile; File *file;
-	Configure configure[Programs];
-	void initProgram(Program program);
-	void initDipoint();
-	void initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback, Configure &program);
-	void initShader(MYenum type, const char *source, MYuint &handle);
-	void initFile(File &file);
-	void initHandle(enum Buffer buffer, int first, Handle &handle);
-	void initVao(enum Buffer buffer, enum Program program, enum Space space, MYuint vao, MYuint handle);
-	void initVao3f(MYuint index, MYuint handle);
-	void initVao2f(MYuint index, MYuint handle);
-	void initVao4u(MYuint index, MYuint handle);
-	void initVao2u(MYuint index, MYuint handle);
-	void allocBuffer(Update &update);
-	void writeBuffer(Update &update);
-	void bindBuffer(Update &update);
-	void unbindBuffer(Update &update);
-	void readBuffer(Update &update);
-	void allocTexture2d(Update &update);
-	void writeTexture2d(Update &update);
-	void bindTexture2d(Update &update);
+	int nfile; Object *object;
+	Microcode microcode[Programs];
+	void allocBuffer(int file, Update &update);
+	void writeBuffer(int file, Update &update);
+	void bindBuffer(int file, Update &update);
+	void unbindBuffer(int file, Update &update);
+	void readBuffer(int file, Update &update);
+	void allocTexture2d(int file, Update &update);
+	void writeTexture2d(int file, Update &update);
+	void bindTexture2d(int file, Update &update);
 	void unbindTexture2d();
 public:
 	Message<std::string> data; // get mode change and raw data from Read
 	Message<Command> request; // get Command from Polytope
+	Message<Command> response; // send Command back to Polytope
 	Window(int n);
 	void connect(int i, Write *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); write[i] = ptr;}
 	void connect(int i, Polytope *ptr) {if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__); polytope[i] = ptr;}
