@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include "types.h"
+#include "arithmetic.h"
 
 int pierceInit = 0;
 float piercePoint[3];
@@ -53,6 +54,41 @@ int lastPlaneSelect;
 int lastFileSelect;
 struct Command redrawCommand = {0};
 int testGoon = 1;
+
+void changeTargetMode(enum TargetMode mode)
+{
+	if (targetMode == PolytopeMode && mode != PolytopeMode) {
+		// change B to X, such that AX = BA
+	}
+	if (targetMode != PolytopeMode && mode == PolytopeMode) {
+		// change B to X, such that XA = AB
+	}
+	targetMode = mode;
+}
+
+void getUniform(int file, struct Update *update)
+{
+	float *affine = update->format->affine;
+	float *perplane = update->format->perplane;
+	MYuint *tagplane = &update->format->tagplane;
+	// MYuint *taggraph = &update->format->taggraph;
+	// float *cutoff = update->format->cutoff;
+	// float *slope = update->format->cutoff;
+	// float *aspect = update->format->aspect;
+	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode == FacetMode) identmat(affine,4); else {
+	// fill affine with pierch,cursor,roller depending on mouseMode and rollerMode
+	}
+	if (sessionInit == 0) {sessionInit = 1; identmat(sessionMatrix,4);}
+	if (fileInit[file] == 0) {fileInit[file] = 1; identmat(fileMatrix[file],4);}
+	if (planeInit == 0) {planeInit = 1; identmat(planeMatrix,4);}
+	if (targetMode == PolytopeMode && pierceInit == 1 && file == pierceFile)
+	timesmat(timesmat(affine,fileMatrix[file],4),sessionMatrix,4); else
+	timesmat(timesmat(affine,sessionMatrix,4),fileMatrix[file],4);
+	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode != FacetMode || file != fileSelect) identmat(perplane,4); else {
+	// fill perplane with pierce,cursor,roller depending on mouseMode and rollerMode
+	}
+	if (targetMode == FacetMode && file == fileSelect) {timesmat(perplane,planeMatrix,4); *tagplane = planeSelect;}
+}
 
 void displayError(int error, const char *description)
 {

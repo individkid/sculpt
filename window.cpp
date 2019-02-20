@@ -43,7 +43,7 @@ void Window::writeBuffer(int file, Update &update)
     Handle &buffer = object[file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) {writeTexture2d(file,update); return;}
     glBindBuffer(buffer.target,buffer.handle);
-    if (update.function) update.function(update.data);
+    if (update.function) update.function(file,&update);
     glBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);
 }
@@ -89,7 +89,7 @@ void Window::writeTexture2d(int file, Update &update)
     Handle &buffer = object[file].handle[update.buffer];
     glActiveTexture(buffer.handle);
     glBindTexture(GL_TEXTURE_2D,update.handle);
-    if (update.function) update.function(update.data);
+    if (update.function) update.function(file,&update);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D,0);
@@ -134,6 +134,7 @@ void Window::call()
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
     if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
     if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
+    if (sizeof(float)%4 != 0) error("sizeof float",sizeof(float)%4,__FILE__,__LINE__);
     fileCount = nfile;
     fileInit = new int[nfile]; for (int i = 0; i < nfile; i++) fileInit[i] = 0;
     fileMatrix = new float[nfile][16];

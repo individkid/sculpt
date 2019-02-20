@@ -48,6 +48,17 @@ enum Space {
 	Small, // specified space
 	Large, // cospace
 	Spaces};
+struct Format
+{
+// assume sizeof(float) is multiple of 4
+float affine[16];
+float perplane[16];
+MYuint tagplane;
+char filler1[4-sizeof(MYuint)]; MYuint taggraph;
+char filler2[4-sizeof(MYuint)]; float cutoff;
+float slope;
+float aspect;
+};
 struct Update
 {
 	struct Update *next;
@@ -55,8 +66,8 @@ struct Update
 	union {int offset; int width;};
 	union {int size; int height;};
 	MYuint handle;
-	char *data;
-	void (*function)(char *);
+	union {char *data; struct Format *format;};
+	void (*function)(int, struct Update *);
 };
 struct Render
 {
