@@ -17,6 +17,7 @@
 */
 
 #include <stdio.h>
+#include <math.h>
 
 #include "types.h"
 #include "arithmetic.h"
@@ -40,10 +41,10 @@ float sessionMatrix[16];
 int fileCount;
 int *fileInit;
 float (*fileMatrix)[16];
+int fileSelect;
 int planeInit = 0;
 float planeMatrix[16];
 int planeSelect;
-int fileSelect;
 int lastSessionInit = 0;
 float lastSessionMatrix[16];
 int *lastFileInit;
@@ -54,6 +55,18 @@ int lastPlaneSelect;
 int lastFileSelect;
 struct Command redrawCommand = {0};
 int testGoon = 1;
+
+void changeTransformToggle(int toggle)
+{
+	float *matrix = (targetMode == PolytopeMode ? fileMatrix[fileSelect] : sessionMatrix);
+	if (transformToggle == 0 && toggle == 1) {
+	// fold mouseMatrix into matrix
+	copyvec(pierceCursor,cursorPoint,2);}
+	if (transformToggle == 1 && toggle == 0) {
+	// fold rollerMatrix into matrix
+	rollerDelta = 0;}
+	transformToggle = toggle;
+}
 
 void changeTargetMode(enum TargetMode mode)
 {
@@ -66,6 +79,26 @@ void changeTargetMode(enum TargetMode mode)
 	targetMode = mode;
 }
 
+void mouseMatrix(float *matrix)
+{
+	float minus[2]; scalevec(copyvec(minus,pierceCursor,2),-1.0,2);
+	float delta[2]; plusvec(copyvec(delta,cursorPoint,2),minus,2);
+	float angle[2]; angle[0] = sqrtf(delta[0]*delta[0]+delta[1]*delta[1]); angle[1] = -1.0;
+	float xmat[9]; float zmat[9];
+	scalevec(angle,1.0/sqrtf(dotvec(angle,angle,2)),2);
+	xmat[0] = -1.0; xmat[1] = xmat[2] = 0.0;
+	xmat[3] = 0.0; xmat[4] = -angle[1]; xmat[5] = angle[0];
+	xmat[6] = 0.0; xmat[7] = -angle[0]; xmat[8] = -angle[1];
+	float denom = sqrtf(dotvec(delta,delta,2));
+	if (fabs(denom*INVALID) >= 1.0) {
+	scalevec(delta,1.0/denom,2);
+	zmat[0] = delta[1]; zmat[1] = -delta[0]; zmat[2] = 0.0;
+	zmat[3] = delta[0]; zmat[4] = delta[1]; zmat[5] = 0.0;
+	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
+	timesmat(copymat(matrix,zmat,3),xmat,3);} else {
+	copymat(matrix,xmat,3);}
+}
+
 void getUniform(int file, struct Update *update)
 {
 	float *affine = update->format->affine;
@@ -76,7 +109,7 @@ void getUniform(int file, struct Update *update)
 	// float *slope = update->format->cutoff;
 	// float *aspect = update->format->aspect;
 	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode == FacetMode) identmat(affine,4); else {
-	// fill affine with pierch,cursor,roller depending on mouseMode and rollerMode
+	// fill affine with pierch,cursor,roller depending on mouseMode, rollerMode, and transformToggle
 	}
 	if (sessionInit == 0) {sessionInit = 1; identmat(sessionMatrix,4);}
 	if (fileInit[file] == 0) {fileInit[file] = 1; identmat(fileMatrix[file],4);}
@@ -85,7 +118,7 @@ void getUniform(int file, struct Update *update)
 	timesmat(timesmat(affine,fileMatrix[file],4),sessionMatrix,4); else
 	timesmat(timesmat(affine,sessionMatrix,4),fileMatrix[file],4);
 	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode != FacetMode || file != fileSelect) identmat(perplane,4); else {
-	// fill perplane with pierce,cursor,roller depending on mouseMode and rollerMode
+	// fill perplane with pierch,cursor,roller depending on mouseMode, rollerMode, and transformToggle
 	}
 	if (targetMode == FacetMode && file == fileSelect) {timesmat(perplane,planeMatrix,4); *tagplane = planeSelect;}
 }
