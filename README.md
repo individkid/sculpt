@@ -36,7 +36,7 @@ The -- commands are as follows.
 --shared plane index for communicating to other sessions  
 --space list of optional bnames and lists of sidednesses  
 --region two lists of bnames and whether the indicated region is in the polytope  
---inflate mark inside regions as in, and outside regions as not in the polytope
+--inflate mark inside regions as in, and outside regions as not in the polytope  
 --picture "bname" filename for texture  
 --sounde "sname" coefficients, variables as references to snames and mnames, equations as quotients of sums of terms of one coefficients and up to three variables, value as equation, value change delay as equation, reschedule delay as equation, sound contribution as equation  
 --metric "mname" script, refers to features, returns value  
