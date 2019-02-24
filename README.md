@@ -42,7 +42,7 @@ The -- commands are as follows.
 --metric "mname" script, refers to features, returns value  
 --script "bname" script, attached to plane, takes pierce point, has side effects, returns whether click does its thing  
 
-For example, --plane sends a Command to the OpenGL thread that appends the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Haskell thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.
+For example, --plane sends a Command to the OpenGL thread that appends the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.
 
-For another example, --space sends a Command, one boundary at a time, threat points from the Small space, to OpenGL microcode to reinterpret those as planes, run microcode to classify each reinterpreted plane into a Large subspace. Then the Haskell thread reads the region's corners from the Large subspace, finds the average or throw, back-interprets that, and does the --plane operations on that.
+For another example, --space sends a Command, one boundary at a time, threat points from the Small space, to OpenGL microcode to reinterpret those as planes, run microcode to classify each reinterpreted plane into a Large subspace. Then the Polytope thread reads the region's corners from the Large subspace, finds the average or throw, back-interprets that, and does the --plane operations on that.
 
