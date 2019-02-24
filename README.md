@@ -9,7 +9,7 @@ Before sending data to the io thread, the window thread saves what it sends. Whe
 The -- commands are as follows.  
 --additive change click mode to fill in region over clicked facet  
 --subractive change click mode to hollow out region under clicked facet  
---refine chance click mode to add random plane through point on clicked facet  
+--refine change click mode to add random plane through point on clicked facet  
 --transform change click mode to transform clicked target  
 --reveal change click mode to make clicked facet transparent  
 --hide change click mode to make clicked through facets opaque  
@@ -19,9 +19,7 @@ The -- commands are as follows.
 --clock change roller mode to rotate around normal to picture plane through pierce point  
 --normal change roller mode to rotate around normal to clicked facet through pierce point  
 --scale change roller mode to scale with clicked point fixed  
---drive change roller mode to move picture plane forward or back  
 --rotate change mouse mode to tip target from focal point to pierce point  
---look change mouse mode to rotate picture plane around focal point  
 --tanget change mouse mode to translate parallel to clicked facet  
 --translate change mouse mode to translate parallel to picture plane  
 --session change transform target to all observed facets  
@@ -38,6 +36,7 @@ The -- commands are as follows.
 --shared plane index for communicating to other sessions  
 --space list of optional bnames and lists of sidednesses  
 --region two lists of bnames and whether the indicated region is in the polytope  
+--inflate mark inside regions as in, and outside regions as not in the polytope
 --picture "bname" filename for texture  
 --sounde "sname" coefficients, variables as references to snames and mnames, equations as quotients of sums of terms of one coefficients and up to three variables, value as equation, value change delay as equation, reschedule delay as equation, sound contribution as equation  
 --metric "mname" script, refers to features, returns value  

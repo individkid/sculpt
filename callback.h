@@ -22,7 +22,7 @@ extern int pierceInit;
 extern float piercePoint[3];
 extern int piercePlane;
 extern int pierceFile;
-extern float pierceCursor[2];
+extern float cursorDelta[2];
 extern float cursorPoint[2];
 extern float rollerDelta;
 extern int transformToggle;
@@ -53,4 +53,5 @@ extern struct Command redrawCommand;
 extern int testGoon;
 
 void displayError(int error, const char *description);
-void displayKey(GLFWwindow* ptr, int key, int scancode, int action, int mods);
+void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mode);
+void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos);

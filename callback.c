@@ -17,16 +17,17 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
-#include "types.h"
+#include "callback.h"
 #include "arithmetic.h"
 
 int pierceInit = 0;
 float piercePoint[3];
 int piercePlane;
 int pierceFile;
-float pierceCursor[2];
+float cursorDelta[2];
 float cursorPoint[2];
 float rollerDelta = 0;
 int transformToggle = 0;
@@ -56,47 +57,61 @@ int lastFileSelect;
 struct Command redrawCommand = {0};
 int testGoon = 1;
 
-void changeTransformToggle(int toggle)
+float *rotateMatrix(float *matrix, float *from, float *to)
 {
-	float *matrix = (targetMode == PolytopeMode ? fileMatrix[fileSelect] : sessionMatrix);
-	if (transformToggle == 0 && toggle == 1) {
-	// fold mouseMatrix into matrix
-	copyvec(pierceCursor,cursorPoint,2);}
-	if (transformToggle == 1 && toggle == 0) {
-	// fold rollerMatrix into matrix
-	rollerDelta = 0;}
-	transformToggle = toggle;
-}
-
-void changeTargetMode(enum TargetMode mode)
-{
-	if (targetMode == PolytopeMode && mode != PolytopeMode) {
-		// change B to X, such that AX = BA
-	}
-	if (targetMode != PolytopeMode && mode == PolytopeMode) {
-		// change B to X, such that XA = AB
-	}
-	targetMode = mode;
-}
-
-void mouseMatrix(float *matrix)
-{
-	float minus[2]; scalevec(copyvec(minus,pierceCursor,2),-1.0,2);
-	float delta[2]; plusvec(copyvec(delta,cursorPoint,2),minus,2);
-	float angle[2]; angle[0] = sqrtf(delta[0]*delta[0]+delta[1]*delta[1]); angle[1] = -1.0;
-	float xmat[9]; float zmat[9];
+	float minus[2]; scalevec(copyvec(minus,from,2),-1.0,2);
+	float delta[2]; plusvec(copyvec(delta,to,2),minus,2);
+	float angle[2]; angle[0] = -sqrtf(delta[0]*delta[0]+delta[1]*delta[1]); angle[1] = 1.0;
+	float xmat[9]; float zmat[9]; float zinv[9];
 	scalevec(angle,1.0/sqrtf(dotvec(angle,angle,2)),2);
-	xmat[0] = -1.0; xmat[1] = xmat[2] = 0.0;
-	xmat[3] = 0.0; xmat[4] = -angle[1]; xmat[5] = angle[0];
-	xmat[6] = 0.0; xmat[7] = -angle[0]; xmat[8] = -angle[1];
+	xmat[0] = 1.0; xmat[1] = xmat[2] = 0.0;
+	xmat[3] = 0.0; xmat[4] = angle[1]; xmat[5] = -angle[0];
+	xmat[6] = 0.0; xmat[7] = angle[0]; xmat[8] = angle[1];
 	float denom = sqrtf(dotvec(delta,delta,2));
 	if (fabs(denom*INVALID) >= 1.0) {
 	scalevec(delta,1.0/denom,2);
 	zmat[0] = delta[1]; zmat[1] = -delta[0]; zmat[2] = 0.0;
 	zmat[3] = delta[0]; zmat[4] = delta[1]; zmat[5] = 0.0;
 	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
-	timesmat(copymat(matrix,zmat,3),xmat,3);} else {
-	copymat(matrix,xmat,3);}
+	zinv[0] = delta[1]; zinv[1] = delta[0]; zinv[2] = 0.0;
+	zinv[3] = -delta[0]; zinv[4] = delta[1]; zinv[5] = 0.0;
+	zinv[6] = 0.0; zinv[7] = 0.0; zinv[8] = 1.0;
+	return timesmat(timesmat(copymat(matrix,zmat,3),xmat,3),zinv,3);} else {
+	return copymat(matrix,xmat,3);}
+}
+
+float *mouseMatrix(float *matrix)
+{
+	switch (mouseMode) {case (RotateMode): {
+	float inverse[9]; rotateMatrix(inverse,cursorDelta,piercePoint);
+	float rotate[16]; timesmat(rotateMatrix(rotate,piercePoint,cursorPoint),inverse,3);
+	rotate[3] = rotate[7] = rotate[11] = rotate[12] = rotate[13] = rotate[14] = 0.0; rotate[15] = 1.0;
+	float before[16]; float after[16]; identmat(before,4); identmat(after,4);
+	before[3] = -piercePoint[0]; before[7] = -piercePoint[1]; before[11] = -piercePoint[2];
+	after[3] = piercePoint[0]; after[7] = piercePoint[1]; after[11] = piercePoint[2];
+	return copymat(matrix,jumpmat(timesmat(rotate,before,4),after,4),4);}
+	case (TranslateMode): {
+	float translate[16]; identmat(translate,4);
+	translate[3] = cursorPoint[0]-cursorDelta[0];
+	translate[7] = cursorPoint[1]-cursorDelta[1];
+	translate[11] = 0.0;
+	return copymat(matrix,translate,4);}
+	default: displayError(mouseMode,"invalid mouseMode"); exit(-1);}
+	switch (rollerMode) {case (CylinderMode): {
+
+	}
+	default: displayError(rollerMode,"invalid rollerMode"); exit(-1);}
+}
+
+float *rollerMatrix(float *matrix)
+{
+	return matrix;
+}
+
+float *affineMatrix(float *matrix)
+{
+	if (transformToggle == 0) return mouseMatrix(matrix);
+	else return rollerMatrix(matrix);
 }
 
 void getUniform(int file, struct Update *update)
@@ -106,21 +121,48 @@ void getUniform(int file, struct Update *update)
 	MYuint *tagplane = &update->format->tagplane;
 	// MYuint *taggraph = &update->format->taggraph;
 	// float *cutoff = update->format->cutoff;
-	// float *slope = update->format->cutoff;
+	// float *slope = update->format->slope;
 	// float *aspect = update->format->aspect;
-	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode == FacetMode) identmat(affine,4); else {
-	// fill affine with pierch,cursor,roller depending on mouseMode, rollerMode, and transformToggle
-	}
+	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode == FacetMode)
+	identmat(affine,4); else affineMatrix(affine);
 	if (sessionInit == 0) {sessionInit = 1; identmat(sessionMatrix,4);}
 	if (fileInit[file] == 0) {fileInit[file] = 1; identmat(fileMatrix[file],4);}
 	if (planeInit == 0) {planeInit = 1; identmat(planeMatrix,4);}
 	if (targetMode == PolytopeMode && pierceInit == 1 && file == pierceFile)
 	timesmat(timesmat(affine,fileMatrix[file],4),sessionMatrix,4); else
 	timesmat(timesmat(affine,sessionMatrix,4),fileMatrix[file],4);
-	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode != FacetMode || file != fileSelect) identmat(perplane,4); else {
-	// fill perplane with pierch,cursor,roller depending on mouseMode, rollerMode, and transformToggle
-	}
+	if (clickMode != TransformMode || clickToggle == 1 || pierceInit == 0 || targetMode != FacetMode || file != fileSelect)
+	identmat(perplane,4); else affineMatrix(perplane);
 	if (targetMode == FacetMode && file == fileSelect) {timesmat(perplane,planeMatrix,4); *tagplane = planeSelect;}
+}
+
+void changeTransformToggle()
+{
+	if (clickMode != TransformMode) return;
+	float *matrix; switch (targetMode) {
+	case (SessionMode): matrix = sessionMatrix; break;
+	case (PolytopeMode): matrix = fileMatrix[fileSelect]; break;
+	case (FacetMode): matrix = planeMatrix; break;
+	default: displayError(targetMode,"invalid targetMode"); exit(-1);}
+	float affine[16]; jumpmat(matrix,affineMatrix(affine),4);
+	if (transformToggle == 0) {
+	copyvec(cursorDelta,cursorPoint,2);
+	transformToggle = 1;} else {
+	rollerDelta = 0;
+	transformToggle = 0;}
+}
+
+void changeTargetMode(enum TargetMode mode)
+{
+	if (targetMode == PolytopeMode && mode != PolytopeMode) {
+	float matrix[16]; invmat(copymat(matrix,sessionMatrix,4),4);
+	timesmat(timesmat(matrix,fileMatrix[fileSelect],4),sessionMatrix,4);
+	copymat(fileMatrix[fileSelect],matrix,4);}
+	if (targetMode != PolytopeMode && mode == PolytopeMode) {
+	float matrix[16]; invmat(copymat(matrix,sessionMatrix,4),4);
+	jumpmat(jumpmat(matrix,fileMatrix[fileSelect],4),sessionMatrix,4);
+	copymat(fileMatrix[fileSelect],matrix,4);}
+	targetMode = mode;
 }
 
 void displayError(int error, const char *description)
@@ -133,4 +175,9 @@ void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int m
     if (action == 1) printf("GLFW key %d %d %d %d\n",key,scancode,action,mods);
     if (key == 256 && action == 1 && testGoon == 1) testGoon = 2;
     if (key == 257 && action == 1 && testGoon == 2) testGoon = 0;
+}
+
+void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos)
+{
+	cursorPoint[0] = xpos; cursorPoint[1] = ypos;
 }

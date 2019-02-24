@@ -106,7 +106,6 @@ enum ClickMode {
 	ClickModes};
 enum MouseMode {
 	RotateMode,
-	LookMode,
 	TangentMode,
 	TranslateMode,
 	MouseModes};
@@ -115,7 +114,6 @@ enum RollerMode {
 	ClockMode,
 	NormalMode,
 	ScaleMode,
-	DriveMode,
 	RollerModes};
 enum TargetMode {
 	SessionMode,
