@@ -68,7 +68,7 @@ float *rotateMatrix(float *matrix, float *from, float *to)
 	xmat[3] = 0.0; xmat[4] = angle[1]; xmat[5] = -angle[0];
 	xmat[6] = 0.0; xmat[7] = angle[0]; xmat[8] = angle[1];
 	float denom = sqrtf(dotvec(delta,delta,2));
-	if (fabs(denom*INVALID) >= 1.0) {
+	if (absval(denom*INVALID) >= 1.0) {
 	scalevec(delta,1.0/denom,2);
 	zmat[0] = delta[1]; zmat[1] = -delta[0]; zmat[2] = 0.0;
 	zmat[3] = delta[0]; zmat[4] = delta[1]; zmat[5] = 0.0;
@@ -80,16 +80,22 @@ float *rotateMatrix(float *matrix, float *from, float *to)
 	return copymat(matrix,xmat,3);}
 }
 
-float *mouseMatrix(float *matrix)
+float *fixedMatrix(float *matrix)
 {
-	switch (mouseMode) {case (RotateMode): {
-	float inverse[9]; rotateMatrix(inverse,cursorDelta,piercePoint);
-	float rotate[16]; timesmat(rotateMatrix(rotate,piercePoint,cursorPoint),inverse,3);
-	rotate[3] = rotate[7] = rotate[11] = rotate[12] = rotate[13] = rotate[14] = 0.0; rotate[15] = 1.0;
 	float before[16]; float after[16]; identmat(before,4); identmat(after,4);
 	before[3] = -piercePoint[0]; before[7] = -piercePoint[1]; before[11] = -piercePoint[2];
 	after[3] = piercePoint[0]; after[7] = piercePoint[1]; after[11] = piercePoint[2];
-	return copymat(matrix,jumpmat(timesmat(rotate,before,4),after,4),4);}
+	return jumpmat(timesmat(matrix,before,4),after,4);
+}
+
+float *mouseMatrix(float *matrix)
+{
+	switch (mouseMode) {
+	case (RotateMode): {
+	float inverse[9]; rotateMatrix(inverse,cursorDelta,piercePoint);
+	float rotate[9]; timesmat(rotateMatrix(rotate,piercePoint,cursorPoint),inverse,3);
+	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
+	return fixedMatrix(matrix);}
 	case (TranslateMode): {
 	float translate[16]; identmat(translate,4);
 	translate[3] = cursorPoint[0]-cursorDelta[0];
@@ -97,14 +103,29 @@ float *mouseMatrix(float *matrix)
 	translate[11] = 0.0;
 	return copymat(matrix,translate,4);}
 	default: displayError(mouseMode,"invalid mouseMode"); exit(-1);}
-	switch (rollerMode) {case (CylinderMode): {
-
-	}
-	default: displayError(rollerMode,"invalid rollerMode"); exit(-1);}
 }
 
 float *rollerMatrix(float *matrix)
 {
+	switch (rollerMode) {
+	case (CylinderMode): {
+	float inverse[9]; rotateMatrix(inverse,cursorDelta,piercePoint);
+	float rotate[9]; rotateMatrix(rotate,piercePoint,cursorDelta);
+	float zmat[9]; float sinval = sinf(rollerDelta); float cosval = cosf(rollerDelta);
+	zmat[0] = cosval; zmat[1] = -sinval; zmat[2] = 0.0;
+	zmat[3] = sinval; zmat[4] = cosval; zmat[5] = 0.0;
+	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
+	timesmat(timesmat(rotate,zmat,3),inverse,3);
+	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
+	return fixedMatrix(matrix);}
+	case (ClockMode): {
+	float zmat[9]; float sinval = sinf(rollerDelta); float cosval = cosf(rollerDelta);
+	zmat[0] = cosval; zmat[1] = -sinval; zmat[2] = 0.0;
+	zmat[3] = sinval; zmat[4] = cosval; zmat[5] = 0.0;
+	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
+	identmat(matrix,4); copyary(matrix,zmat,3,4,9);
+	return fixedMatrix(matrix);}
+	default: displayError(rollerMode,"invalid rollerMode"); exit(-1);}
 	return matrix;
 }
 
@@ -180,4 +201,9 @@ void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int m
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos)
 {
 	cursorPoint[0] = xpos; cursorPoint[1] = ypos;
+}
+
+void displayScroll(struct GLFWwindow *ptr, double xoffset, double yoffset)
+{
+	rollerDelta += yoffset;
 }

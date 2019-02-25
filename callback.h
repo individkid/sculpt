@@ -55,3 +55,4 @@ extern int testGoon;
 void displayError(int error, const char *description);
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mode);
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos);
+void displayScroll(struct GLFWwindow *ptr, double xoffset, double yoffset);

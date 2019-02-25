@@ -97,6 +97,9 @@ float *identmat(float *u, int n)
 
 float *copyary(float *u, float *v, int duty, int stride, int size)
 {
+    // duty is number to copy in chunk; negative for number to skip
+    // stride is size of chunks
+    // size is total number to copy
     float *w = u;
     int i = 0;
     int j = 0;
