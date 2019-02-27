@@ -135,11 +135,7 @@ void Window::call()
     if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
     if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
     if (sizeof(float)%4 != 0) error("sizeof float",sizeof(float)%4,__FILE__,__LINE__);
-    fileCount = nfile;
-    fileInit = new int[nfile]; for (int i = 0; i < nfile; i++) fileInit[i] = 0;
-    fileMatrix = new float[nfile][16];
-    lastFileInit = new int[nfile]; for (int i = 0; i < nfile; i++) lastFileInit[i] = 0;
-    lastFileMatrix = new float[nfile][16];
+    globalInit(nfile);
 	glfwInit();
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

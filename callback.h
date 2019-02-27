@@ -18,40 +18,41 @@
 
 #include "types.h"
 
-extern int pierceInit;
 extern float piercePoint[3];
+extern float pierceNormal[3];
 extern int piercePlane;
 extern int pierceFile;
-extern float cursorDelta[2];
+extern float warpPoint[3];
+extern float warpNormal[3];
+extern int warpPlane;
+extern int warpFile;
+extern int clickToggle;
 extern float cursorPoint[2];
+extern float cursorDelta[2];
 extern float rollerDelta;
-extern int transformToggle;
 extern enum TargetMode targetMode;
 extern enum FixedMode fixedMode;
-extern int clickToggle;
 extern enum ClickMode clickMode;
 extern enum MouseMode mouseMode;
 extern enum RollerMode rollerMode;
-extern int sessionInit;
+extern int transformToggle;
 extern float sessionMatrix[16];
 extern int fileCount;
-extern int *fileInit;
 extern float (*fileMatrix)[16];
-extern int planeInit;
 extern float planeMatrix[16];
-extern int planeSelect;
-extern int fileSelect;
-extern int lastSessionInit;
+extern int swapFile;
+extern int swapPlane;
+extern float swapMatrix[16];
 extern float lastSessionMatrix[16];
-extern int *lastFileInit;
 extern float (*lastFileMatrix)[16];
-extern int lastPlaneInit;
 extern float lastPlaneMatrix[16];
-extern int lastPlaneSelect;
-extern int lastFileSelect;
+extern int lastPiercePlane;
+extern int lastPierceFile;
 extern struct Command redrawCommand;
+extern struct Command pierceCommand;
 extern int testGoon;
 
+void globalInit(int nfile);
 void displayError(int error, const char *description);
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mode);
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos);
