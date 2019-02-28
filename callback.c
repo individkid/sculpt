@@ -31,26 +31,32 @@ float warpPoint[3] = {0};
 float warpNormal[3] = {0};
 int warpPlane = 0;
 int warpFile = 0;
-int clickToggle = 0;
+int swapPlane = 0;
+int swapFile = 0;
+float swapMatrix[16] = {0};
 float cursorPoint[2] = {0};
-float cursorDelta[2] = {0};
-float rollerDelta = 0;
-enum TargetMode targetMode = SessionMode;
-enum FixedMode fixedMode = NumericMode;
+float cursorDelta[2] = {0}; // changed by displayCursor
+float rollerDelta = 0; // changed by displayScroll
+// states:
+// 1) clickMode != TransformMode && clickToggle == 0
+// 2) clickMode == TransformMode && clickToggle == 0
+// 3) clickMode == TransformMode && clickToggle == 1
+int clickToggle = 0;
 enum ClickMode clickMode = TransformMode;
-enum MouseMode mouseMode = RotateMode;
-enum RollerMode rollerMode = CylinderMode;
-int transformToggle = 0;
+enum TargetMode targetMode = SessionMode; // state 2 substate
+enum FixedMode fixedMode = NumericMode; // state 1 substate
+enum MouseMode mouseMode = RotateMode; // state 2 substate
+enum RollerMode rollerMode = CylinderMode; // state 2 substate
+int transformToggle = 0; // state 2 substate
 float sessionMatrix[16] = {0};
 int fileCount = 0;
 float (*fileMatrix)[16] = {0};
 float planeMatrix[16] = {0};
-int swapFile = 0;
-int swapPlane = 0;
-float swapMatrix[16] = {0};
+float alignMatrix[9] = {0};
 float lastSessionMatrix[16] = {0};
 float (*lastFileMatrix)[16] = {0};
 float lastPlaneMatrix[16] = {0};
+float lastAlignMatrix[9] = {0};
 int lastPiercePlane = 0;
 int lastPierceFile = 0;
 struct Command redrawCommand = {0};
@@ -63,9 +69,11 @@ void globalInit(int nfile)
 	identmat(sessionMatrix,4);
     fileMatrix = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(fileMatrix[i],4);
     identmat(planeMatrix,4);
+    identmat(alignMatrix,3);
     identmat(lastSessionMatrix,4);
     lastFileMatrix = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(lastFileMatrix[i],4);
     identmat(lastPlaneMatrix,4);
+    identmat(lastAlignMatrix,3);
 }
 
 float *rotateMatrix(float *matrix, float *from, float *to)
@@ -148,6 +156,7 @@ float *affineMatrix(float *matrix)
 
 void getUniform(int file, struct Update *update)
 {
+	float *cursor = update->format->cursor;
 	float *affine = update->format->affine;
 	float *perplane = update->format->perplane;
 	float *perswap = update->format->perswap;
@@ -157,6 +166,7 @@ void getUniform(int file, struct Update *update)
 	// float *cutoff = update->format->cutoff;
 	// float *slope = update->format->slope;
 	// float *aspect = update->format->aspect;
+	copyvec(cursor,cursorDelta,2);
 	if (clickMode != TransformMode || clickToggle == 1 || targetMode == FacetMode)
 	identmat(affine,4); else affineMatrix(affine);
 	if (targetMode == PolytopeMode && file == pierceFile)
@@ -185,18 +195,21 @@ int changeClickToggle(float *xpos, float *ypos)
 {
 	if (clickMode != TransformMode) return 0;
 	if (clickToggle == 0) {
+	// transition from state 2 to 3
 	copyvec(warpPoint,piercePoint,3);
 	copyvec(warpNormal,pierceNormal,3);
 	warpPlane = piercePlane;
 	warpFile = pierceFile;
-	clickToggle = 1;} else {
+	clickToggle = 1;
+	return 0;} else {
+	// transition from state 3 to 2
 	copyvec(piercePoint,warpPoint,3);
 	copyvec(pierceNormal,warpNormal,3);
 	piercePlane = warpPlane;
 	pierceFile = warpFile;
 	*xpos = piercePoint[0]; *ypos = piercePoint[1];
-	clickToggle = 1;}
-	return clickToggle;
+	clickToggle = 0;
+	return 1;}
 }
 
 void changeTransformToggle()
@@ -231,7 +244,8 @@ void changeTargetMode(enum TargetMode mode)
 
 void changeClickMode(enum ClickMode mode)
 {
-	if (clickMode == TransformMode && mode != TransformMode) clearClickToggle();
+	if (clickMode == TransformMode && mode != TransformMode)
+	clearClickToggle(); // transition state from 2 or 3 to 1
 	clickMode = mode;
 }
 

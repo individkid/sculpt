@@ -50,16 +50,17 @@ enum Space {
 	Spaces};
 struct Format
 {
-// assume sizeof(float) is multiple of 4
-float affine[16];
-float perplane[16];
-float perswap[16];
-MYuint tagplane;
-char filler0[4-sizeof(MYuint)]; MYuint tagswap;
-char filler1[4-sizeof(MYuint)]; MYuint taggraph;
-char filler2[4-sizeof(MYuint)]; float cutoff;
-float slope;
-float aspect;
+	float cursor[2];
+	float align[9];
+	float affine[16];
+	float perplane[16];
+	float perswap[16];
+	MYuint tagplane;
+	char filler0[4-sizeof(MYuint)]; MYuint tagswap;
+	char filler1[4-sizeof(MYuint)]; MYuint taggraph;
+	char filler2[4-sizeof(MYuint)]; float cutoff;
+	float slope;
+	float aspect;
 };
 struct Update
 {
