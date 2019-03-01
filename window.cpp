@@ -29,6 +29,10 @@ extern "C" {
 #include "callback.h"
 }
 
+extern "C" void warpCursor(float *cursor)
+{
+}
+
 void Window::allocBuffer(int file, Update &update)
 {
     Handle &buffer = object[file].handle[update.buffer];

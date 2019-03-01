@@ -18,38 +18,36 @@
 
 #include "types.h"
 
-extern float piercePoint[3];
-extern float pierceNormal[3];
-extern int piercePlane;
-extern int pierceFile;
-extern float warpPoint[3];
-extern float warpNormal[3];
-extern int warpPlane;
-extern int warpFile;
-extern int swapPlane;
-extern int swapFile;
-extern float swapMatrix[16];
-extern float cursorPoint[2];
-extern float cursorDelta[2];
-extern float rollerDelta;
-extern int clickToggle;
-extern enum ClickMode clickMode;
-extern enum TargetMode targetMode;
-extern enum FixedMode fixedMode;
-extern enum MouseMode mouseMode;
-extern enum RollerMode rollerMode;
-extern int transformToggle;
-extern float sessionMatrix[16];
-extern int fileCount;
-extern float (*fileMatrix)[16];
-extern float planeMatrix[16];
-extern float lastSessionMatrix[16];
-extern float (*lastFileMatrix)[16];
-extern float lastPlaneMatrix[16];
-extern int lastPiercePlane;
-extern int lastPierceFile;
-extern struct Command redrawCommand;
-extern struct Command pierceCommand;
+struct Current
+{
+	float pierce[3];
+	float normal[3];
+	int plane;
+	int file;
+	float point[2]; // amount of cursor rolled into matrix
+	float cursor[2]; // changed by displayCursor
+	float roller; // changed by displayScroll
+};
+struct Matrix
+{
+	float session[16];
+	float (*polytope)[16];
+	float facet[16];
+	float align[9];
+	int plane;
+	int file;
+};
+struct State
+{
+	int suspend;
+	int toggle;
+	enum ClickMode click;
+	enum TargetMode target;
+	enum MouseMode mouse;
+	enum RollerMode roller;
+	enum FixedMode fixed;
+};
+
 extern int testGoon;
 
 void globalInit(int nfile);

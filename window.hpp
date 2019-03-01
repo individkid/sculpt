@@ -34,6 +34,9 @@ private:
 	GLFWwindow *window;
 	int nfile; Object *object;
 	Microcode microcode[Programs];
+	Command redrawCommand;
+	Command pierceCommand;
+
 	void allocBuffer(int file, Update &update);
 	void writeBuffer(int file, Update &update);
 	void bindBuffer(int file, Update &update);

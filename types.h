@@ -54,9 +54,9 @@ struct Format
 	float align[9];
 	float affine[16];
 	float perplane[16];
-	float perswap[16];
+	float perlast[16];
 	MYuint tagplane;
-	char filler0[4-sizeof(MYuint)]; MYuint tagswap;
+	char filler0[4-sizeof(MYuint)]; MYuint taglast;
 	char filler1[4-sizeof(MYuint)]; MYuint taggraph;
 	char filler2[4-sizeof(MYuint)]; float cutoff;
 	float slope;

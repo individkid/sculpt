@@ -23,57 +23,30 @@
 #include "callback.h"
 #include "arithmetic.h"
 
-float piercePoint[3] = {0};
-float pierceNormal[3] = {0};
-int piercePlane = 0;
-int pierceFile = 0;
-float warpPoint[3] = {0};
-float warpNormal[3] = {0};
-int warpPlane = 0;
-int warpFile = 0;
-int swapPlane = 0;
-int swapFile = 0;
-float swapMatrix[16] = {0};
-float cursorPoint[2] = {0};
-float cursorDelta[2] = {0}; // changed by displayCursor
-float rollerDelta = 0; // changed by displayScroll
-// states:
-// 1) clickMode != TransformMode && clickToggle == 0
-// 2) clickMode == TransformMode && clickToggle == 0
-// 3) clickMode == TransformMode && clickToggle == 1
-int clickToggle = 0;
-enum ClickMode clickMode = TransformMode;
-enum TargetMode targetMode = SessionMode; // state 2 substate
-enum FixedMode fixedMode = NumericMode; // state 1 substate
-enum MouseMode mouseMode = RotateMode; // state 2 substate
-enum RollerMode rollerMode = CylinderMode; // state 2 substate
-int transformToggle = 0; // state 2 substate
-float sessionMatrix[16] = {0};
+struct Current current = {0};
+struct Current warp = {0};
+struct Matrix matrix = {0};
+struct Matrix last = {0};
+struct State state = {0};
 int fileCount = 0;
-float (*fileMatrix)[16] = {0};
-float planeMatrix[16] = {0};
-float alignMatrix[9] = {0};
-float lastSessionMatrix[16] = {0};
-float (*lastFileMatrix)[16] = {0};
-float lastPlaneMatrix[16] = {0};
-float lastAlignMatrix[9] = {0};
-int lastPiercePlane = 0;
-int lastPierceFile = 0;
-struct Command redrawCommand = {0};
-struct Command pierceCommand = {0};
 int testGoon = 1;
 
 void globalInit(int nfile)
 {
 	fileCount = nfile;
-	identmat(sessionMatrix,4);
-    fileMatrix = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(fileMatrix[i],4);
-    identmat(planeMatrix,4);
-    identmat(alignMatrix,3);
-    identmat(lastSessionMatrix,4);
-    lastFileMatrix = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(lastFileMatrix[i],4);
-    identmat(lastPlaneMatrix,4);
-    identmat(lastAlignMatrix,3);
+	identmat(matrix.session,4);
+    matrix.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(matrix.polytope[i],4);
+    identmat(matrix.facet,4);
+    identmat(matrix.align,3);
+	identmat(last.session,4);
+    last.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(last.polytope[i],4);
+    identmat(last.facet,4);
+    identmat(last.align,3);
+    state.click = TransformMode;
+    state.target = SessionMode;
+    state.mouse = RotateMode;
+    state.roller = CylinderMode;
+    state.fixed = NumericMode;
 }
 
 float *rotateMatrix(float *matrix, float *from, float *to)
@@ -102,35 +75,39 @@ float *rotateMatrix(float *matrix, float *from, float *to)
 float *fixedMatrix(float *matrix)
 {
 	float before[16]; float after[16]; identmat(before,4); identmat(after,4);
-	before[3] = -piercePoint[0]; before[7] = -piercePoint[1]; before[11] = -piercePoint[2];
-	after[3] = piercePoint[0]; after[7] = piercePoint[1]; after[11] = piercePoint[2];
+	before[3] = -current.pierce[0]; before[7] = -current.pierce[1]; before[11] = -current.pierce[2];
+	after[3] = current.pierce[0]; after[7] = current.pierce[1]; after[11] = current.pierce[2];
 	return jumpmat(timesmat(matrix,before,4),after,4);
 }
 
 float *mouseMatrix(float *matrix)
 {
-	switch (mouseMode) {
+	struct Current *pointer;
+	if (state.suspend) pointer = &warp; else pointer = &current;
+	switch (state.mouse) {
 	case (RotateMode): {
-	float inverse[9]; rotateMatrix(inverse,cursorPoint,piercePoint);
-	float rotate[9]; timesmat(rotateMatrix(rotate,piercePoint,cursorDelta),inverse,3);
+	float inverse[9]; rotateMatrix(inverse,pointer->point,pointer->pierce);
+	float rotate[9]; timesmat(rotateMatrix(rotate,pointer->pierce,pointer->cursor),inverse,3);
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
 	case (TranslateMode): {
 	float translate[16]; identmat(translate,4);
-	translate[3] = cursorDelta[0]-cursorPoint[0];
-	translate[7] = cursorDelta[1]-cursorPoint[1];
+	translate[3] = pointer->cursor[0]-pointer->point[0];
+	translate[7] = pointer->cursor[1]-pointer->point[1];
 	translate[11] = 0.0;
 	return copymat(matrix,translate,4);}
-	default: displayError(mouseMode,"invalid mouseMode"); exit(-1);}
+	default: displayError(state.mouse,"invalid state.mouse"); exit(-1);}
 }
 
 float *rollerMatrix(float *matrix)
 {
-	switch (rollerMode) {
+	struct Current *pointer;
+	if (state.suspend) pointer = &warp; else pointer = &current;
+	switch (state.roller) {
 	case (CylinderMode): {
-	float inverse[9]; rotateMatrix(inverse,cursorPoint,piercePoint);
-	float rotate[9]; rotateMatrix(rotate,piercePoint,cursorPoint);
-	float zmat[9]; float sinval = sinf(rollerDelta); float cosval = cosf(rollerDelta);
+	float inverse[9]; rotateMatrix(inverse,pointer->point,pointer->pierce);
+	float rotate[9]; rotateMatrix(rotate,pointer->pierce,pointer->point);
+	float zmat[9]; float sinval = sinf(pointer->roller); float cosval = cosf(pointer->roller);
 	zmat[0] = cosval; zmat[1] = -sinval; zmat[2] = 0.0;
 	zmat[3] = sinval; zmat[4] = cosval; zmat[5] = 0.0;
 	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
@@ -138,20 +115,27 @@ float *rollerMatrix(float *matrix)
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
 	case (ClockMode): {
-	float zmat[9]; float sinval = sinf(rollerDelta); float cosval = cosf(rollerDelta);
+	float zmat[9]; float sinval = sinf(pointer->roller); float cosval = cosf(pointer->roller);
 	zmat[0] = cosval; zmat[1] = -sinval; zmat[2] = 0.0;
 	zmat[3] = sinval; zmat[4] = cosval; zmat[5] = 0.0;
 	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
 	identmat(matrix,4); copyary(matrix,zmat,3,4,9);
 	return fixedMatrix(matrix);}
-	default: displayError(rollerMode,"invalid rollerMode"); exit(-1);}
+	default: displayError(state.roller,"invalid state.roller"); exit(-1);}
 	return matrix;
 }
 
-float *affineMatrix(float *matrix)
+void affineMatrix(int file, float *affine)
 {
-	if (transformToggle == 0) return mouseMatrix(matrix);
-	else return rollerMatrix(matrix);
+	switch (state.target) {case(SessionMode): if (state.toggle == 0)
+	timesmat(timesmat(mouseMatrix(affine),matrix.session,4),matrix.polytope[file],4); else
+	timesmat(timesmat(rollerMatrix(affine),matrix.session,4),matrix.polytope[file],4); break;
+	case (PolytopeMode): if (file == current.file) {if (state.toggle == 0)
+	timesmat(timesmat(mouseMatrix(affine),matrix.polytope[file],4),matrix.session,4); else
+	timesmat(timesmat(rollerMatrix(affine),matrix.polytope[file],4),matrix.session,4);} else
+	timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
+	case (FacetMode): timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
+	default: displayError(state.target,"invalid state.target"); exit(-1);}
 }
 
 void getUniform(int file, struct Update *update)
@@ -159,94 +143,66 @@ void getUniform(int file, struct Update *update)
 	float *cursor = update->format->cursor;
 	float *affine = update->format->affine;
 	float *perplane = update->format->perplane;
-	float *perswap = update->format->perswap;
+	float *perlast = update->format->perlast;
 	MYuint *tagplane = &update->format->tagplane;
-	MYuint *tagswap = &update->format->tagswap;
+	MYuint *tagast = &update->format->taglast;
 	// MYuint *taggraph = &update->format->taggraph;
 	// float *cutoff = update->format->cutoff;
 	// float *slope = update->format->slope;
 	// float *aspect = update->format->aspect;
-	copyvec(cursor,cursorDelta,2);
-	if (clickMode != TransformMode || clickToggle == 1 || targetMode == FacetMode)
-	identmat(affine,4); else affineMatrix(affine);
-	if (targetMode == PolytopeMode && file == pierceFile)
-	timesmat(timesmat(affine,fileMatrix[file],4),sessionMatrix,4); else
-	timesmat(timesmat(affine,sessionMatrix,4),fileMatrix[file],4);
-	if (clickMode != TransformMode || clickToggle == 1 || targetMode != FacetMode || file != pierceFile)
-	identmat(perplane,4); else affineMatrix(perplane);
-	if (targetMode == FacetMode && file == pierceFile) {timesmat(perplane,planeMatrix,4); *tagplane = piercePlane;}
-	if (file == swapFile) {copymat(perswap,swapMatrix,4); *tagswap = swapPlane;} else identmat(perswap,4);
+	copyvec(cursor,current.cursor,2);
+	affineMatrix(file,affine);
+	if (state.target == FacetMode && file == current.file) {
+	if (state.toggle == 0) mouseMatrix(perplane); else rollerMatrix(perplane);
+	timesmat(perplane,matrix.facet,4); *tagplane = current.plane;} else identmat(perplane,4);
+	if (file == last.file) {copymat(perlast,last.facet,4); *tagast = last.plane;} else identmat(perlast,4);
 }
 
-enum ClickMode clearClickToggle()
+void foldMatrix()
 {
-	if (clickMode != TransformMode) return clickMode;
-	copyvec(cursorPoint,piercePoint,2);
-	copyvec(cursorDelta,piercePoint,2);
-	rollerDelta = 0;
-	clickToggle = 0;
-	swapFile = pierceFile;
-	swapPlane = piercePlane;
-	copymat(swapMatrix,planeMatrix,4);
-	return TransformMode;
+	float affine[16];
+	if (state.toggle == 0) mouseMatrix(affine); else rollerMatrix(affine);
+	switch (state.target) {
+	case (SessionMode): jumpmat(matrix.session,affine,4); break;
+	case (PolytopeMode): jumpmat(matrix.polytope[current.file],affine,4); break;
+	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
+	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	copyvec(current.point,current.cursor,2);
+	current.roller = 0;
 }
 
-int changeClickToggle(float *xpos, float *ypos)
+void warpCursor(float *cursor);
+void changeSuspend()
 {
-	if (clickMode != TransformMode) return 0;
-	if (clickToggle == 0) {
-	// transition from state 2 to 3
-	copyvec(warpPoint,piercePoint,3);
-	copyvec(warpNormal,pierceNormal,3);
-	warpPlane = piercePlane;
-	warpFile = pierceFile;
-	clickToggle = 1;
-	return 0;} else {
-	// transition from state 3 to 2
-	copyvec(piercePoint,warpPoint,3);
-	copyvec(pierceNormal,warpNormal,3);
-	piercePlane = warpPlane;
-	pierceFile = warpFile;
-	*xpos = piercePoint[0]; *ypos = piercePoint[1];
-	clickToggle = 0;
-	return 1;}
+	foldMatrix();
+	if (state.suspend == 0) {warp = current; state.suspend = 1;} else {
+	current = warp; state.suspend = 0; warpCursor(current.pierce);}
 }
 
-void changeTransformToggle()
+void changeToggle()
 {
-	if (clickMode != TransformMode) return;
-	float *matrix; switch (targetMode) {
-	case (SessionMode): matrix = sessionMatrix; break;
-	case (PolytopeMode): matrix = fileMatrix[pierceFile]; break;
-	case (FacetMode): matrix = planeMatrix; break;
-	default: displayError(targetMode,"invalid targetMode"); exit(-1);}
-	float affine[16]; jumpmat(matrix,affineMatrix(affine),4);
-	if (transformToggle == 0) {
-	copyvec(cursorPoint,cursorDelta,2);
-	transformToggle = 1;} else {
-	rollerDelta = 0;
-	transformToggle = 0;}
+	foldMatrix();
+	if (state.toggle == 0) state.toggle = 1; else state.toggle = 0;
 }
 
-void changeTargetMode(enum TargetMode mode)
+void changeTarget(enum TargetMode mode)
 {
-	if (targetMode == PolytopeMode && mode != PolytopeMode) {
-	float matrix[16]; invmat(copymat(matrix,sessionMatrix,4),4);
-	timesmat(timesmat(matrix,fileMatrix[pierceFile],4),sessionMatrix,4);
-	copymat(fileMatrix[pierceFile],matrix,4);}
-	if (targetMode != PolytopeMode && mode == PolytopeMode) {
-	float matrix[16]; invmat(copymat(matrix,sessionMatrix,4),4);
-	jumpmat(jumpmat(matrix,fileMatrix[pierceFile],4),sessionMatrix,4);
-	copymat(fileMatrix[pierceFile],matrix,4);}
-	if (targetMode != mode) clearClickToggle();
-	targetMode = mode;
+	foldMatrix();
+	if (state.target == PolytopeMode && mode != PolytopeMode) {
+	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
+	timesmat(timesmat(affine,matrix.polytope[current.file],4),matrix.session,4);
+	copymat(matrix.polytope[current.file],affine,4);}
+	if (state.target != PolytopeMode && mode == PolytopeMode) {
+	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
+	jumpmat(jumpmat(affine,matrix.polytope[current.file],4),matrix.session,4);
+	copymat(matrix.polytope[current.file],affine,4);}
+	state.target = mode;
 }
 
-void changeClickMode(enum ClickMode mode)
+void changeClick(enum ClickMode mode)
 {
-	if (clickMode == TransformMode && mode != TransformMode)
-	clearClickToggle(); // transition state from 2 or 3 to 1
-	clickMode = mode;
+	foldMatrix();
+	state.click = mode;
 }
 
 void displayError(int error, const char *description)
@@ -263,10 +219,10 @@ void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int m
 
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos)
 {
-	cursorDelta[0] = xpos; cursorDelta[1] = ypos;
+	current.cursor[0] = xpos; current.cursor[1] = ypos;
 }
 
 void displayScroll(struct GLFWwindow *ptr, double xoffset, double yoffset)
 {
-	rollerDelta += yoffset;
+	current.roller += yoffset;
 }
