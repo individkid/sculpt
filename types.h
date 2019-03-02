@@ -62,6 +62,12 @@ struct Format
 	float slope;
 	float aspect;
 };
+struct Feedback
+{
+	float pierce[3];
+	float normal[3];
+	int plane;
+};
 struct Update
 {
 	struct Update *next;
@@ -69,7 +75,7 @@ struct Update
 	union {int offset; int width;};
 	union {int size; int height;};
 	MYuint handle;
-	union {char *data; struct Format *format;};
+	union {char *data; struct Format *format; struct Feedback *feedback;};
 	void (*function)(int, struct Update *);
 };
 struct Render
@@ -102,6 +108,8 @@ enum ClickMode {
 	SubtractiveMode,
 	RefineMode,
 	TransformMode,
+	SuspendMode,
+	PierceMode,
 	RevealMode,
 	HideMode,
 	TweakMode,

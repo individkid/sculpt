@@ -39,7 +39,6 @@ struct Matrix
 };
 struct State
 {
-	int suspend;
 	int toggle;
 	enum ClickMode click;
 	enum TargetMode target;
@@ -55,3 +54,10 @@ void displayError(int error, const char *description);
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mode);
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos);
 void displayScroll(struct GLFWwindow *ptr, double xoffset, double yoffset);
+void getUniform(int file, struct Update *update);
+void putUniform(int file, struct Update *update);
+void changeClick(enum ClickMode mode);
+void changeTarget(enum TargetMode mode);
+void changeMouse(enum MouseMode mode);
+void changeRoller(enum RollerMode mode);
+void changeFixed(enum FixedMode mode);

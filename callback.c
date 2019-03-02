@@ -25,11 +25,18 @@
 
 struct Current current = {0};
 struct Current warp = {0};
+struct Current *pointer = 0;
 struct Matrix matrix = {0};
 struct Matrix last = {0};
 struct State state = {0};
 int fileCount = 0;
 int testGoon = 1;
+
+int decodeClick(int button, int action, int mods);
+void warpCursor(struct GLFWwindow* ptr, float *cursor);
+void additiveAction(int file, int plane);
+void subtractiveAction(int file, int plane);
+void refineAction(float *pierce);
 
 void globalInit(int nfile)
 {
@@ -42,7 +49,8 @@ void globalInit(int nfile)
     last.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(last.polytope[i],4);
     identmat(last.facet,4);
     identmat(last.align,3);
-    state.click = TransformMode;
+    pointer = &current;
+    state.click = PierceMode;
     state.target = SessionMode;
     state.mouse = RotateMode;
     state.roller = CylinderMode;
@@ -75,15 +83,13 @@ float *rotateMatrix(float *matrix, float *from, float *to)
 float *fixedMatrix(float *matrix)
 {
 	float before[16]; float after[16]; identmat(before,4); identmat(after,4);
-	before[3] = -current.pierce[0]; before[7] = -current.pierce[1]; before[11] = -current.pierce[2];
-	after[3] = current.pierce[0]; after[7] = current.pierce[1]; after[11] = current.pierce[2];
+	before[3] = -pointer->pierce[0]; before[7] = -pointer->pierce[1]; before[11] = -pointer->pierce[2];
+	after[3] = pointer->pierce[0]; after[7] = pointer->pierce[1]; after[11] = pointer->pierce[2];
 	return jumpmat(timesmat(matrix,before,4),after,4);
 }
 
 float *mouseMatrix(float *matrix)
 {
-	struct Current *pointer;
-	if (state.suspend) pointer = &warp; else pointer = &current;
 	switch (state.mouse) {
 	case (RotateMode): {
 	float inverse[9]; rotateMatrix(inverse,pointer->point,pointer->pierce);
@@ -101,8 +107,6 @@ float *mouseMatrix(float *matrix)
 
 float *rollerMatrix(float *matrix)
 {
-	struct Current *pointer;
-	if (state.suspend) pointer = &warp; else pointer = &current;
 	switch (state.roller) {
 	case (CylinderMode): {
 	float inverse[9]; rotateMatrix(inverse,pointer->point,pointer->pierce);
@@ -130,12 +134,59 @@ void affineMatrix(int file, float *affine)
 	switch (state.target) {case(SessionMode): if (state.toggle == 0)
 	timesmat(timesmat(mouseMatrix(affine),matrix.session,4),matrix.polytope[file],4); else
 	timesmat(timesmat(rollerMatrix(affine),matrix.session,4),matrix.polytope[file],4); break;
-	case (PolytopeMode): if (file == current.file) {if (state.toggle == 0)
+	case (PolytopeMode): if (file == matrix.file) {if (state.toggle == 0)
 	timesmat(timesmat(mouseMatrix(affine),matrix.polytope[file],4),matrix.session,4); else
 	timesmat(timesmat(rollerMatrix(affine),matrix.polytope[file],4),matrix.session,4);} else
 	timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
 	case (FacetMode): timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
+}
+
+void foldMatrix()
+{
+	float affine[16];
+	if (state.toggle == 0) mouseMatrix(affine); else rollerMatrix(affine);
+	switch (state.target) {
+	case (SessionMode): jumpmat(matrix.session,affine,4); break;
+	case (PolytopeMode): jumpmat(matrix.polytope[matrix.file],affine,4); break;
+	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
+	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	copyvec(pointer->point,pointer->cursor,2);
+	pointer->roller = 0;
+}
+
+void adjustSession()
+{
+	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
+	timesmat(timesmat(affine,matrix.polytope[matrix.file],4),matrix.session,4);
+	copymat(matrix.polytope[matrix.file],affine,4);
+}
+
+void adjustPolytope()
+{
+	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
+	jumpmat(jumpmat(affine,matrix.polytope[matrix.file],4),matrix.session,4);
+	copymat(matrix.polytope[matrix.file],affine,4);
+}
+
+void triggerAction()
+{
+	switch (state.click) {
+	case (AdditiveMode): additiveAction(pointer->file,pointer->plane); break;
+	case (SubtractiveMode): subtractiveAction(pointer->file,pointer->plane); break;
+	case (RefineMode): refineAction(pointer->pierce); break;
+	case (TransformMode): changeClick(PierceMode); break;
+	case (SuspendMode): changeClick(TransformMode); break;
+	case (PierceMode): changeClick(TransformMode); break;
+	default: displayError(state.click,"invalid state.click"); exit(-1);}
+}
+
+void changeMode(struct GLFWwindow* ptr, enum ClickMode mode);
+void toggleSuspend(struct GLFWwindow *ptr)
+{
+	if (state.click == TransformMode) changeMode(ptr,SuspendMode);
+	else if (state.click == SuspendMode) changeMode(ptr,TransformMode);
+	else changeMode(ptr,state.click);
 }
 
 void getUniform(int file, struct Update *update)
@@ -152,57 +203,71 @@ void getUniform(int file, struct Update *update)
 	// float *aspect = update->format->aspect;
 	copyvec(cursor,current.cursor,2);
 	affineMatrix(file,affine);
-	if (state.target == FacetMode && file == current.file) {
+	if (state.target == FacetMode && file == matrix.file) {
 	if (state.toggle == 0) mouseMatrix(perplane); else rollerMatrix(perplane);
-	timesmat(perplane,matrix.facet,4); *tagplane = current.plane;} else identmat(perplane,4);
+	timesmat(perplane,matrix.facet,4); *tagplane = matrix.plane;} else identmat(perplane,4);
 	if (file == last.file) {copymat(perlast,last.facet,4); *tagast = last.plane;} else identmat(perlast,4);
 }
 
-void foldMatrix()
+void putUniform(int file, struct Update *update)
 {
-	float affine[16];
-	if (state.toggle == 0) mouseMatrix(affine); else rollerMatrix(affine);
-	switch (state.target) {
-	case (SessionMode): jumpmat(matrix.session,affine,4); break;
-	case (PolytopeMode): jumpmat(matrix.polytope[current.file],affine,4); break;
-	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
-	default: displayError(state.target,"invalid state.target"); exit(-1);}
-	copyvec(current.point,current.cursor,2);
-	current.roller = 0;
+	current.pierce[2] = INVALID;
+	for (int i = 0; i < update->size; i++)
+	if (current.pierce[2] > update->feedback[i].pierce[2]) {
+	for (int j = 0; j < 3; j++) current.pierce[j] = update->feedback[i].pierce[j];
+	for (int j = 0; j < 3; j++) current.normal[j] = update->feedback[i].normal[j];
+	current.file = file; current.plane = update->feedback[i].plane;}
 }
 
-void warpCursor(float *cursor);
-void changeSuspend()
+void changeMode(struct GLFWwindow* ptr, enum ClickMode mode)
 {
 	foldMatrix();
-	if (state.suspend == 0) {warp = current; state.suspend = 1;} else {
-	current = warp; state.suspend = 0; warpCursor(current.pierce);}
+	if (state.click == TransformMode && mode != TransformMode) {
+	warp = current; pointer = &warp;}
+	if (state.click == SuspendMode && mode == TransformMode) {
+	current = warp; pointer = &current; warpCursor(ptr,current.cursor);}
+	if (state.click == PierceMode && mode == TransformMode && state.target != PolytopeMode) {
+	pointer = &current; matrix.plane = current.plane; matrix.file = current.file;}
+	if (state.click == PierceMode && mode == TransformMode && state.target == PolytopeMode) {
+	pointer = &current; adjustSession(); matrix.plane = current.plane; matrix.file = current.file; adjustPolytope();}
+	state.click = mode;
 }
 
-void changeToggle()
+void changeClick(enum ClickMode mode)
 {
-	foldMatrix();
-	if (state.toggle == 0) state.toggle = 1; else state.toggle = 0;
+	changeMode(0,mode);
 }
 
 void changeTarget(enum TargetMode mode)
 {
 	foldMatrix();
-	if (state.target == PolytopeMode && mode != PolytopeMode) {
-	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
-	timesmat(timesmat(affine,matrix.polytope[current.file],4),matrix.session,4);
-	copymat(matrix.polytope[current.file],affine,4);}
-	if (state.target != PolytopeMode && mode == PolytopeMode) {
-	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
-	jumpmat(jumpmat(affine,matrix.polytope[current.file],4),matrix.session,4);
-	copymat(matrix.polytope[current.file],affine,4);}
+	if (state.target == PolytopeMode && mode != PolytopeMode) adjustSession();
+	if (state.target != PolytopeMode && mode == PolytopeMode) adjustPolytope();
 	state.target = mode;
 }
 
-void changeClick(enum ClickMode mode)
+void changeMouse(enum MouseMode mode)
 {
 	foldMatrix();
-	state.click = mode;
+	state.mouse = mode;
+}
+
+void changeRoller(enum RollerMode mode)
+{
+	foldMatrix();
+	state.roller = mode;
+}
+
+void changeFixed(enum FixedMode mode)
+{
+	foldMatrix();
+	state.fixed = mode;
+}
+
+void changeToggle(int toggle)
+{
+	foldMatrix();
+	state.toggle = toggle;
 }
 
 void displayError(int error, const char *description)
@@ -219,10 +284,19 @@ void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int m
 
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos)
 {
+	changeToggle(0);
 	current.cursor[0] = xpos; current.cursor[1] = ypos;
 }
 
 void displayScroll(struct GLFWwindow *ptr, double xoffset, double yoffset)
 {
+	changeToggle(1);
 	current.roller += yoffset;
+}
+
+void displayClick(struct GLFWwindow *ptr, int button, int action, int mods)
+{
+	int click = decodeClick(button,action,mods);
+	if (click == 0) triggerAction();
+	if (click == 1) toggleSuspend(ptr);
 }

@@ -18,6 +18,13 @@
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
+#ifdef __APPLE__
+#define Point ApplePoint
+#define Handle AppleHandle
+#include <CoreGraphics/CoreGraphics.h>
+#undef Point
+#undef Handle
+#endif
 
 #include "window.hpp"
 #include "object.hpp"
@@ -29,7 +36,38 @@ extern "C" {
 #include "callback.h"
 }
 
-extern "C" void warpCursor(float *cursor)
+extern "C" int decodeClick(int button, int action, int mods)
+{
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 0;
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 1;
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) return 1;
+    return -1;
+}
+
+extern "C" void warpCursor(struct GLFWwindow* ptr, float *cursor)
+{
+#ifdef __linux__
+    // double xpos, ypos;
+    // glfwGetCursorPos(ptr,&xpos,&ypos);
+    // XWarpPointer(screenHandle,None,None,0,0,0,0,cursor[0]-xpos,cursor[1]-ypos);
+#endif
+#ifdef __APPLE__
+    int xloc, yloc;
+    glfwGetWindowPos(ptr,&xloc,&yloc);
+    struct CGPoint point; point.x = xloc+cursor[0]; point.y = yloc+cursor[1];
+    CGWarpMouseCursorPosition(point);
+#endif
+}
+
+extern "C" void additiveAction(int file, int plane)
+{
+}
+
+extern "C" void subtractiveAction(int file, int plane)
+{
+}
+
+extern "C" void refineAction(float *pierce)
 {
 }
 
