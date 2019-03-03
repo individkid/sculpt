@@ -33,7 +33,6 @@ struct Matrix
 	float session[16];
 	float (*polytope)[16];
 	float facet[16];
-	float align[9];
 	int plane;
 	int file;
 };

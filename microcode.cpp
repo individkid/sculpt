@@ -101,13 +101,16 @@ void Microcode::initShader(MYenum type, const char *source, MYuint &ident)
     mat4 perfile;\n\
     };\n\
     layout(std140) uniform Global {\n\
+    vec2 cursor;\n\
     mat4 affine;\n\
     mat4 perplane;\n\
-    uint tagplane;\n\
-    uint taggraph;\n\
+    mat4 perlast;\n\
     float cutoff;\n\
     float slope;\n\
     float aspect;\n\
+    uint tagplane;\n\
+    uint taglast;\n\
+    uint taggraph;\n\
     };",
     source};
     ident = glCreateShader(type); glShaderSource(ident, 2, code, NULL); glCompileShader(ident);

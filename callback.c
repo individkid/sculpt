@@ -45,11 +45,9 @@ void globalInit(int nfile)
 	identmat(matrix.session,4);
     matrix.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(matrix.polytope[i],4);
     identmat(matrix.facet,4);
-    identmat(matrix.align,3);
 	identmat(last.session,4);
     last.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(last.polytope[i],4);
     identmat(last.facet,4);
-    identmat(last.align,3);
     pointer = &current;
     state.click = PierceMode;
     state.target = SessionMode;
@@ -262,18 +260,18 @@ void getUniform(int file, struct Update *update)
 	float *affine = update->format->affine;
 	float *perplane = update->format->perplane;
 	float *perlast = update->format->perlast;
-	MYuint *tagplane = &update->format->tagplane;
-	MYuint *tagast = &update->format->taglast;
-	// MYuint *taggraph = &update->format->taggraph;
 	// float *cutoff = update->format->cutoff;
 	// float *slope = update->format->slope;
 	// float *aspect = update->format->aspect;
+	MYuint *tagplane = &update->format->tagplane;
+	MYuint *taglast = &update->format->taglast;
+	// MYuint *taggraph = &update->format->taggraph;
 	copyvec(cursor,current.cursor,2);
 	affineMatrix(file,affine);
 	if (state.target == FacetMode && file == matrix.file) {
 	if (state.toggle == 0) mouseMatrix(perplane); else rollerMatrix(perplane);
 	timesmat(perplane,matrix.facet,4); *tagplane = matrix.plane;} else identmat(perplane,4);
-	if (file == last.file) {copymat(perlast,last.facet,4); *tagast = last.plane;} else identmat(perlast,4);
+	if (file == last.file) {copymat(perlast,last.facet,4); *taglast = last.plane;} else identmat(perlast,4);
 }
 
 void putUniform(int file, struct Update *update)
