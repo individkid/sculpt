@@ -33,7 +33,7 @@ int fileCount = 0;
 int testGoon = 1;
 
 int decodeClick(int button, int action, int mods);
-void warpCursor(struct GLFWwindow* ptr, float *cursor);
+void warpCursor(float *cursor);
 void additiveAction(int file, int plane);
 void subtractiveAction(int file, int plane);
 void refineAction(float *pierce);
@@ -181,12 +181,11 @@ void triggerAction()
 	default: displayError(state.click,"invalid state.click"); exit(-1);}
 }
 
-void changeMode(struct GLFWwindow* ptr, enum ClickMode mode);
-void toggleSuspend(struct GLFWwindow *ptr)
+void toggleSuspend()
 {
-	if (state.click == TransformMode) changeMode(ptr,SuspendMode);
-	else if (state.click == SuspendMode) changeMode(ptr,TransformMode);
-	else changeMode(ptr,state.click);
+	if (state.click == TransformMode) changeClick(SuspendMode);
+	else if (state.click == SuspendMode) changeClick(TransformMode);
+	else changeClick(state.click);
 }
 
 void getUniform(int file, struct Update *update)
@@ -219,23 +218,18 @@ void putUniform(int file, struct Update *update)
 	current.file = file; current.plane = update->feedback[i].plane;}
 }
 
-void changeMode(struct GLFWwindow* ptr, enum ClickMode mode)
+void changeClick(enum ClickMode mode)
 {
 	foldMatrix();
 	if (state.click == TransformMode && mode != TransformMode) {
 	warp = current; pointer = &warp;}
 	if (state.click == SuspendMode && mode == TransformMode) {
-	current = warp; pointer = &current; warpCursor(ptr,current.cursor);}
+	current = warp; pointer = &current; warpCursor(current.cursor);}
 	if (state.click == PierceMode && mode == TransformMode && state.target != PolytopeMode) {
 	pointer = &current; matrix.plane = current.plane; matrix.file = current.file;}
 	if (state.click == PierceMode && mode == TransformMode && state.target == PolytopeMode) {
 	pointer = &current; adjustSession(); matrix.plane = current.plane; matrix.file = current.file; adjustPolytope();}
 	state.click = mode;
-}
-
-void changeClick(enum ClickMode mode)
-{
-	changeMode(0,mode);
 }
 
 void changeTarget(enum TargetMode mode)
@@ -298,5 +292,5 @@ void displayClick(struct GLFWwindow *ptr, int button, int action, int mods)
 {
 	int click = decodeClick(button,action,mods);
 	if (click == 0) triggerAction();
-	if (click == 1) toggleSuspend(ptr);
+	if (click == 1) toggleSuspend();
 }

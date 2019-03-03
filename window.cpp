@@ -36,6 +36,8 @@ extern "C" {
 #include "callback.h"
 }
 
+extern Window *window;
+
 extern "C" int decodeClick(int button, int action, int mods)
 {
     if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 0;
@@ -44,16 +46,16 @@ extern "C" int decodeClick(int button, int action, int mods)
     return -1;
 }
 
-extern "C" void warpCursor(struct GLFWwindow* ptr, float *cursor)
+extern "C" void warpCursor(float *cursor)
 {
 #ifdef __linux__
     // double xpos, ypos;
-    // glfwGetCursorPos(ptr,&xpos,&ypos);
+    // glfwGetCursorPos(window->get(),&xpos,&ypos);
     // XWarpPointer(screenHandle,None,None,0,0,0,0,cursor[0]-xpos,cursor[1]-ypos);
 #endif
 #ifdef __APPLE__
     int xloc, yloc;
-    glfwGetWindowPos(ptr,&xloc,&yloc);
+    glfwGetWindowPos(window->get(),&xloc,&yloc);
     struct CGPoint point; point.x = xloc+cursor[0]; point.y = yloc+cursor[1];
     CGWarpMouseCursorPosition(point);
 #endif
@@ -169,6 +171,11 @@ void Window::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
     object[i].read = ptr;
+}
+
+GLFWwindow *Window::get()
+{
+    return window;
 }
 
 void Window::call()

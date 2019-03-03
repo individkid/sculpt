@@ -54,6 +54,7 @@ public:
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(int i, Read *ptr);
+	GLFWwindow *get();
 	virtual void call();
 	virtual void wake();
 	void processData(std::string cmdstr);
