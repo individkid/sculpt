@@ -79,7 +79,7 @@ void Microcode::initConfigure(const char *vertex, const char *geometry, const ch
     MYuint vertexIdent; initShader(GL_VERTEX_SHADER, vertex, vertexIdent); glAttachShader(handle, vertexIdent);
     MYuint geometryIdent; if (geometry) {initShader(GL_GEOMETRY_SHADER, geometry, geometryIdent); glAttachShader(handle, geometryIdent);}
     MYuint fragmentIdent; initShader(GL_FRAGMENT_SHADER, fragment, fragmentIdent); glAttachShader(handle, fragmentIdent);
-    if (count) glTransformFeedbackVaryings(handle,count,feedback,GL_SEPARATE_ATTRIBS);
+    if (count) glTransformFeedbackVaryings(handle,count,feedback,GL_INTERLEAVED_ATTRIBS);
     glLinkProgram(handle);
     GLint status = GL_FALSE; glGetProgramiv(handle, GL_LINK_STATUS, &status);
     int length; glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &length); if (length > 0) {

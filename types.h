@@ -29,7 +29,7 @@ enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
 	Face, Frame, Coface, Coframe, Incidence, Block,
 	Construct, Dimension, Vertex, Vector, Pierce, Side,
-	Uniform, Global, Texture0, Texture1, Buffers};
+	Uniform, Global, Query, Texture0, Texture1, Buffers};
 enum Program {
     Diplane, // Plane,Versor,Face -> display
     Dipoint, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
@@ -122,8 +122,9 @@ struct Update
 	union {int offset; int width;};
 	union {int size; int height;};
 	MYuint handle;
-	union {char *data; struct Format *format; struct Feedback *feedback; struct Data *matrix;};
+	union {char *data; MYuint *query; struct Format *format; struct Feedback *feedback; struct Data *matrix;};
 	void (*function)(int, struct Update *);
+	int done;
 };
 struct Render
 {
@@ -142,6 +143,7 @@ struct Response
 };
 struct Command
 {
+	struct Command *next;
 	struct Update *allocs;
 	struct Update *writes;
 	int feedback;

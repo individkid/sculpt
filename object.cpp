@@ -43,13 +43,15 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
 	switch (buffer) {
 	case (Texture0): handle.unit = GL_TEXTURE0; break;
     case (Texture1): handle.unit = GL_TEXTURE1; break;
-    case (Uniform): case (Global): if (!first) handle.handle = 0; break;
+    case (Uniform): case (Global): if (!first) {handle.handle = 0; break;}
+    case (Query): glGenQueries(1,&handle.handle); break;
 	default: glGenBuffers(1,&handle.handle); break;}
     switch (buffer) {
     case (Face): case (Frame): case (Coface): case (Coframe): case (Incidence): case (Block): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
     case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
     case (Uniform): case (Global): handle.target = GL_UNIFORM_BUFFER; break;
     case (Texture0): case (Texture1): handle.target = GL_TEXTURE_2D; break;
+    case (Query): handle.target = GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN; break;
     default: handle.target = GL_ARRAY_BUFFER; break;}
     switch (buffer) {
     case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle.usage = GL_STATIC_READ; break;

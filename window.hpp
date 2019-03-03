@@ -34,8 +34,9 @@ private:
 	GLFWwindow *window;
 	int nfile; Object *object;
 	Microcode microcode[Programs];
-	Command redrawCommand;
-	Command pierceCommand;
+	Command *redraw;
+	Command *pierce;
+	Command *query;
 
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
@@ -46,11 +47,11 @@ private:
 	void writeTexture2d(Update &update);
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
-	int command(const char *pre, std::string str, std::string &res);
+	int compare(const char *pre, std::string str, std::string &res);
 public:
 	Message<std::string> data; // get mode change and raw data from Read
-	Message<Command> request; // get Command from Polytope
-	Message<Command> response; // send Command back to Polytope
+	Message<Command*> request; // get Command from Polytope
+	Message<Command*> response; // send Command back to Polytope
 	Window(int n);
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
@@ -62,6 +63,7 @@ public:
 	virtual void wake();
 	void processData(std::string cmdstr);
 	void processCommand(Command &command);
+	void finishCommand(Command &command);
 };
 
 #endif
