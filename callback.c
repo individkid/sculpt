@@ -185,23 +185,20 @@ void adjustPolytope()
 
 void triggerAction()
 {
+	struct Action action; action.click = state.click;
+	action.file = current.file; action.plane = current.plane;
 	switch (state.click) {
-	case (AdditiveMode): {
-	struct Action action; action.click = AdditiveMode;
-	action.file = current.file; action.plane = current.plane;
-	sendAction(&action); break;}
-	case (SubtractiveMode): {
-	struct Action action; action.click = SubtractiveMode;
-	action.file = current.file; action.plane = current.plane;
-	sendAction(&action); break;}
+	case (AdditiveMode):
+	case (SubtractiveMode):
+	sendAction(&action); break;
 	case (RefineMode): {
-	struct Action action; action.click = RefineMode;
-	action.file = current.file; action.plane = current.plane;
 	for (int i = 0; i < 3; i++) action.matrix[i] = current.pierce[i];
 	sendAction(&action); break;}
-	case (TransformMode): changeClick(PierceMode); break;
-	case (SuspendMode): changeClick(TransformMode); break;
-	case (PierceMode): changeClick(TransformMode); break;
+	case (TransformMode):
+	changeClick(PierceMode); break;
+	case (SuspendMode):
+	case (PierceMode):
+	changeClick(TransformMode); break;
 	default: displayError(state.click,"invalid state.click"); exit(-1);}
 }
 
@@ -227,22 +224,20 @@ void foldMatrix()
 
 void sendMatrix()
 {
+	struct Data data; data.target = state.target;
+	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
+	struct Action action; action.click = TransformMode;
+	action.file = last.file = matrix.file; action.plane = last.plane = matrix.plane;
 	switch (state.target) {
 	case (SessionMode): {
-	struct Data data; data.target = SessionMode;
-	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
 	for (int i = 0; i < 16; i++)
 	data.matrix[i] = last.session[i] = matrix.session[i];
 	sendData(&data); break;}
 	case (PolytopeMode): {
-	struct Data data; data.target = PolytopeMode;
-	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
 	for (int i = 0; i < 16; i++)
 	data.matrix[i] = last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
 	sendData(&data); break;}
 	case (FacetMode): {
-	struct Action action; action.click = TransformMode;
-	action.file = last.file = matrix.file; action.plane = last.plane = matrix.plane;
 	for (int i = 0; i < 16; i++)
 	action.matrix[i] = last.facet[i] = matrix.facet[i];
 	sendAction(&action); break;}
