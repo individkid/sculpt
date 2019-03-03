@@ -38,6 +38,24 @@ template <class T> void message(const char *str, T wrt, const char *file, int li
 	std::cerr << "message:" << str << " wrt:" << wrt << " file:" << file << " line:" << line << std::endl;
 }
 
+template <class T, int N> union Convert
+{
+	char array[N+1];
+	T value;
+};
+
+template <class T> std::string convert(T val)
+{
+	Convert<T,sizeof(T)> convert; convert.value = val;
+	std::string str = convert.array; return str;
+}
+
+template <class T> void convert(std::string str, T &val)
+{
+	Convert<T,sizeof(T)> convert; strcpy(convert.array,str.c_str());
+	val = convert.value;
+}
+
 int cmpstr(std::string str, const char *cstr);
 int prestr(std::string str, const char *cstr);
 

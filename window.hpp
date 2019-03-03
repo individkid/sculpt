@@ -46,6 +46,7 @@ private:
 	void writeTexture2d(int file, Update &update);
 	void bindTexture2d(int file, Update &update);
 	void unbindTexture2d();
+	int command(const char *pre, std::string str, std::string &res);
 public:
 	Message<std::string> data; // get mode change and raw data from Read
 	Message<Command> request; // get Command from Polytope
@@ -54,7 +55,8 @@ public:
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(int i, Read *ptr);
-	GLFWwindow *get();
+	void sendData(Data *data);
+	void warpCursor(float *cursor);
 	virtual void call();
 	virtual void wake();
 	void processData(std::string cmdstr);

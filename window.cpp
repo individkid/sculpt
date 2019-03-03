@@ -38,27 +38,14 @@ extern "C" {
 
 extern Window *window;
 
-extern "C" int decodeClick(int button, int action, int mods)
+extern "C" void sendData(struct Data *data)
 {
-    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 0;
-    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 1;
-    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) return 1;
-    return -1;
+    window->sendData(data);
 }
 
 extern "C" void warpCursor(float *cursor)
 {
-#ifdef __linux__
-    // double xpos, ypos;
-    // glfwGetCursorPos(window->get(),&xpos,&ypos);
-    // XWarpPointer(screenHandle,None,None,0,0,0,0,cursor[0]-xpos,cursor[1]-ypos);
-#endif
-#ifdef __APPLE__
-    int xloc, yloc;
-    glfwGetWindowPos(window->get(),&xloc,&yloc);
-    struct CGPoint point; point.x = xloc+cursor[0]; point.y = yloc+cursor[1];
-    CGWarpMouseCursorPosition(point);
-#endif
+    window->warpCursor(cursor);
 }
 
 extern "C" void additiveAction(int file, int plane)
@@ -71,6 +58,14 @@ extern "C" void subtractiveAction(int file, int plane)
 
 extern "C" void refineAction(float *pierce)
 {
+}
+
+extern "C" int decodeClick(int button, int action, int mods)
+{
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 0;
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 1;
+    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) return 1;
+    return -1;
 }
 
 void Window::allocBuffer(int file, Update &update)
@@ -151,6 +146,13 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
+int Window::command(const char *pre, std::string str, std::string &res)
+{
+    int len = strlen(pre);
+    if (str.substr(0,len) != pre) return 0;
+    res = str.substr(len,std::string::npos); return 1;
+}
+
 Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), data(this), request(this)
 {
 }
@@ -173,9 +175,24 @@ void Window::connect(int i, Read *ptr)
     object[i].read = ptr;
 }
 
-GLFWwindow *Window::get()
+void Window::sendData(Data *data)
 {
-    return window;
+    object[data->file].write->data.put(convert(*data));
+}
+
+void Window::warpCursor(float *cursor)
+{
+#ifdef __linux__
+    // double xpos, ypos;
+    // glfwGetCursorPos(window,&xpos,&ypos);
+    // XWarpPointer(screenHandle,None,None,0,0,0,0,cursor[0]-xpos,cursor[1]-ypos);
+#endif
+#ifdef __APPLE__
+    int xloc, yloc;
+    glfwGetWindowPos(window,&xloc,&yloc);
+    struct CGPoint point; point.x = xloc+cursor[0]; point.y = yloc+cursor[1];
+    CGWarpMouseCursorPosition(point);
+#endif
 }
 
 void Window::call()
@@ -221,6 +238,10 @@ void Window::wake()
 void Window::processData(std::string cmdstr)
 {
     std::cout << cmdstr;
+    std::string str;
+    if (command("--data",cmdstr,str)) {
+    printf("--data match\n");
+    struct Data data; convert(str,data); syncMatrix(&data);}
 }
 
 void Window::processCommand(Command &command)

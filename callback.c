@@ -32,11 +32,12 @@ struct State state = {0};
 int fileCount = 0;
 int testGoon = 1;
 
-int decodeClick(int button, int action, int mods);
+void sendData(struct Data *data);
 void warpCursor(float *cursor);
 void additiveAction(int file, int plane);
 void subtractiveAction(int file, int plane);
 void refineAction(float *pierce);
+int decodeClick(int button, int action, int mods);
 
 void globalInit(int nfile)
 {
@@ -88,6 +89,22 @@ float *fixedMatrix(float *matrix)
 	return jumpmat(timesmat(matrix,before,4),after,4);
 }
 
+float solvePlane(float *coord)
+{
+	float minus[2]; scalevec(copyvec(minus,pointer->pierce,2),-1.0,2);
+	float diff[2]; plusvec(copyvec(diff,coord,2),minus,2);
+	return pointer->pierce[2]-dotvec(diff,pointer->normal,2)/pointer->normal[2];
+}
+
+float *angleMatrix(float *matrix)
+{
+	float sinval = sinf(pointer->roller); float cosval = cosf(pointer->roller);
+	matrix[0] = cosval; matrix[1] = -sinval; matrix[2] = 0.0;
+	matrix[3] = sinval; matrix[4] = cosval; matrix[5] = 0.0;
+	matrix[6] = 0.0; matrix[7] = 0.0; matrix[8] = 1.0;
+	return matrix;
+}
+
 float *mouseMatrix(float *matrix)
 {
 	switch (state.mouse) {
@@ -96,6 +113,12 @@ float *mouseMatrix(float *matrix)
 	float rotate[9]; timesmat(rotateMatrix(rotate,pointer->pierce,pointer->cursor),inverse,3);
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
+	case (TangentMode): {
+	float translate[16]; identmat(translate,4);
+	translate[3] = pointer->cursor[0]-pointer->point[0];
+	translate[7] = pointer->cursor[1]-pointer->point[1];
+	translate[11] = solvePlane(pointer->cursor)-solvePlane(pointer->point);
+	return copymat(matrix,translate,4);}
 	case (TranslateMode): {
 	float translate[16]; identmat(translate,4);
 	translate[3] = pointer->cursor[0]-pointer->point[0];
@@ -111,19 +134,27 @@ float *rollerMatrix(float *matrix)
 	case (CylinderMode): {
 	float inverse[9]; rotateMatrix(inverse,pointer->point,pointer->pierce);
 	float rotate[9]; rotateMatrix(rotate,pointer->pierce,pointer->point);
-	float zmat[9]; float sinval = sinf(pointer->roller); float cosval = cosf(pointer->roller);
-	zmat[0] = cosval; zmat[1] = -sinval; zmat[2] = 0.0;
-	zmat[3] = sinval; zmat[4] = cosval; zmat[5] = 0.0;
-	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
+	float zmat[9]; angleMatrix(zmat);
 	timesmat(timesmat(rotate,zmat,3),inverse,3);
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
 	case (ClockMode): {
-	float zmat[9]; float sinval = sinf(pointer->roller); float cosval = cosf(pointer->roller);
-	zmat[0] = cosval; zmat[1] = -sinval; zmat[2] = 0.0;
-	zmat[3] = sinval; zmat[4] = cosval; zmat[5] = 0.0;
-	zmat[6] = 0.0; zmat[7] = 0.0; zmat[8] = 1.0;
+	float zmat[9]; angleMatrix(zmat);
 	identmat(matrix,4); copyary(matrix,zmat,3,4,9);
+	return fixedMatrix(matrix);}
+	case (NormalMode): {
+	float zero[2]; zerovec(zero,2);
+	int sub = 0; float min = INVALID;
+	for (int i = 0; i < 3; i++) if (pointer->normal[i] < min) {sub = i; min = pointer->normal[i];}
+	float norm[2]; int j = 0; for (int i = 0; i < 3; i++) if (i != sub) norm[j++] = pointer->normal[i];
+	float inverse[9]; rotateMatrix(inverse,norm,zero);
+	float rotate[9]; rotateMatrix(rotate,zero,norm);
+	float zmat[9]; angleMatrix(zmat);
+	timesmat(timesmat(rotate,zmat,3),inverse,3);
+	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
+	return fixedMatrix(matrix);}
+	case (ScaleMode): {
+	scalevec(identmat(matrix,4),powf(BASE,pointer->roller),16);
 	return fixedMatrix(matrix);}
 	default: displayError(state.roller,"invalid state.roller"); exit(-1);}
 	return matrix;
@@ -140,19 +171,6 @@ void affineMatrix(int file, float *affine)
 	timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
 	case (FacetMode): timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
-}
-
-void foldMatrix()
-{
-	float affine[16];
-	if (state.toggle == 0) mouseMatrix(affine); else rollerMatrix(affine);
-	switch (state.target) {
-	case (SessionMode): jumpmat(matrix.session,affine,4); break;
-	case (PolytopeMode): jumpmat(matrix.polytope[matrix.file],affine,4); break;
-	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
-	default: displayError(state.target,"invalid state.target"); exit(-1);}
-	copyvec(pointer->point,pointer->cursor,2);
-	pointer->roller = 0;
 }
 
 void adjustSession()
@@ -186,6 +204,56 @@ void toggleSuspend()
 	if (state.click == TransformMode) changeClick(SuspendMode);
 	else if (state.click == SuspendMode) changeClick(TransformMode);
 	else changeClick(state.click);
+}
+
+void foldMatrix()
+{
+	float affine[16];
+	if (state.toggle == 0) mouseMatrix(affine); else rollerMatrix(affine);
+	switch (state.target) {
+	case (SessionMode): jumpmat(matrix.session,affine,4); break;
+	case (PolytopeMode): jumpmat(matrix.polytope[matrix.file],affine,4); break;
+	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
+	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	copyvec(pointer->point,pointer->cursor,2);
+	pointer->roller = 0;
+}
+
+void sendMatrix()
+{
+	struct Data data; data.target = state.target;
+	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
+	switch (state.target) {
+	case (SessionMode): for (int i = 0; i < 16; i++)
+	data.matrix[i] = last.session[i] = matrix.session[i]; break;
+	case (PolytopeMode): for (int i = 0; i < 16; i++)
+	data.matrix[i] = last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i]; break;
+	case (FacetMode): for (int i = 0; i < 16; i++)
+	data.matrix[i] = last.facet[i] = matrix.facet[i]; break;
+	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	sendData(&data);
+}
+
+void syncMatrix(struct Data *data)
+{
+	switch (data->target) {
+	case (SessionMode): {
+	float invert[16]; invmat(copymat(invert,last.session,4),4);
+	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
+	timesmat(copymat(matrix.session,data->matrix,4),delta,4); break;}
+	case (PolytopeMode): {
+	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);
+	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
+	timesmat(copymat(matrix.polytope[data->file],data->matrix,4),delta,4); break;}
+	case (FacetMode): {
+	if (data->file == matrix.file && data->plane == matrix.plane) identmat(matrix.facet,4);
+	if (data->file == last.file && data->plane == last.plane) identmat(last.facet,4); break;}
+	default: displayError(data->target,"invalid data->target"); exit(-1);}
+}
+
+void setData(int file, struct Update *update)
+{
+	syncMatrix(update->matrix);
 }
 
 void getUniform(int file, struct Update *update)

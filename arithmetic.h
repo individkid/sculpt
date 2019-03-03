@@ -17,6 +17,7 @@
 */
 
 #define INVALID 1.0e37
+#define BASE 1.1
 
 float dotvec(float *u, float *v, int n);
 float *plusvec(float *u, float *v, int n);

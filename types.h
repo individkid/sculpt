@@ -48,61 +48,6 @@ enum Space {
 	Small, // specified space
 	Large, // cospace
 	Spaces};
-struct Format
-{
-	float cursor[2];
-	float align[9];
-	float affine[16];
-	float perplane[16];
-	float perlast[16];
-	MYuint tagplane;
-	char filler0[4-sizeof(MYuint)]; MYuint taglast;
-	char filler1[4-sizeof(MYuint)]; MYuint taggraph;
-	char filler2[4-sizeof(MYuint)]; float cutoff;
-	float slope;
-	float aspect;
-};
-struct Feedback
-{
-	float pierce[3];
-	float normal[3];
-	int plane;
-};
-struct Update
-{
-	struct Update *next;
-	enum Buffer buffer;
-	union {int offset; int width;};
-	union {int size; int height;};
-	MYuint handle;
-	union {char *data; struct Format *format; struct Feedback *feedback;};
-	void (*function)(int, struct Update *);
-};
-struct Render
-{
-	struct Render *next;
-	enum Program program;
-	enum Space space;
-	int base;
-	int count;
-	int size;
-};
-struct Command
-{
-	int file;
-	struct Update *allocs;
-	struct Update *writes;
-	int feedback;
-	struct Update *binds;
-	struct Update *reads;
-	struct Render *renders;
-	int response;
-	struct Command *command;
-};
-struct Action
-{
-	int file;
-};
 enum ClickMode {
 	AdditiveMode,
 	SubtractiveMode,
@@ -136,5 +81,67 @@ enum FixedMode {
 	InvariantMode,
 	SymbolicMode,
 	FixedModes};
+struct Format
+{
+	float cursor[2];
+	float align[9];
+	float affine[16];
+	float perplane[16];
+	float perlast[16];
+	MYuint tagplane;
+	char filler0[4-sizeof(MYuint)]; MYuint taglast;
+	char filler1[4-sizeof(MYuint)]; MYuint taggraph;
+	char filler2[4-sizeof(MYuint)]; float cutoff;
+	float slope;
+	float aspect;
+};
+struct Feedback
+{
+	float pierce[3];
+	float normal[3];
+	int plane;
+};
+struct Data
+{
+	int file;
+	int plane;
+	enum TargetMode target;
+	float matrix[16];
+};
+struct Update
+{
+	struct Update *next;
+	enum Buffer buffer;
+	union {int offset; int width;};
+	union {int size; int height;};
+	MYuint handle;
+	union {char *data; struct Format *format; struct Feedback *feedback; struct Data *matrix;};
+	void (*function)(int, struct Update *);
+};
+struct Render
+{
+	struct Render *next;
+	enum Program program;
+	enum Space space;
+	int base;
+	int count;
+	int size;
+};
+struct Command
+{
+	int file;
+	struct Update *allocs;
+	struct Update *writes;
+	int feedback;
+	struct Update *binds;
+	struct Update *reads;
+	struct Render *renders;
+	int response;
+	struct Command *command;
+};
+struct Action
+{
+	int file;
+};
 
 #endif
