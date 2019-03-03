@@ -116,8 +116,8 @@ struct Action
 };
 struct Update
 {
-	int file;
 	struct Update *next;
+	int file;
 	enum Buffer buffer;
 	union {int offset; int width;};
 	union {int size; int height;};
@@ -127,13 +127,18 @@ struct Update
 };
 struct Render
 {
-	int file;
 	struct Render *next;
+	int file;
 	enum Program program;
 	enum Space space;
 	int base;
 	int count;
 	int size;
+};
+struct Response
+{
+	struct Response *next;
+	int file;
 };
 struct Command
 {
@@ -145,8 +150,7 @@ struct Command
 	struct Render *renders;
 	struct Command *redraw;
 	struct Command *pierce;
-	int response;
-	int file;
+	struct Response *response;
 };
 
 #endif

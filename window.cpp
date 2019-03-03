@@ -266,5 +266,5 @@ void Window::processCommand(Command &command)
     for (Update *next = command.reads; next; next = next->next) readBuffer(*next);
     if (command.redraw) {Command temp = redrawCommand; redrawCommand = *command.redraw; *command.redraw = temp;}
     if (command.pierce) {Command temp = pierceCommand; pierceCommand = *command.pierce; *command.pierce = temp;}
-    if (command.response) object[command.file].polytope->response.put(command);
+    for (Response *next = command.response; next; next = next->next) object[next->file].polytope->response.put(command);
 }

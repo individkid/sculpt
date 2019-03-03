@@ -40,13 +40,15 @@ int decodeClick(int button, int action, int mods);
 void globalInit(int nfile)
 {
 	fileCount = nfile;
+	unitvec(current.normal,3,0);
+	unitvec(warp.normal,3,0);
 	identmat(matrix.session,4);
     matrix.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(matrix.polytope[i],4);
     identmat(matrix.facet,4);
 	identmat(last.session,4);
     last.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(last.polytope[i],4);
     identmat(last.facet,4);
-    pointer = &current;
+    pointer = &warp;
     state.click = PierceMode;
     state.target = SessionMode;
     state.mouse = RotateMode;
