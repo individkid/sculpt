@@ -107,8 +107,16 @@ struct Data
 	enum TargetMode target;
 	float matrix[16];
 };
+struct Action
+{
+	int file;
+	int plane;
+	enum ClickMode click;
+	float matrix[16];
+};
 struct Update
 {
+	int file;
 	struct Update *next;
 	enum Buffer buffer;
 	union {int offset; int width;};
@@ -119,6 +127,7 @@ struct Update
 };
 struct Render
 {
+	int file;
 	struct Render *next;
 	enum Program program;
 	enum Space space;
@@ -128,18 +137,15 @@ struct Render
 };
 struct Command
 {
-	int file;
 	struct Update *allocs;
 	struct Update *writes;
 	int feedback;
 	struct Update *binds;
 	struct Update *reads;
 	struct Render *renders;
+	struct Command *redraw;
+	struct Command *pierce;
 	int response;
-	struct Command *command;
-};
-struct Action
-{
 	int file;
 };
 

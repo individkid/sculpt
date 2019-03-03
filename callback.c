@@ -32,11 +32,9 @@ struct State state = {0};
 int fileCount = 0;
 int testGoon = 1;
 
+void sendAction(struct Action *action);
 void sendData(struct Data *data);
 void warpCursor(float *cursor);
-void additiveAction(int file, int plane);
-void subtractiveAction(int file, int plane);
-void refineAction(float *pierce);
 int decodeClick(int button, int action, int mods);
 
 void globalInit(int nfile)
@@ -188,9 +186,19 @@ void adjustPolytope()
 void triggerAction()
 {
 	switch (state.click) {
-	case (AdditiveMode): additiveAction(pointer->file,pointer->plane); break;
-	case (SubtractiveMode): subtractiveAction(pointer->file,pointer->plane); break;
-	case (RefineMode): refineAction(pointer->pierce); break;
+	case (AdditiveMode): {
+	struct Action action; action.click = AdditiveMode;
+	action.file = current.file; action.plane = current.plane;
+	sendAction(&action); break;}
+	case (SubtractiveMode): {
+	struct Action action; action.click = SubtractiveMode;
+	action.file = current.file; action.plane = current.plane;
+	sendAction(&action); break;}
+	case (RefineMode): {
+	struct Action action; action.click = RefineMode;
+	action.file = current.file; action.plane = current.plane;
+	for (int i = 0; i < 3; i++) action.matrix[i] = current.pierce[i];
+	sendAction(&action); break;}
 	case (TransformMode): changeClick(PierceMode); break;
 	case (SuspendMode): changeClick(TransformMode); break;
 	case (PierceMode): changeClick(TransformMode); break;
@@ -219,17 +227,26 @@ void foldMatrix()
 
 void sendMatrix()
 {
-	struct Data data; data.target = state.target;
-	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
 	switch (state.target) {
-	case (SessionMode): for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.session[i] = matrix.session[i]; break;
-	case (PolytopeMode): for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i]; break;
-	case (FacetMode): for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.facet[i] = matrix.facet[i]; break;
+	case (SessionMode): {
+	struct Data data; data.target = SessionMode;
+	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
+	for (int i = 0; i < 16; i++)
+	data.matrix[i] = last.session[i] = matrix.session[i];
+	sendData(&data); break;}
+	case (PolytopeMode): {
+	struct Data data; data.target = PolytopeMode;
+	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
+	for (int i = 0; i < 16; i++)
+	data.matrix[i] = last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
+	sendData(&data); break;}
+	case (FacetMode): {
+	struct Action action; action.click = TransformMode;
+	action.file = last.file = matrix.file; action.plane = last.plane = matrix.plane;
+	for (int i = 0; i < 16; i++)
+	action.matrix[i] = last.facet[i] = matrix.facet[i];
+	sendAction(&action); break;}
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
-	sendData(&data);
 }
 
 void syncMatrix(struct Data *data)

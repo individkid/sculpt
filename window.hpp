@@ -37,14 +37,14 @@ private:
 	Command redrawCommand;
 	Command pierceCommand;
 
-	void allocBuffer(int file, Update &update);
-	void writeBuffer(int file, Update &update);
-	void bindBuffer(int file, Update &update);
-	void unbindBuffer(int file, Update &update);
-	void readBuffer(int file, Update &update);
-	void allocTexture2d(int file, Update &update);
-	void writeTexture2d(int file, Update &update);
-	void bindTexture2d(int file, Update &update);
+	void allocBuffer(Update &update);
+	void writeBuffer(Update &update);
+	void bindBuffer(Update &update);
+	void unbindBuffer(Update &update);
+	void readBuffer(Update &update);
+	void allocTexture2d(Update &update);
+	void writeTexture2d(Update &update);
+	void bindTexture2d(Update &update);
 	void unbindTexture2d();
 	int command(const char *pre, std::string str, std::string &res);
 public:
@@ -55,6 +55,7 @@ public:
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(int i, Read *ptr);
+	void sendAction(Action *action);
 	void sendData(Data *data);
 	void warpCursor(float *cursor);
 	virtual void call();

@@ -38,6 +38,11 @@ extern "C" {
 
 extern Window *window;
 
+extern "C" void sendAction(struct Action *action)
+{
+    window->sendAction(action);
+}
+
 extern "C" void sendData(struct Data *data)
 {
     window->sendData(data);
@@ -48,18 +53,6 @@ extern "C" void warpCursor(float *cursor)
     window->warpCursor(cursor);
 }
 
-extern "C" void additiveAction(int file, int plane)
-{
-}
-
-extern "C" void subtractiveAction(int file, int plane)
-{
-}
-
-extern "C" void refineAction(float *pierce)
-{
-}
-
 extern "C" int decodeClick(int button, int action, int mods)
 {
     if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 0;
@@ -68,51 +61,51 @@ extern "C" int decodeClick(int button, int action, int mods)
     return -1;
 }
 
-void Window::allocBuffer(int file, Update &update)
+void Window::allocBuffer(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) {allocTexture2d(file,update); return;}
+    Handle &buffer = object[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) {allocTexture2d(update); return;}
     glBindBuffer(buffer.target,buffer.handle);
     glBufferData(buffer.target,update.size,NULL,buffer.usage);
     glBindBuffer(buffer.target,0);
 }
 
-void Window::writeBuffer(int file, Update &update)
+void Window::writeBuffer(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) {writeTexture2d(file,update); return;}
+    Handle &buffer = object[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) {writeTexture2d(update); return;}
     glBindBuffer(buffer.target,buffer.handle);
-    if (update.function) update.function(file,&update);
+    if (update.function) update.function(update.file,&update);
     glBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);
 }
 
-void Window::bindBuffer(int file, Update &update)
+void Window::bindBuffer(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) {bindTexture2d(file,update); return;}
+    Handle &buffer = object[update.file].handle[update.buffer];
+    if (buffer.target == GL_TEXTURE_2D) {bindTexture2d(update); return;}
     glBindBufferBase(buffer.target,buffer.index,buffer.handle);
 }
 
-void Window::unbindBuffer(int file, Update &update)
+void Window::unbindBuffer(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
+    Handle &buffer = object[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) {unbindTexture2d(); return;}
     glBindBufferBase(buffer.target,buffer.index,0);
 }
 
-void Window::readBuffer(int file, Update &update)
+void Window::readBuffer(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
+    Handle &buffer = object[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) return;
     glBindBuffer(buffer.target,buffer.handle);
     glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);
 }
 
-void Window::allocTexture2d(int file, Update &update)
+void Window::allocTexture2d(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
+    Handle &buffer = object[update.file].handle[update.buffer];
     glGenTextures(1,&update.handle);
     glActiveTexture(buffer.unit);
     glBindTexture(GL_TEXTURE_2D,update.handle);
@@ -123,20 +116,20 @@ void Window::allocTexture2d(int file, Update &update)
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void Window::writeTexture2d(int file, Update &update)
+void Window::writeTexture2d(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
+    Handle &buffer = object[update.file].handle[update.buffer];
     glActiveTexture(buffer.handle);
     glBindTexture(GL_TEXTURE_2D,update.handle);
-    if (update.function) update.function(file,&update);
+    if (update.function) update.function(update.file,&update);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void Window::bindTexture2d(int file, Update &update)
+void Window::bindTexture2d(Update &update)
 {
-    Handle &buffer = object[file].handle[update.buffer];
+    Handle &buffer = object[update.file].handle[update.buffer];
     glActiveTexture(buffer.handle);
     glBindTexture(GL_TEXTURE_2D,update.handle);
 }
@@ -173,6 +166,11 @@ void Window::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
     object[i].read = ptr;
+}
+
+void Window::sendAction(Action *action)
+{
+    object[action->file].polytope->action.put(*action);
 }
 
 void Window::sendData(Data *data)
@@ -240,19 +238,18 @@ void Window::processData(std::string cmdstr)
     std::cout << cmdstr;
     std::string str;
     if (command("--data",cmdstr,str)) {
-    printf("--data match\n");
     struct Data data; convert(str,data); syncMatrix(&data);}
 }
 
 void Window::processCommand(Command &command)
 {
-    for (Update *next = command.allocs; next; next = next->next) allocBuffer(command.file,*next);
-    for (Update *next = command.writes; next; next = next->next) writeBuffer(command.file,*next);
+    for (Update *next = command.allocs; next; next = next->next) allocBuffer(*next);
+    for (Update *next = command.writes; next; next = next->next) writeBuffer(*next);
     for (Render *next = command.renders; next; next = next->next) {
     Render &render = *next; Microcode &program = microcode[render.program];
     glUseProgram(program.handle);
-    glBindVertexArray(object[command.file].vao[render.program][render.space]);
-    for (Update *next = command.binds; next; next = next->next) bindBuffer(command.file,*next);
+    glBindVertexArray(object[render.file].vao[render.program][render.space]);
+    for (Update *next = command.binds; next; next = next->next) bindBuffer(*next);
     if (command.feedback) {
         glEnable(GL_RASTERIZER_DISCARD);
         glBeginTransformFeedback(program.primitive);}
@@ -261,12 +258,13 @@ void Window::processCommand(Command &command)
     if (command.feedback) {
         glEndTransformFeedback();
         glDisable(GL_RASTERIZER_DISCARD);}
-    for (Update *next = command.binds; next; next = next->next) unbindBuffer(command.file,*next);
+    for (Update *next = command.binds; next; next = next->next) unbindBuffer(*next);
     glBindVertexArray(0);
     glUseProgram(0);}
     if (command.feedback) glFlush();
     else glfwSwapBuffers(window);
-    for (Update *next = command.reads; next; next = next->next) readBuffer(command.file,*next);
-    if (command.command) {Command temp = redrawCommand; redrawCommand = *command.command; *command.command = temp;}
+    for (Update *next = command.reads; next; next = next->next) readBuffer(*next);
+    if (command.redraw) {Command temp = redrawCommand; redrawCommand = *command.redraw; *command.redraw = temp;}
+    if (command.pierce) {Command temp = pierceCommand; pierceCommand = *command.pierce; *command.pierce = temp;}
     if (command.response) object[command.file].polytope->response.put(command);
 }
