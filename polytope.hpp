@@ -32,7 +32,7 @@ private:
 public:
 	Message<std::string> read; // get -- from Read
 	Message<Command> response; // get Command from Window
-	Message<Action> action; // get Action from Window
+	Message<Rawdata> action; // get Action from Window
 	Polytope(int i, Window &gl, Write &w);
 	virtual void call();
 };

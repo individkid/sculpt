@@ -20,6 +20,9 @@
 #define TYPES_HPP
 
 #define INFINITE 1000000
+#define BASE 1.1
+#define DELAY 0.01
+#define GRANULARITY 30.0
 
 struct GLFWwindow;
 
@@ -90,6 +93,8 @@ struct Format
 	float cutoff;
 	float slope;
 	float aspect;
+	float feather;
+	float arrow;
 	MYuint tagplane;
 	char filler0[4-sizeof(MYuint)]; MYuint taglast;
 	char filler1[4-sizeof(MYuint)]; MYuint taggraph;
@@ -100,18 +105,11 @@ struct Feedback
 	float normal[3];
 	int plane;
 };
-struct Data
+struct Rawdata
 {
 	int file;
 	int plane;
-	enum TargetMode target;
-	float matrix[16];
-};
-struct Action
-{
-	int file;
-	int plane;
-	enum ClickMode click;
+	union {enum TargetMode target; enum ClickMode click;};
 	float matrix[16];
 };
 struct Update
@@ -122,7 +120,7 @@ struct Update
 	union {int offset; int width;};
 	union {int size; int height;};
 	MYuint handle;
-	union {char *data; MYuint *query; struct Format *format; struct Feedback *feedback; struct Data *matrix;};
+	union {char *data; MYuint *query; struct Format *format; struct Feedback *feedback; struct Rawdata *rawdata;};
 	void (*function)(int, struct Update *);
 	int done;
 };

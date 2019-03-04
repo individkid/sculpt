@@ -48,8 +48,9 @@ struct State
 
 extern int testGoon;
 
+int isSuspend();
 void globalInit(int nfile);
-void syncMatrix(struct Data *data);
+void syncMatrix(struct Rawdata *rawdata);
 void setData(int file, struct Update *update);
 void getUniform(int file, struct Update *update);
 void putUniform(int file, struct Update *update);

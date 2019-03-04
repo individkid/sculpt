@@ -32,10 +32,15 @@ struct State state = {0};
 int fileCount = 0;
 int testGoon = 1;
 
-void sendAction(struct Action *action);
-void sendData(struct Data *data);
+void sendAction(struct Rawdata *rawdata);
+void sendData(struct Rawdata *rawdata);
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
+
+int isSuspend()
+{
+	return (state.click != TransformMode);
+}
 
 void globalInit(int nfile)
 {
@@ -92,11 +97,13 @@ float solvePlane(float *coord)
 	float minus[2]; scalevec(copyvec(minus,pointer->pierce,2),-1.0,2);
 	float diff[2]; plusvec(copyvec(diff,coord,2),minus,2);
 	return pointer->pierce[2]-dotvec(diff,pointer->normal,2)/pointer->normal[2];
+	// TODO allow for normal[2] too small
 }
 
 float *angleMatrix(float *matrix)
 {
-	float sinval = sinf(pointer->roller); float cosval = cosf(pointer->roller);
+	float angle = pointer->roller/GRANULARITY;
+	float sinval = sinf(angle); float cosval = cosf(angle);
 	matrix[0] = cosval; matrix[1] = -sinval; matrix[2] = 0.0;
 	matrix[3] = sinval; matrix[4] = cosval; matrix[5] = 0.0;
 	matrix[6] = 0.0; matrix[7] = 0.0; matrix[8] = 1.0;
@@ -187,15 +194,15 @@ void adjustPolytope()
 
 void triggerAction()
 {
-	struct Action action; action.click = state.click;
-	action.file = current.file; action.plane = current.plane;
+	struct Rawdata rawdata; rawdata.click = state.click;
+	rawdata.file = current.file; rawdata.plane = current.plane;
 	switch (state.click) {
 	case (AdditiveMode):
 	case (SubtractiveMode):
-	sendAction(&action); break;
+	sendAction(&rawdata); break;
 	case (RefineMode): {
-	for (int i = 0; i < 3; i++) action.matrix[i] = current.pierce[i];
-	sendAction(&action); break;}
+	for (int i = 0; i < 3; i++) rawdata.matrix[i] = current.pierce[i];
+	sendAction(&rawdata); break;}
 	case (TransformMode):
 	changeClick(PierceMode); break;
 	case (SuspendMode):
@@ -226,46 +233,44 @@ void foldMatrix()
 
 void sendMatrix()
 {
-	struct Data data; data.target = state.target;
-	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
-	struct Action action; action.click = TransformMode;
-	action.file = last.file = matrix.file; action.plane = last.plane = matrix.plane;
+	struct Rawdata rawdata; rawdata.target = state.target;
+	rawdata.file = last.file = matrix.file; rawdata.plane = last.plane = matrix.plane;
 	switch (state.target) {
 	case (SessionMode): {
 	for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.session[i] = matrix.session[i];
-	sendData(&data); break;}
+	rawdata.matrix[i] = last.session[i] = matrix.session[i];
+	sendData(&rawdata); break;}
 	case (PolytopeMode): {
 	for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
-	sendData(&data); break;}
+	rawdata.matrix[i] = last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
+	sendData(&rawdata); break;}
 	case (FacetMode): {
 	for (int i = 0; i < 16; i++)
-	action.matrix[i] = last.facet[i] = matrix.facet[i];
-	sendAction(&action); break;}
+	rawdata.matrix[i] = last.facet[i] = matrix.facet[i];
+	sendAction(&rawdata); break;}
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
 }
 
-void syncMatrix(struct Data *data)
+void syncMatrix(struct Rawdata *rawdata)
 {
-	switch (data->target) {
+	switch (rawdata->target) {
 	case (SessionMode): {
 	float invert[16]; invmat(copymat(invert,last.session,4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
-	timesmat(copymat(matrix.session,data->matrix,4),delta,4); break;}
+	timesmat(copymat(matrix.session,rawdata->matrix,4),delta,4); break;}
 	case (PolytopeMode): {
-	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);
-	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
-	timesmat(copymat(matrix.polytope[data->file],data->matrix,4),delta,4); break;}
+	float invert[16]; invmat(copymat(invert,last.polytope[rawdata->file],4),4);
+	float delta[16]; timesmat(copymat(delta,matrix.polytope[rawdata->file],4),invert,4);
+	timesmat(copymat(matrix.polytope[rawdata->file],rawdata->matrix,4),delta,4); break;}
 	case (FacetMode): {
-	if (data->file == matrix.file && data->plane == matrix.plane) identmat(matrix.facet,4);
-	if (data->file == last.file && data->plane == last.plane) identmat(last.facet,4); break;}
-	default: displayError(data->target,"invalid data->target"); exit(-1);}
+	if (rawdata->file == matrix.file && rawdata->plane == matrix.plane) identmat(matrix.facet,4);
+	if (rawdata->file == last.file && rawdata->plane == last.plane) identmat(last.facet,4); break;}
+	default: displayError(rawdata->target,"invalid rawdata->target"); exit(-1);}
 }
 
 void setData(int file, struct Update *update)
 {
-	syncMatrix(update->matrix);
+	syncMatrix(update->rawdata);
 }
 
 void getUniform(int file, struct Update *update)
@@ -300,7 +305,7 @@ void putUniform(int file, struct Update *update)
 
 void changeClick(enum ClickMode mode)
 {
-	foldMatrix();
+	foldMatrix(); if (state.click == TransformMode) sendMatrix();
 	if (state.click == TransformMode && mode != TransformMode) {
 	warp = current; pointer = &warp;}
 	if (state.click == SuspendMode && mode == TransformMode) {
@@ -314,7 +319,7 @@ void changeClick(enum ClickMode mode)
 
 void changeTarget(enum TargetMode mode)
 {
-	foldMatrix();
+	foldMatrix(); if (state.click == TransformMode) sendMatrix();
 	if (state.target == PolytopeMode && mode != PolytopeMode) adjustSession();
 	if (state.target != PolytopeMode && mode == PolytopeMode) adjustPolytope();
 	state.target = mode;
@@ -322,25 +327,25 @@ void changeTarget(enum TargetMode mode)
 
 void changeMouse(enum MouseMode mode)
 {
-	foldMatrix();
+	foldMatrix(); if (state.click == TransformMode) sendMatrix();
 	state.mouse = mode;
 }
 
 void changeRoller(enum RollerMode mode)
 {
-	foldMatrix();
+	foldMatrix(); if (state.click == TransformMode) sendMatrix();
 	state.roller = mode;
 }
 
 void changeFixed(enum FixedMode mode)
 {
-	foldMatrix();
+	foldMatrix(); if (state.click == TransformMode) sendMatrix();
 	state.fixed = mode;
 }
 
 void changeToggle(int toggle)
 {
-	foldMatrix();
+	foldMatrix(); if (state.click == TransformMode) sendMatrix();
 	state.toggle = toggle;
 }
 

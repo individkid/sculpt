@@ -108,6 +108,8 @@ void Microcode::initShader(MYenum type, const char *source, MYuint &ident)
     float cutoff;\n\
     float slope;\n\
     float aspect;\n\
+    float feather;\n\
+    float arrow;\n\
     uint tagplane;\n\
     uint taglast;\n\
     uint taggraph;\n\

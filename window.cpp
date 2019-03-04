@@ -38,14 +38,14 @@ extern "C" {
 
 extern Window *window;
 
-extern "C" void sendAction(struct Action *action)
+extern "C" void sendAction(struct Rawdata *rawdata)
 {
-    window->sendAction(action);
+    window->sendAction(rawdata);
 }
 
-extern "C" void sendData(struct Data *data)
+extern "C" void sendData(struct Rawdata *rawdata)
 {
-    window->sendData(data);
+    window->sendData(rawdata);
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -103,7 +103,7 @@ void Window::readBuffer(Update &update)
     Handle &buffer = object[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) ; else
     if (buffer.target == GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN)
-    glGetQueryObjectuiv(update.handle, GL_QUERY_RESULT, update.query); else {
+                                             glGetQueryObjectuiv(update.handle, GL_QUERY_RESULT, update.query); else {
     glBindBuffer(buffer.target,buffer.handle);
     glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);}
@@ -175,14 +175,14 @@ void Window::connect(int i, Read *ptr)
     object[i].read = ptr;
 }
 
-void Window::sendAction(Action *action)
+void Window::sendAction(Rawdata *rawdata)
 {
-    object[action->file].polytope->action.put(*action);
+    object[rawdata->file].polytope->action.put(*rawdata);
 }
 
-void Window::sendData(Data *data)
+void Window::sendData(Rawdata *rawdata)
 {
-    object[data->file].write->data.put(convert(*data));
+    object[rawdata->file].write->data.put(convert(*rawdata));
 }
 
 void Window::warpCursor(float *cursor)
@@ -228,9 +228,10 @@ void Window::call()
     glfwSwapBuffers(window);
     for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) microcode[p].initProgram(p);
     for (int f = 0; f < nfile; f++) object[f].initFile(f==0);
-    while (testGoon) {
-    glfwWaitEvents();
+    glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
+    if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
     Command *todo = query; query = 0; while (todo) {finishCommand(*todo); remove(todo,todo);}
+    if (isSuspend()) {if (pierce) processCommand(*pierce);} else {if (redraw) processCommand(*redraw);}
     std::string cmdstr; while (data.get(cmdstr)) {processData(cmdstr); glfwPollEvents();}
     Command *command; while (request.get(command)) {processCommand(*command); glfwPollEvents();}}
     glfwTerminate();
@@ -246,13 +247,15 @@ void Window::processData(std::string cmdstr)
     std::cout << cmdstr;
     std::string str;
     if (compare("--data",cmdstr,str)) {
-    struct Data data; convert(str,data); syncMatrix(&data);}
+    struct Rawdata rawdata; convert(str,rawdata); syncMatrix(&rawdata);}
 }
 
 void Window::processCommand(Command &command)
 {
-    if (command.redraw) {Command *temp = redraw; redraw = command.redraw; command.redraw = temp;}
-    if (command.pierce) {Command *temp = pierce; pierce = command.pierce; command.pierce = temp;}
+    if (command.redraw) {if (command.redraw == redraw) redraw = 0; else {
+    Command *temp = redraw; redraw = command.redraw; command.redraw = temp;}}
+    if (command.pierce) {if (command.pierce == pierce) pierce = 0; else {
+    Command *temp = pierce; pierce = command.pierce; command.pierce = temp;}}
     for (Update *next = command.allocs; next; next = next->next) allocBuffer(*next);
     for (Update *next = command.writes; next; next = next->next) writeBuffer(*next);
     for (Render *next = command.renders; next; next = next->next) {
