@@ -37,6 +37,7 @@ private:
 	Command *redraw;
 	Command *pierce;
 	Command *query;
+	Command *todo;
 
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);

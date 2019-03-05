@@ -92,14 +92,6 @@ float *fixedMatrix(float *matrix)
 	return jumpmat(timesmat(matrix,before,4),after,4);
 }
 
-float solvePlane(float *coord)
-{
-	float minus[2]; scalevec(copyvec(minus,pointer->pierce,2),-1.0,2);
-	float diff[2]; plusvec(copyvec(diff,coord,2),minus,2);
-	return pointer->pierce[2]-dotvec(diff,pointer->normal,2)/pointer->normal[2];
-	// TODO allow for normal[2] too small
-}
-
 float *angleMatrix(float *matrix)
 {
 	float angle = pointer->roller/GRANULARITY;
@@ -108,6 +100,13 @@ float *angleMatrix(float *matrix)
 	matrix[3] = sinval; matrix[4] = cosval; matrix[5] = 0.0;
 	matrix[6] = 0.0; matrix[7] = 0.0; matrix[8] = 1.0;
 	return matrix;
+}
+
+float solvePlane(float *coord)
+{
+	float minus[2]; scalevec(copyvec(minus,pointer->pierce,2),-1.0,2);
+	float diff[2]; plusvec(copyvec(diff,coord,2),minus,2);
+	return pointer->pierce[2]-dotvec(diff,pointer->normal,2)/pointer->normal[2];
 }
 
 float *mouseMatrix(float *matrix)
@@ -119,11 +118,17 @@ float *mouseMatrix(float *matrix)
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
 	case (TangentMode): {
+	float minus[2]; scalevec(copyvec(minus,pointer->normal,2),-1.0,2);
+	float diff[2]; plusvec(copyvec(diff,pointer->normal,2),minus,2);
+	float length = sqrtf(dotvec(diff,diff,2));
+	if (pointer->normal[2] > length) {
 	float translate[16]; identmat(translate,4);
 	translate[3] = pointer->cursor[0]-pointer->point[0];
 	translate[7] = pointer->cursor[1]-pointer->point[1];
 	translate[11] = solvePlane(pointer->cursor)-solvePlane(pointer->point);
-	return copymat(matrix,translate,4);}
+	return copymat(matrix,translate,4);} else {
+
+	}}
 	case (TranslateMode): {
 	float translate[16]; identmat(translate,4);
 	translate[3] = pointer->cursor[0]-pointer->point[0];
@@ -301,6 +306,11 @@ void putUniform(int file, struct Update *update)
 	for (int j = 0; j < 3; j++) current.pierce[j] = update->feedback[i].pierce[j];
 	for (int j = 0; j < 3; j++) current.normal[j] = update->feedback[i].normal[j];
 	current.file = file; current.plane = update->feedback[i].plane;}
+}
+
+void checkQuery(int file, struct Update *update)
+{
+	if (*update->query < update->size) update->done = 0;
 }
 
 void changeClick(enum ClickMode mode)

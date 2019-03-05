@@ -230,7 +230,7 @@ void Window::call()
     for (int f = 0; f < nfile; f++) object[f].initFile(f==0);
     glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
     if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
-    Command *todo = query; query = 0; while (todo) {finishCommand(*todo); remove(todo,todo);}
+    todo = query; query = 0; while (todo) {finishCommand(*todo); remove(todo,todo);}
     if (isSuspend()) {if (pierce) processCommand(*pierce);} else {if (redraw) processCommand(*redraw);}
     std::string cmdstr; while (data.get(cmdstr)) {processData(cmdstr); glfwPollEvents();}
     Command *command; while (request.get(command)) {processCommand(*command); glfwPollEvents();}}
@@ -252,10 +252,6 @@ void Window::processData(std::string cmdstr)
 
 void Window::processCommand(Command &command)
 {
-    if (command.redraw) {if (command.redraw == redraw) redraw = 0; else {
-    Command *temp = redraw; redraw = command.redraw; command.redraw = temp;}}
-    if (command.pierce) {if (command.pierce == pierce) pierce = 0; else {
-    Command *temp = pierce; pierce = command.pierce; command.pierce = temp;}}
     for (Update *next = command.allocs; next; next = next->next) allocBuffer(*next);
     for (Update *next = command.writes; next; next = next->next) writeBuffer(*next);
     for (Render *next = command.renders; next; next = next->next) {
@@ -275,8 +271,15 @@ void Window::processCommand(Command &command)
 void Window::finishCommand(Command &command)
 {
     for (Update *next = command.reads; next; next = next->next) {
-    next->done = 1; readBuffer(*next);
+    if (next->done == 0) {next->done = 1; readBuffer(*next);}
     if (next->done == 0) {insert(query,&command); return;}}
+    for (Command *start = todo; start; start = (start == todo ? query : 0))
+    for (Command *next = start; next; next = next->next)
+    if (next == command.pierce) {insert(query,&command); return;}
+    if (command.pierce) {if (command.pierce == pierce) pierce = 0; else {
+    Command *temp = pierce; pierce = command.pierce; command.pierce = temp;}}
+    if (command.redraw) {if (command.redraw == redraw) redraw = 0; else {
+    Command *temp = redraw; redraw = command.redraw; command.redraw = temp;}}
     for (Response *next = command.response; next; next = next->next)
     object[next->file].polytope->response.put(command);
 }
