@@ -107,16 +107,19 @@ float *tangentPoint(float *point, float *coord)
 	float *normal = pointer->normal;
 	float minus[2]; scalevec(copyvec(minus,normal,2),-1.0,2);
 	float diff[2]; plusvec(copyvec(diff,normal,2),minus,2);
-	float length = sqrt(dotvec(diff,diff,2));
-	float proj[3]; copyvec(proj,diff,2); proj[2] = -dotvec(proj,normal,2)/normal[2];
-	float adjust = length/sqrt(dotvec(proj,proj,3));
+	float abs = absval(normal[2]);
+	float dot = dotvec(diff,normal,2);
+	if (abs < 1.0 && absval(dot) > INVALID*abs) return zerovec(point,3);
+	float proj[3]; copyvec(proj,diff,2); proj[2] = -dot/normal[2];
+	float length = sqrtf(dotvec(diff,diff,2));
+	float len = sqrtf(dotvec(proj,proj,3));
+	if (len < 1.0 && length > INVALID*len) return zerovec(point,3);
+	float adjust = length/len;
 	return scalevec(copyvec(point,proj,3),adjust,3);
 	// length = sqrt(diff[0]*diff[0]+diff[1]*diff[1])
 	// proj[0]*normal[0] + proj[1]*normal[1] + proj[2]*normal[2] = 0
 	// proj[0] = diff[0] proj[1] = diff[1]
-	// proj[2] = -(proj[0]*normal[0] + proj[1]*normal[1]) / normal[2]
 	// adjust*sqrt(proj[0]*proj[0]+proj[1]*proj[1]+proj[2]*proj[2]) = length
-	// adjust = sqrt(diff[0]*diff[0]+diff[1]*diff[1])/sqrt(proj[0]*proj[0]+proj[1]*proj[1]+proj[2]*proj[2])
 	// point = adjust*proj
 }
 
