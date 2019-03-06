@@ -102,11 +102,22 @@ float *angleMatrix(float *matrix)
 	return matrix;
 }
 
-float solvePlane(float *coord)
+float *tangentPoint(float *point, float *coord)
 {
-	float minus[2]; scalevec(copyvec(minus,pointer->pierce,2),-1.0,2);
-	float diff[2]; plusvec(copyvec(diff,coord,2),minus,2);
-	return pointer->pierce[2]-dotvec(diff,pointer->normal,2)/pointer->normal[2];
+	float *normal = pointer->normal;
+	float minus[2]; scalevec(copyvec(minus,normal,2),-1.0,2);
+	float diff[2]; plusvec(copyvec(diff,normal,2),minus,2);
+	float length = sqrt(dotvec(diff,diff,2));
+	float proj[3]; copyvec(proj,diff,2); proj[2] = -dotvec(proj,normal,2)/normal[2];
+	float adjust = length/sqrt(dotvec(proj,proj,3));
+	return scalevec(copyvec(point,proj,3),adjust,3);
+	// length = sqrt(diff[0]*diff[0]+diff[1]*diff[1])
+	// proj[0]*normal[0] + proj[1]*normal[1] + proj[2]*normal[2] = 0
+	// proj[0] = diff[0] proj[1] = diff[1]
+	// proj[2] = -(proj[0]*normal[0] + proj[1]*normal[1]) / normal[2]
+	// adjust*sqrt(proj[0]*proj[0]+proj[1]*proj[1]+proj[2]*proj[2]) = length
+	// adjust = sqrt(diff[0]*diff[0]+diff[1]*diff[1])/sqrt(proj[0]*proj[0]+proj[1]*proj[1]+proj[2]*proj[2])
+	// point = adjust*proj
 }
 
 float *mouseMatrix(float *matrix)
@@ -118,17 +129,13 @@ float *mouseMatrix(float *matrix)
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
 	case (TangentMode): {
-	float minus[2]; scalevec(copyvec(minus,pointer->normal,2),-1.0,2);
-	float diff[2]; plusvec(copyvec(diff,pointer->normal,2),minus,2);
-	float length = sqrtf(dotvec(diff,diff,2));
-	if (pointer->normal[2] > length) {
+	float point[3]; tangentPoint(point,pointer->point);
+	float cursor[3]; tangentPoint(cursor,pointer->cursor);
 	float translate[16]; identmat(translate,4);
-	translate[3] = pointer->cursor[0]-pointer->point[0];
-	translate[7] = pointer->cursor[1]-pointer->point[1];
-	translate[11] = solvePlane(pointer->cursor)-solvePlane(pointer->point);
-	return copymat(matrix,translate,4);} else {
-
-	}}
+	translate[3] = cursor[0]-point[0];
+	translate[7] = cursor[1]-point[1];
+	translate[11] = cursor[2]-point[2];
+	return copymat(matrix,translate,4);}
 	case (TranslateMode): {
 	float translate[16]; identmat(translate,4);
 	translate[3] = pointer->cursor[0]-pointer->point[0];
