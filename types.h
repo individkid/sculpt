@@ -22,7 +22,8 @@
 #define INFINITE 1000000
 #define BASE 1.1
 #define DELAY 0.01
-#define GRANULARITY 30.0
+#define ANGLE (1.0/30.0)
+#define LENGTH (1.0/30.0)
 
 struct GLFWwindow;
 
@@ -72,6 +73,7 @@ enum RollerMode {
 	CylinderMode,
 	ClockMode,
 	NormalMode,
+	ParallelMode,
 	ScaleMode,
 	RollerModes};
 enum TargetMode {

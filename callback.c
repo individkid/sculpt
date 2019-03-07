@@ -94,7 +94,7 @@ float *fixedMatrix(float *matrix)
 
 float *angleMatrix(float *matrix)
 {
-	float angle = pointer->roller/GRANULARITY;
+	float angle = ANGLE*pointer->roller;
 	float sinval = sinf(angle); float cosval = cosf(angle);
 	matrix[0] = cosval; matrix[1] = -sinval; matrix[2] = 0.0;
 	matrix[3] = sinval; matrix[4] = cosval; matrix[5] = 0.0;
@@ -102,11 +102,12 @@ float *angleMatrix(float *matrix)
 	return matrix;
 }
 
-float *tangentPoint(float *point, float *coord)
+float *tangentPoint(float *point)
 {
 	float *normal = pointer->normal;
-	float minus[2]; scalevec(copyvec(minus,normal,2),-1.0,2);
-	float diff[2]; plusvec(copyvec(diff,normal,2),minus,2);
+	float *pierce = pointer->pierce;
+	float minus[2]; scalevec(copyvec(minus,pierce,2),-1.0,2);
+	float diff[2]; plusvec(copyvec(diff,point,2),minus,2);
 	float abs = absval(normal[2]);
 	float dot = dotvec(diff,normal,2);
 	if (abs < 1.0 && absval(dot) > INVALID*abs) return zerovec(point,3);
@@ -132,12 +133,10 @@ float *mouseMatrix(float *matrix)
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
 	case (TangentMode): {
-	float point[3]; tangentPoint(point,pointer->point);
-	float cursor[3]; tangentPoint(cursor,pointer->cursor);
-	float translate[16]; identmat(translate,4);
-	translate[3] = cursor[0]-point[0];
-	translate[7] = cursor[1]-point[1];
-	translate[11] = cursor[2]-point[2];
+	float point[3]; tangentPoint(copyvec(point,pointer->point,2));
+	float cursor[3]; tangentPoint(copyvec(cursor,pointer->cursor,2));
+	float translate[16]; identmat(translate,4); translate[3] = cursor[0]-point[0];
+	translate[7] = cursor[1]-point[1]; translate[11] = cursor[2]-point[2];
 	return copymat(matrix,translate,4);}
 	case (TranslateMode): {
 	float translate[16]; identmat(translate,4);
@@ -173,6 +172,12 @@ float *rollerMatrix(float *matrix)
 	timesmat(timesmat(rotate,zmat,3),inverse,3);
 	identmat(matrix,4); copyary(matrix,rotate,3,4,9);
 	return fixedMatrix(matrix);}
+	case (ParallelMode): {
+	float length = LENGTH*pointer->roller/sqrtf(dotvec(pointer->normal,pointer->normal,3));
+	float offset[3]; scalevec(copyvec(offset,pointer->normal,3),length,3);
+	float translate[16]; identmat(translate,4);
+	translate[3] = offset[0]; translate[7] = offset[1]; translate[11] = offset[2];
+	return copymat(matrix,translate,4);}
 	case (ScaleMode): {
 	scalevec(identmat(matrix,4),powf(BASE,pointer->roller),16);
 	return fixedMatrix(matrix);}
