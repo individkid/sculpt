@@ -144,9 +144,9 @@ struct Response
 struct Command
 {
 	struct Command *next;
+	int feedback; int finish;
 	struct Update *allocs;
 	struct Update *writes;
-	int feedback;
 	struct Update *binds;
 	struct Update *reads;
 	struct Render *renders;

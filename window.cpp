@@ -153,7 +153,7 @@ int Window::compare(const char *pre, std::string str, std::string &res)
     res = str.substr(len,std::string::npos); return 1;
 }
 
-Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), data(this), request(this), response(this)
+Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), data(this), request(this)
 {
 }
 
@@ -230,10 +230,10 @@ void Window::call()
     for (int f = 0; f < nfile; f++) object[f].initFile(f==0);
     glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
     if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
-    todo = query; query = 0; while (todo) {finishCommand(*todo); remove(todo,todo);}
-    if (isSuspend()) {if (pierce) processCommand(*pierce);} else {if (redraw) processCommand(*redraw);}
-    std::string cmdstr; while (data.get(cmdstr)) {processData(cmdstr); glfwPollEvents();}
-    Command *command; while (request.get(command)) {processCommand(*command); glfwPollEvents();}}
+    completeCommand(query);
+    if (isSuspend()) repeatCommand(pierce); else repeatCommand(redraw);
+    std::string cmdstr; while (data.get(cmdstr)) processData(cmdstr);
+    Command *command = 0; while (request.get(command)) consumeCommand(*command);}
     glfwTerminate();
 }
 
@@ -248,6 +248,54 @@ void Window::processData(std::string cmdstr)
     std::string str;
     if (compare("--data",cmdstr,str)) {
     struct Rawdata rawdata; convert(str,rawdata); syncMatrix(&rawdata);}
+    glfwPollEvents();
+}
+
+void Window::repeatCommand(Queue &queue)
+{
+    Command *next = 0;
+    while (next != queue.loop) {
+    next = queue.first;
+    if (!next->finish) processCommand(*next);
+    if (next->finish) finishCommand(*next);
+    glfwPollEvents();
+    if (next->finish) break;
+    deque(queue.first,queue.last);
+    enque(queue.first,queue.last,next);}
+}
+
+void Window::completeCommand(Queue &queue)
+{
+    Command *next = 0;
+    while (next != queue.loop) {
+    next = deque(queue.first,queue.last);
+    if (!next->finish) processCommand(*next);
+    if (next->finish) finishCommand(*next);
+    glfwPollEvents();
+    if (next->finish) enque(queue.first,queue.last,next);}
+    queue.loop = queue.last;
+}
+
+void Window::consumeCommand(Command &command)
+{
+    Command *next = &command;
+    while (next) {
+    if (!next->finish) processCommand(*next);
+    if (next->finish) finishCommand(*next);
+    glfwPollEvents();
+    if (next->finish) enque(query.first,query.last,next);    
+    next = next->next;}
+}
+
+void Window::exchangeCommand(Queue &queue, Command *&command)
+{
+    if (command == queue.first) {
+    queue.first = queue.last = queue.loop = 0;}
+    else {Command *temp = queue.first;
+    while (command) {
+    enque(queue.first,queue.last,command);
+    command = command->next;}
+    queue.loop = queue.last; command = temp;}
 }
 
 void Window::processCommand(Command &command)
@@ -265,21 +313,19 @@ void Window::processCommand(Command &command)
     for (Update *next = command.binds; next; next = next->next) unbindBuffer(*next);
     glBindVertexArray(0); glUseProgram(0);}
     if (command.feedback) glFlush(); else glfwSwapBuffers(window);
-    finishCommand(command);
+    command.finish = 1;
 }
 
 void Window::finishCommand(Command &command)
 {
     for (Update *next = command.reads; next; next = next->next) {
     if (next->done == 0) {next->done = 1; readBuffer(*next);}
-    if (next->done == 0) {insert(query,&command); return;}}
-    for (Command *start = todo; start; start = (start == todo ? query : 0))
-    for (Command *next = start; next; next = next->next)
-    if (next == command.pierce) {insert(query,&command); return;}
-    if (command.pierce) {if (command.pierce == pierce) pierce = 0; else {
-    Command *temp = pierce; pierce = command.pierce; command.pierce = temp;}}
-    if (command.redraw) {if (command.redraw == redraw) redraw = 0; else {
-    Command *temp = redraw; redraw = command.redraw; command.redraw = temp;}}
+    if (next->done == 0) return;}
+    if (command.pierce && pierce.last != pierce.loop) return;
+    if (command.pierce) exchangeCommand(pierce,command.pierce);
+    if (command.redraw) exchangeCommand(redraw,command.redraw);
     for (Response *next = command.response; next; next = next->next)
     object[next->file].polytope->response.put(command);
+    for (Update *next = command.reads; next; next = next->next) next->done = 0;
+    command.finish = 0;
 }

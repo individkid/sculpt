@@ -28,16 +28,22 @@ class Write;
 class Polytope;
 class Read;
 
+struct Queue
+{
+	Command *first;
+	Command *last;
+	Command *loop;
+};
+
 class Window : public Thread
 {
 private:
 	GLFWwindow *window;
 	int nfile; Object *object;
 	Microcode microcode[Programs];
-	Command *redraw;
-	Command *pierce;
-	Command *query;
-	Command *todo;
+	Queue redraw;
+	Queue pierce;
+	Queue query;
 
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
@@ -52,7 +58,6 @@ private:
 public:
 	Message<std::string> data; // get mode change and raw data from Read
 	Message<Command*> request; // get Command from Polytope
-	Message<Command*> response; // send Command back to Polytope
 	Window(int n);
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
@@ -63,6 +68,10 @@ public:
 	virtual void call();
 	virtual void wake();
 	void processData(std::string cmdstr);
+	void repeatCommand(Queue &queue);
+	void completeCommand(Queue &queue);
+	void consumeCommand(Command &command);
+	void exchangeCommand(Queue &queue, Command *&command);
 	void processCommand(Command &command);
 	void finishCommand(Command &command);
 };
