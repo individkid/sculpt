@@ -32,7 +32,6 @@ struct State state = {0};
 int fileCount = 0;
 int testGoon = 1;
 
-void sendAction(struct Rawdata *rawdata);
 void sendData(struct Rawdata *rawdata);
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
@@ -214,15 +213,15 @@ void adjustPolytope()
 
 void triggerAction()
 {
-	struct Rawdata rawdata; rawdata.click = state.click;
+	struct Rawdata rawdata; rawdata.type = ClickType; rawdata.click = state.click;
 	rawdata.file = current.file; rawdata.plane = current.plane;
 	switch (state.click) {
 	case (AdditiveMode):
 	case (SubtractiveMode):
-	sendAction(&rawdata); break;
+	sendData(&rawdata); break;
 	case (RefineMode): {
 	for (int i = 0; i < 3; i++) rawdata.matrix[i] = current.pierce[i];
-	sendAction(&rawdata); break;}
+	sendData(&rawdata); break;}
 	case (TransformMode):
 	changeClick(PierceMode); break;
 	case (SuspendMode):
@@ -253,7 +252,7 @@ void foldMatrix()
 
 void sendMatrix()
 {
-	struct Rawdata rawdata; rawdata.target = state.target;
+	struct Rawdata rawdata; rawdata.type = TargetType; rawdata.target = state.target;
 	rawdata.file = last.file = matrix.file; rawdata.plane = last.plane = matrix.plane;
 	switch (state.target) {
 	case (SessionMode): {
@@ -267,7 +266,7 @@ void sendMatrix()
 	case (FacetMode): {
 	for (int i = 0; i < 16; i++)
 	rawdata.matrix[i] = last.facet[i] = matrix.facet[i];
-	sendAction(&rawdata); break;}
+	sendData(&rawdata); break;}
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
 }
 

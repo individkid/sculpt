@@ -86,6 +86,9 @@ enum FixedMode {
 	InvariantMode,
 	SymbolicMode,
 	FixedModes};
+enum ModeType {
+	TargetType,
+	ClickType};
 struct Format
 {
 	float cursor[2];
@@ -111,6 +114,7 @@ struct Rawdata
 {
 	int file;
 	int plane;
+	enum ModeType type;
 	union {enum TargetMode target; enum ClickMode click;};
 	float matrix[16];
 };

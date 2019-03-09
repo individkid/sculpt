@@ -38,11 +38,6 @@ extern "C" {
 
 extern Window *window;
 
-extern "C" void sendAction(struct Rawdata *rawdata)
-{
-    window->sendAction(rawdata);
-}
-
 extern "C" void sendData(struct Rawdata *rawdata)
 {
     window->sendData(rawdata);
@@ -153,6 +148,94 @@ int Window::compare(const char *pre, std::string str, std::string &res)
     res = str.substr(len,std::string::npos); return 1;
 }
 
+void Window::processData(std::string cmdstr)
+{
+    std::cout << cmdstr;
+    std::string str;
+    if (compare("--data",cmdstr,str)) {
+    struct Rawdata rawdata; convert(str,rawdata); syncMatrix(&rawdata);}
+    glfwPollEvents();
+}
+
+void Window::startQueue(Queue &queue)
+{
+    Command *next = 0;
+    while (next != queue.loop) {
+    next = queue.first;
+    if (!next->finish) processCommand(*next);
+    if (next->finish) finishCommand(*next);
+    glfwPollEvents();
+    if (next->finish) break;
+    deque(queue.first,queue.last);
+    enque(queue.first,queue.last,next);}
+}
+
+void Window::finishQueue(Queue &queue)
+{
+    Command *next = 0;
+    while (next != queue.loop) {
+    next = deque(queue.first,queue.last);
+    if (!next->finish) processCommand(*next);
+    if (next->finish) finishCommand(*next);
+    glfwPollEvents();
+    if (next->finish) enque(queue.first,queue.last,next);}
+    queue.loop = queue.last;
+}
+
+void Window::swapQueue(Queue &queue, Command *&command)
+{
+    if (command == queue.first) {
+    queue.first = queue.last = queue.loop = 0;}
+    else {Command *temp = queue.first;
+    while (command) {
+    enque(queue.first,queue.last,command);
+    command = command->next;}
+    queue.loop = queue.last; command = temp;}
+}
+
+void Window::startCommand(Queue &queue, Command &command)
+{
+    Command *next = &command;
+    while (next) {
+    if (!next->finish) processCommand(*next);
+    if (next->finish) finishCommand(*next);
+    glfwPollEvents();
+    if (next->finish) enque(queue.first,queue.last,next);    
+    next = next->next;}
+}
+
+void Window::processCommand(Command &command)
+{
+    for (Update *next = command.allocs; next; next = next->next) allocBuffer(*next);
+    for (Update *next = command.writes; next; next = next->next) writeBuffer(*next);
+    for (Render *next = command.renders; next; next = next->next) {
+    Render &render = *next; Microcode &program = microcode[render.program];
+    glUseProgram(program.handle); glBindVertexArray(object[render.file].vao[render.program][render.space]);
+    for (Update *next = command.binds; next; next = next->next) bindBuffer(*next);
+    if (command.feedback) {glEnable(GL_RASTERIZER_DISCARD); glBeginTransformFeedback(program.primitive);}
+    if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
+    if (render.size) glDrawArrays(program.mode,render.base,render.size);
+    if (command.feedback) {glEndTransformFeedback(); glDisable(GL_RASTERIZER_DISCARD);}
+    for (Update *next = command.binds; next; next = next->next) unbindBuffer(*next);
+    glBindVertexArray(0); glUseProgram(0);}
+    if (command.feedback) glFlush(); else glfwSwapBuffers(window);
+    command.finish = 1;
+}
+
+void Window::finishCommand(Command &command)
+{
+    for (Update *next = command.reads; next; next = next->next) {
+    if (next->done == 0) {next->done = 1; readBuffer(*next);}
+    if (next->done == 0) return;}
+    if (command.pierce && pierce.last != pierce.loop) return;
+    if (command.pierce) swapQueue(pierce,command.pierce);
+    if (command.redraw) swapQueue(redraw,command.redraw);
+    for (Response *next = command.response; next; next = next->next)
+    object[next->file].polytope->response.put(command);
+    for (Update *next = command.reads; next; next = next->next) next->done = 0;
+    command.finish = 0;
+}
+
 Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), data(this), request(this)
 {
 }
@@ -175,14 +258,12 @@ void Window::connect(int i, Read *ptr)
     object[i].read = ptr;
 }
 
-void Window::sendAction(Rawdata *rawdata)
-{
-    object[rawdata->file].polytope->action.put(*rawdata);
-}
-
 void Window::sendData(Rawdata *rawdata)
 {
-    object[rawdata->file].write->data.put(convert(*rawdata));
+    switch (rawdata->type) {
+    case (ClickType): object[rawdata->file].polytope->action.put(*rawdata); break;
+    case (TargetType): object[rawdata->file].write->data.put(convert(*rawdata)); break;
+    default: error("sendData",rawdata->type,__FILE__,__LINE__); break;}
 }
 
 void Window::warpCursor(float *cursor)
@@ -230,102 +311,13 @@ void Window::call()
     for (int f = 0; f < nfile; f++) object[f].initFile(f==0);
     glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
     if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
-    completeCommand(query);
-    if (isSuspend()) repeatCommand(pierce); else repeatCommand(redraw);
+    finishQueue(query); if (isSuspend()) startQueue(pierce); else startQueue(redraw);
     std::string cmdstr; while (data.get(cmdstr)) processData(cmdstr);
-    Command *command = 0; while (request.get(command)) consumeCommand(*command);}
+    Command *command = 0; while (request.get(command)) startCommand(query,*command);}
     glfwTerminate();
 }
 
 void Window::wake()
 {
 	glfwPostEmptyEvent();
-}
-
-void Window::processData(std::string cmdstr)
-{
-    std::cout << cmdstr;
-    std::string str;
-    if (compare("--data",cmdstr,str)) {
-    struct Rawdata rawdata; convert(str,rawdata); syncMatrix(&rawdata);}
-    glfwPollEvents();
-}
-
-void Window::repeatCommand(Queue &queue)
-{
-    Command *next = 0;
-    while (next != queue.loop) {
-    next = queue.first;
-    if (!next->finish) processCommand(*next);
-    if (next->finish) finishCommand(*next);
-    glfwPollEvents();
-    if (next->finish) break;
-    deque(queue.first,queue.last);
-    enque(queue.first,queue.last,next);}
-}
-
-void Window::completeCommand(Queue &queue)
-{
-    Command *next = 0;
-    while (next != queue.loop) {
-    next = deque(queue.first,queue.last);
-    if (!next->finish) processCommand(*next);
-    if (next->finish) finishCommand(*next);
-    glfwPollEvents();
-    if (next->finish) enque(queue.first,queue.last,next);}
-    queue.loop = queue.last;
-}
-
-void Window::consumeCommand(Command &command)
-{
-    Command *next = &command;
-    while (next) {
-    if (!next->finish) processCommand(*next);
-    if (next->finish) finishCommand(*next);
-    glfwPollEvents();
-    if (next->finish) enque(query.first,query.last,next);    
-    next = next->next;}
-}
-
-void Window::exchangeCommand(Queue &queue, Command *&command)
-{
-    if (command == queue.first) {
-    queue.first = queue.last = queue.loop = 0;}
-    else {Command *temp = queue.first;
-    while (command) {
-    enque(queue.first,queue.last,command);
-    command = command->next;}
-    queue.loop = queue.last; command = temp;}
-}
-
-void Window::processCommand(Command &command)
-{
-    for (Update *next = command.allocs; next; next = next->next) allocBuffer(*next);
-    for (Update *next = command.writes; next; next = next->next) writeBuffer(*next);
-    for (Render *next = command.renders; next; next = next->next) {
-    Render &render = *next; Microcode &program = microcode[render.program];
-    glUseProgram(program.handle); glBindVertexArray(object[render.file].vao[render.program][render.space]);
-    for (Update *next = command.binds; next; next = next->next) bindBuffer(*next);
-    if (command.feedback) {glEnable(GL_RASTERIZER_DISCARD); glBeginTransformFeedback(program.primitive);}
-    if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
-    if (render.size) glDrawArrays(program.mode,render.base,render.size);
-    if (command.feedback) {glEndTransformFeedback(); glDisable(GL_RASTERIZER_DISCARD);}
-    for (Update *next = command.binds; next; next = next->next) unbindBuffer(*next);
-    glBindVertexArray(0); glUseProgram(0);}
-    if (command.feedback) glFlush(); else glfwSwapBuffers(window);
-    command.finish = 1;
-}
-
-void Window::finishCommand(Command &command)
-{
-    for (Update *next = command.reads; next; next = next->next) {
-    if (next->done == 0) {next->done = 1; readBuffer(*next);}
-    if (next->done == 0) return;}
-    if (command.pierce && pierce.last != pierce.loop) return;
-    if (command.pierce) exchangeCommand(pierce,command.pierce);
-    if (command.redraw) exchangeCommand(redraw,command.redraw);
-    for (Response *next = command.response; next; next = next->next)
-    object[next->file].polytope->response.put(command);
-    for (Update *next = command.reads; next; next = next->next) next->done = 0;
-    command.finish = 0;
 }

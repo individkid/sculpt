@@ -57,7 +57,7 @@ void Read::wait()
 {
 	int num; char chr; struct flock lock; struct stat size;
 	// try to get writelock at eof to infinity, and block on read from pipe if successful and still at end, releasing after appending to file from pipe
-	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET; num = fcntl(file,F_GETLK,&lock); lock.l_type = F_UNLCK;
+	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET; num = fcntl(file,F_SETLK,&lock); lock.l_type = F_UNLCK;
 	if (num < 0) {if (errno == EAGAIN) return; else error("fcntl failed",errno,__FILE__,__LINE__);}
 	if (fstat(file, &size) < 0) error("fstat failed",errno,__FILE__,__LINE__);
 	if (size.st_size > fpos) {if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}

@@ -20,7 +20,7 @@ The -- commands are as follows.
 --normal change roller mode to rotate around normal to clicked facet through pierce point  
 --parallel change roller mode to translate parallel to the normal to the pierced facet  
 --scale change roller mode to scale with clicked point fixed  
---rotate change mouse mode to tip target from focal point to pierce point  
+--rotate change mouse mode to tip target from pierce point to cursor point  
 --tanget change mouse mode to translate parallel to clicked facet  
 --translate change mouse mode to translate parallel to picture plane  
 --session change transform target to all observed facets  
@@ -39,9 +39,12 @@ The -- commands are as follows.
 --region two lists of bnames and whether the indicated region is in the polytope  
 --inflate mark inside regions as in, and outside regions as not in the polytope  
 --picture "bname" filename for texture  
---sounde "sname" coefficients, variables as references to snames and mnames, equations as quotients of sums of terms of one coefficients and up to three variables, value as equation, value change delay as equation, reschedule delay as equation, sound contribution as equation  
+--sound "sname" coefficients, variables as references to snames and mnames, equations as quotients of sums of terms of one coefficients and up to three variables, value as equation, value change delay as equation, reschedule delay as equation, sound contribution as equation  
 --metric "mname" script, refers to features, returns value  
 --script "bname" script, attached to plane, takes pierce point, has side effects, returns whether click does its thing  
+--command send command to window thread  
+--configure change aspect ratio granularity base delay etc  
+--test run tests of functions in the polytope thread  
 
 For example, --plane sends a stuct to the Polytope thread that sends a Command to the Window thread to append the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.
 

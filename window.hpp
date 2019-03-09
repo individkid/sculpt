@@ -55,6 +55,13 @@ private:
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
 	int compare(const char *pre, std::string str, std::string &res);
+	void processData(std::string cmdstr);
+	void startQueue(Queue &queue);
+	void finishQueue(Queue &queue);
+	void swapQueue(Queue &queue, Command *&command);
+	void startCommand(Queue &queue, Command &command);
+	void processCommand(Command &command);
+	void finishCommand(Command &command);
 public:
 	Message<std::string> data; // get mode change and raw data from Read
 	Message<Command*> request; // get Command from Polytope
@@ -62,18 +69,10 @@ public:
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(int i, Read *ptr);
-	void sendAction(Rawdata *rawdata);
 	void sendData(Rawdata *rawdata);
 	void warpCursor(float *cursor);
 	virtual void call();
 	virtual void wake();
-	void processData(std::string cmdstr);
-	void repeatCommand(Queue &queue);
-	void completeCommand(Queue &queue);
-	void consumeCommand(Command &command);
-	void exchangeCommand(Queue &queue, Command *&command);
-	void processCommand(Command &command);
-	void finishCommand(Command &command);
 };
 
 #endif
