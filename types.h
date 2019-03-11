@@ -16,8 +16,8 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef TYPES_HPP
-#define TYPES_HPP
+#ifndef TYPES_H
+#define TYPES_H
 
 #define INFINITE 1000000
 #define BASE 1.1
@@ -88,7 +88,18 @@ enum FixedMode {
 	FixedModes};
 enum ModeType {
 	TargetType,
-	ClickType};
+	ClickType,
+	ModeTypes};
+enum ThreadType {
+	ReadType,
+	PolytopeType,
+	ThreadTypes};
+enum Field {
+	AllocField,
+	WriteField,
+	BindField,
+	ReadField,
+	Fields};
 struct Format
 {
 	float cursor[2];
@@ -126,7 +137,8 @@ struct Update
 	union {int offset; int width;};
 	union {int size; int height;};
 	MYuint handle;
-	union {char *data; MYuint *query; struct Format *format; struct Feedback *feedback; struct Rawdata *rawdata;};
+	union {char *data; float *scalar; MYuint *query;
+	struct Format *format; struct Feedback *feedback; struct Rawdata *rawdata;};
 	void (*function)(int, struct Update *);
 	int done;
 };
@@ -143,17 +155,15 @@ struct Render
 struct Response
 {
 	struct Response *next;
+	enum ThreadType thread;
 	int file;
 };
 struct Command
 {
 	struct Command *next;
 	int feedback; int finish;
-	struct Update *allocs;
-	struct Update *writes;
-	struct Update *binds;
-	struct Update *reads;
-	struct Render *renders;
+	struct Update *update[Fields];
+	struct Render *render;
 	struct Command *redraw;
 	struct Command *pierce;
 	struct Response *response;

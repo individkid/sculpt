@@ -54,7 +54,6 @@ private:
 	void writeTexture2d(Update &update);
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
-	int compare(const char *pre, std::string str, std::string &res);
 	void processData(std::string cmdstr);
 	void startQueue(Queue &queue);
 	void finishQueue(Queue &queue);

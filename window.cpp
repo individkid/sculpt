@@ -141,18 +141,13 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-int Window::compare(const char *pre, std::string str, std::string &res)
-{
-    int len = strlen(pre);
-    if (str.substr(0,len) != pre) return 0;
-    res = str.substr(len,std::string::npos); return 1;
-}
-
 void Window::processData(std::string cmdstr)
 {
     std::cout << cmdstr;
-    std::string str;
-    if (compare("--data",cmdstr,str)) {
+    const char *pre = "--rawdata";
+    int len = strlen(pre);
+    if (cmdstr.substr(0,len) == pre) {
+    std::string str = cmdstr.substr(len,std::string::npos);
     struct Rawdata rawdata; convert(str,rawdata); syncMatrix(&rawdata);}
     glfwPollEvents();
 }
@@ -206,17 +201,17 @@ void Window::startCommand(Queue &queue, Command &command)
 
 void Window::processCommand(Command &command)
 {
-    for (Update *next = command.allocs; next; next = next->next) allocBuffer(*next);
-    for (Update *next = command.writes; next; next = next->next) writeBuffer(*next);
-    for (Render *next = command.renders; next; next = next->next) {
+    for (Update *next = command.update[AllocField]; next; next = next->next) allocBuffer(*next);
+    for (Update *next = command.update[WriteField]; next; next = next->next) writeBuffer(*next);
+    for (Render *next = command.render; next; next = next->next) {
     Render &render = *next; Microcode &program = microcode[render.program];
     glUseProgram(program.handle); glBindVertexArray(object[render.file].vao[render.program][render.space]);
-    for (Update *next = command.binds; next; next = next->next) bindBuffer(*next);
+    for (Update *next = command.update[BindField]; next; next = next->next) bindBuffer(*next);
     if (command.feedback) {glEnable(GL_RASTERIZER_DISCARD); glBeginTransformFeedback(program.primitive);}
     if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));
     if (render.size) glDrawArrays(program.mode,render.base,render.size);
     if (command.feedback) {glEndTransformFeedback(); glDisable(GL_RASTERIZER_DISCARD);}
-    for (Update *next = command.binds; next; next = next->next) unbindBuffer(*next);
+    for (Update *next = command.update[BindField]; next; next = next->next) unbindBuffer(*next);
     glBindVertexArray(0); glUseProgram(0);}
     if (command.feedback) glFlush(); else glfwSwapBuffers(window);
     command.finish = 1;
@@ -224,15 +219,18 @@ void Window::processCommand(Command &command)
 
 void Window::finishCommand(Command &command)
 {
-    for (Update *next = command.reads; next; next = next->next) {
+    for (Update *next = command.update[ReadField]; next; next = next->next) {
     if (next->done == 0) {next->done = 1; readBuffer(*next);}
     if (next->done == 0) return;}
     if (command.pierce && pierce.last != pierce.loop) return;
     if (command.pierce) swapQueue(pierce,command.pierce);
     if (command.redraw) swapQueue(redraw,command.redraw);
     for (Response *next = command.response; next; next = next->next)
-    object[next->file].polytope->response.put(command);
-    for (Update *next = command.reads; next; next = next->next) next->done = 0;
+    switch (next->thread) {
+    case (ReadType): object[next->file].read->response.put(command); break;
+    case (PolytopeType): object[next->file].polytope->response.put(command); break;
+    default: error("finishCommand",next->thread,__FILE__,__LINE__); break;}
+    for (Update *next = command.update[ReadType]; next; next = next->next) next->done = 0;
     command.finish = 0;
 }
 
