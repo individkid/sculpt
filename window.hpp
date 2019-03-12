@@ -68,7 +68,7 @@ public:
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(int i, Read *ptr);
-	void sendData(Rawdata *rawdata);
+	void sendData(Data *data);
 	void warpCursor(float *cursor);
 	virtual void call();
 	virtual void wake();

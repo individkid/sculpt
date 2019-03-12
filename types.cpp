@@ -29,7 +29,15 @@ extern "C" void checkQuery(int file, struct Update *update);
 Pool<Command> commands;
 Pool<Update> updates;
 Pool<Render> renders;
-Pool<char> pools[10]; // TODO way to return array of given type
+class Power {
+private:
+	Pool<char> *pools[10];
+public:
+	Power() {for (int i = 0; i < 10; i++) pools[i] = 0;}
+	Pool<char> &operator[](int i) {
+		if (!pools[i]) pools[i] = new Pool<char>(1<<i);
+		return *pools[i];}
+} pools;
 
 const char *field[] = {"AllocField","WriteField","BindField","ReadField",0};
 const char *buffer[] = {
@@ -63,23 +71,20 @@ Update *parseUpdate(const char *&ptr)
 	if (sscanf(ptr," %d%n",&update->file,&opt) == 2) ptr += opt; else return 0;
 	for (i = 0; i < Buffers; i++) {
 		std::string str = " "; str += buffer[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; update->buffer = (Buffer)i; break;}
-	}
+		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; update->buffer = (Buffer)i; break;}}
 	if (i == Buffers) return 0;
 	if (sscanf(ptr," %d%n",&update->offset,&opt) == 2) ptr += opt; else return 0;
 	if (sscanf(ptr," %d%n",&update->size,&opt) == 2) ptr += opt; else return 0;
 	int siz = (update->buffer == Texture0 || update->buffer == Texture1 ?
 		update->width*update->height*3 + (4-(update->width*3)%4)*update->height : update->size);
-	int pow = 0; while (siz>(1<<pow)) pow++; update->data = pools[pow].get();
+	int pow = 0; while (siz>(1<<pow)) pow++; update->text = pools[pow].get();
 	for (i = 0; i < siz; i++) {
 		unsigned val;
 		if (sscanf(ptr," %2x%n",&val,&opt) == 2) ptr += opt; else return 0;
-		update->data[i] = val;
-	}
+		update->text[i] = val;}
 	for (i = 0; name[i]; i++) {
 		std::string str = " "; str += name[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; update->function = function[i]; break;}
-	}
+		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; update->function = function[i]; break;}}
 	return update;
 }
 
@@ -89,13 +94,11 @@ Render *parseRender(const char *&ptr)
 	if (sscanf(ptr," %d%n",&render->file,&opt) == 2) ptr += opt; else return 0;
 	for (i = 0; i < Programs; i++) {
 		std::string str = " "; str += program[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; render->program = (Program)i; break;}
-	}
+		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; render->program = (Program)i; break;}}
 	if (i == Programs) return 0;
 	for (i = 0; i < Spaces; i++) {
 		std::string str = " "; str += space[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; render->space = (Space)i; break;}
-	}
+		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; render->space = (Space)i; break;}}
 	if (i == Spaces) return 0;
 	if (sscanf(ptr," %d%n",&render->base,&opt) == 2) ptr += opt; else return 0;
 	if (sscanf(ptr," %d%n",&render->count,&opt) == 2) ptr += opt; else return 0;
@@ -112,24 +115,19 @@ Command *parseCommand(const char *&ptr)
 		while (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt;
 			Update *update = parseUpdate(ptr);
 			if (!update) return 0;
-			insert(command->update[(Field)i],update);
-		}
-	}
+			insert(command->update[(Field)i],update);}}
 	while (sscanf(ptr," render%n",&opt) == 1) {ptr += opt;
 		Render *render = parseRender(ptr);
 		if (!render) return 0;
-		insert(command->render,render);
-	}
+		insert(command->render,render);}
 	if (sscanf(ptr," redraw%n",&opt) == 1) {ptr += opt;
 		Command *redraw = parseCommand(ptr);
 		if (!redraw) return 0;
-		command->redraw = redraw;
-	}
+		command->redraw = redraw;}
 	if (sscanf(ptr," pierce%n",&opt) == 1) {ptr += opt;
 		Command *pierce = parseCommand(ptr);
 		if (!pierce) return 0;
-		command->pierce = pierce;
-	}
+		command->pierce = pierce;}
 	return command;
 }
 
@@ -146,7 +144,5 @@ void parse(std::string str, Message<Command*> &request)
 		if (sscanf(ptr,"--command%n",&opt) == 1) {ptr += opt;
 			Command *command = parseCommand(ptr);
 			if (!command) {skip(ptr); continue;}
-			request.put(command);
-		}
-	}
+			request.put(command);}}
 }

@@ -121,13 +121,14 @@ struct Feedback
 	float normal[3];
 	int plane;
 };
-struct Rawdata
+struct Data
 {
 	int file;
 	int plane;
+	enum ThreadType thread;
 	enum ModeType type;
 	union {enum TargetMode target; enum ClickMode click;};
-	float matrix[16];
+	union {float matrix[16]; char *text;};
 };
 struct Update
 {
@@ -137,8 +138,8 @@ struct Update
 	union {int offset; int width;};
 	union {int size; int height;};
 	MYuint handle;
-	union {char *data; float *scalar; MYuint *query;
-	struct Format *format; struct Feedback *feedback; struct Rawdata *rawdata;};
+	union {char *text; float *scalar; MYuint *query;
+	struct Format *format; struct Feedback *feedback; struct Data *data;};
 	void (*function)(int, struct Update *);
 	int done;
 };
@@ -155,8 +156,8 @@ struct Render
 struct Response
 {
 	struct Response *next;
-	enum ThreadType thread;
 	int file;
+	enum ThreadType thread;
 };
 struct Command
 {

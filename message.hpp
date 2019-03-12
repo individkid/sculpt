@@ -130,11 +130,12 @@ class Pool
 private:
 	Next<T*> *full;
 	Next<T*> *free;
+	int size;
 public:
-	Pool() : full(0), free(0) {}
+	Pool(int s = 1) : full(0), free(0), size(s) {}
 	T *get()
 	{
-		if (!full) return new T();
+		if (!full) return (size == 1 ? new T() : new T[size]);
 		Next<T*> *ptr = full; remove(full,ptr); insert(free,ptr);
 		return ptr->box;
 	}

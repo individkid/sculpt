@@ -38,9 +38,9 @@ extern "C" {
 
 extern Window *window;
 
-extern "C" void sendData(struct Rawdata *rawdata)
+extern "C" void sendData(struct Data *data)
 {
-    window->sendData(rawdata);
+    window->sendData(data);
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -144,11 +144,11 @@ void Window::unbindTexture2d()
 void Window::processData(std::string cmdstr)
 {
     std::cout << cmdstr;
-    const char *pre = "--rawdata";
+    const char *pre = "--data";
     int len = strlen(pre);
     if (cmdstr.substr(0,len) == pre) {
     std::string str = cmdstr.substr(len,std::string::npos);
-    struct Rawdata rawdata; convert(str,rawdata); syncMatrix(&rawdata);}
+    struct Data data; convert(str,data); syncMatrix(&data);}
     glfwPollEvents();
 }
 
@@ -227,8 +227,8 @@ void Window::finishCommand(Command &command)
     if (command.redraw) swapQueue(redraw,command.redraw);
     for (Response *next = command.response; next; next = next->next)
     switch (next->thread) {
-    case (ReadType): object[next->file].read->response.put(command); break;
-    case (PolytopeType): object[next->file].polytope->response.put(command); break;
+    case (ReadType): object[next->file].read->response.put(&command); break;
+    case (PolytopeType): object[next->file].polytope->response.put(&command); break;
     default: error("finishCommand",next->thread,__FILE__,__LINE__); break;}
     for (Update *next = command.update[ReadType]; next; next = next->next) next->done = 0;
     command.finish = 0;
@@ -256,12 +256,12 @@ void Window::connect(int i, Read *ptr)
     object[i].read = ptr;
 }
 
-void Window::sendData(Rawdata *rawdata)
+void Window::sendData(Data *data)
 {
-    switch (rawdata->type) {
-    case (ClickType): object[rawdata->file].polytope->action.put(*rawdata); break;
-    case (TargetType): object[rawdata->file].write->data.put(convert(*rawdata)); break;
-    default: error("sendData",rawdata->type,__FILE__,__LINE__); break;}
+    switch (data->type) {
+    case (ClickType): object[data->file].polytope->action.put(data); break;
+    case (TargetType): object[data->file].write->data.put(convert(data)); break;
+    default: error("sendData",data->type,__FILE__,__LINE__); break;}
 }
 
 void Window::warpCursor(float *cursor)
