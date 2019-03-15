@@ -137,3 +137,7 @@ void parse(const char *str, Message<Command*> &request)
 			if (!command) {skip(ptr); continue;}
 			request.put(command);}}
 }
+
+void unparseCommand(Command *command)
+{
+}
