@@ -31,7 +31,7 @@ static Power<char> chars;
 
 void unparseCommand(Command *command);
 
-Read::Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), name(n), file(-1), pipe(-1), self(i), fpos(0)
+Read::Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), response(this), reuse(this), name(n), file(-1), pipe(-1), self(i), fpos(0)
 {
 	gl.connect(i,this);
 }

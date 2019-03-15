@@ -255,7 +255,7 @@ void Window::finishCommand(Command &command)
     command.finish = 0;
 }
 
-Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), data(this), request(this)
+Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), response(this), data(this), request(this)
 {
 }
 
