@@ -157,6 +157,11 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
+void Window::processResponse(Data &data)
+{
+    if (data.matrix) floats.put(16,data.matrix); datas.put(&data);
+}
+
 void Window::processData(Data &data)
 {
     if (data.conf == TestConf) printf("%s",data.text);
@@ -326,7 +331,8 @@ void Window::call()
     glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
     if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
     finishQueue(query); if (isSuspend()) startQueue(pierce); else startQueue(redraw);
-    Data *msg = 0; while (data.get(msg)) processData(*msg);
+    Data *msg = 0; while (response.get(msg)) processResponse(*msg);
+    msg = 0; while (data.get(msg)) processData(*msg);
     Command *command = 0; while (request.get(command)) startCommand(query,*command);}
     glfwTerminate();
 }

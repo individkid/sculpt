@@ -52,7 +52,7 @@ void Read::call()
 	// read to eof
 	char *cmdstr = setup(chars,""); int num; char chr;
 	while ((num = ::read(file, &chr, 1)) == 1) {
-		cmdstr = concat(chars,cmdstr,chr); fpos++;}
+	cmdstr = concat(chars,cmdstr,chr); fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
 	while (*cmdstr) {
 	int len = 0; while (cmdstr[len])

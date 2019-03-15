@@ -54,6 +54,7 @@ private:
 	void writeTexture2d(Update &update);
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
+	void processResponse(Data &data);
 	void processData(Data &data);
 	void startQueue(Queue &queue);
 	void finishQueue(Queue &queue);
@@ -62,6 +63,7 @@ private:
 	void processCommand(Command &command);
 	void finishCommand(Command &command);
 public:
+	Message<Data*> response; // deallocate matrix change sent to write
 	Message<Data*> data; // get mode change and raw data from Read
 	Message<Command*> request; // get Command from Polytope
 	Window(int n);
