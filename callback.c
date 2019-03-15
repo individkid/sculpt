@@ -32,9 +32,10 @@ struct State state = {0};
 int fileCount = 0;
 int testGoon = 1;
 
-void sendData(struct Data *data);
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
+void sendTopology(int file, int plane, float *point, enum Configure conf);
+void sendWrite(int file, int plane, float *matrix, enum Configure conf);
 
 int isSuspend()
 {
@@ -213,20 +214,12 @@ void adjustPolytope()
 
 void triggerAction()
 {
-	struct Data data; data.type = ClickType; data.click = state.click;
-	data.file = current.file; data.plane = current.plane;
 	switch (state.click) {
-	case (AdditiveMode):
-	case (SubtractiveMode):
-	sendData(&data); break;
-	case (RefineMode): {
-	for (int i = 0; i < 3; i++) data.matrix[i] = current.pierce[i];
-	sendData(&data); break;}
-	case (TransformMode):
-	changeClick(PierceMode); break;
-	case (SuspendMode):
-	case (PierceMode):
-	changeClick(TransformMode); break;
+	case (AdditiveMode): sendTopology(current.file,current.plane,current.pierce,AdditiveConf); break;
+	case (SubtractiveMode): sendTopology(current.file,current.plane,current.pierce,SubtractiveConf); break;
+	case (RefineMode): sendTopology(current.file,current.plane,current.pierce,RefineConf); break;	
+	case (TransformMode): changeClick(PierceMode); break;
+	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
 	default: displayError(state.click,"invalid state.click"); exit(-1);}
 }
 
@@ -252,39 +245,34 @@ void foldMatrix()
 
 void sendMatrix()
 {
-	struct Data data; data.type = TargetType; data.target = state.target;
-	data.file = last.file = matrix.file; data.plane = last.plane = matrix.plane;
 	switch (state.target) {
-	case (SessionMode): {
-	for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.session[i] = matrix.session[i];
-	sendData(&data); break;}
-	case (PolytopeMode): {
-	for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
-	sendData(&data); break;}
-	case (FacetMode): {
-	for (int i = 0; i < 16; i++)
-	data.matrix[i] = last.facet[i] = matrix.facet[i];
-	sendData(&data); break;}
+	case (SessionMode):
+	for (int i = 0; i < 16; i++) last.session[i] = matrix.session[i];
+	sendWrite(matrix.file,matrix.plane,matrix.session,SessionConf); break;
+	case (PolytopeMode):
+	for (int i = 0; i < 16; i++) last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
+	sendWrite(matrix.file,matrix.plane,matrix.session,PolytopeConf); break;
+	case (FacetMode):
+	for (int i = 0; i < 16; i++) last.facet[i] = matrix.facet[i];
+	sendWrite(matrix.file,matrix.plane,matrix.session,FacetConf); break;
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
 }
 
 void syncMatrix(struct Data *data)
 {
-	switch (data->target) {
-	case (SessionMode): {
+	switch (data->conf) {
+	case (SessionConf): {
 	float invert[16]; invmat(copymat(invert,last.session,4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
 	timesmat(copymat(matrix.session,data->matrix,4),delta,4); break;}
-	case (PolytopeMode): {
+	case (PolytopeConf): {
 	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
 	timesmat(copymat(matrix.polytope[data->file],data->matrix,4),delta,4); break;}
-	case (FacetMode): {
+	case (FacetConf): {
 	if (data->file == matrix.file && data->plane == matrix.plane) identmat(matrix.facet,4);
 	if (data->file == last.file && data->plane == last.plane) identmat(last.facet,4); break;}
-	default: displayError(data->target,"invalid data->target"); exit(-1);}
+	default: displayError(data->conf,"invalid data->conf"); exit(-1);}
 }
 
 void setData(int file, struct Update *update)
@@ -324,7 +312,7 @@ void putUniform(int file, struct Update *update)
 
 void checkQuery(int file, struct Update *update)
 {
-	if (*update->query < update->size) update->done = 0;
+	if (*update->query >= update->size) update->finish = 0;
 }
 
 void changeClick(enum ClickMode mode)

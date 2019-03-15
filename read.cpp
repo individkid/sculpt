@@ -26,6 +26,9 @@
 #include "window.hpp"
 #include "polytope.hpp"
 
+static Pool<Data> datas;
+static Power<char> chars;
+
 Read::Read(int i, Window &gl, Polytope &r, const char *n) : Thread(), data(gl), read(r), name(n), file(-1), pipe(-1), self(i), fpos(0)
 {
 	gl.connect(i,this);
@@ -42,15 +45,20 @@ void Read::init()
 void Read::call()
 {
 	// read to eof
-	std::string cmdstr; int num; char chr;
-	while ((num = ::read(file, &chr, 1)) == 1) {cmdstr += chr; fpos++;}
+	char *cmdstr = setup(chars,""); int num; char chr;
+	while ((num = ::read(file, &chr, 1)) == 1) {
+		cmdstr = concat(chars,cmdstr,chr); fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
-	while (cmdstr.size()) {
-	int pre = prestr(cmdstr.substr(2,std::string::npos),"--");
-	int len = 2+pre;
-	std::string substr = cmdstr.substr(0,len);
-	cmdstr = cmdstr.substr(len,std::string::npos);
-	if (cmpstr(substr,"--test") > 0) data.data.put(substr); else read.read.put(substr);}
+	while (*cmdstr) {
+	int len = 0; while (cmdstr[len])
+	if (len > 1 && cmdstr[len+1] == '-' && cmdstr[len+2] == '-') break; else len++;
+	char *substr = prefix(chars,cmdstr,len);
+	cmdstr = postfix(chars,cmdstr,strlen(cmdstr)-len);
+	const char *pat = "--test";
+	Data *msg = datas.get();
+	msg->text = substr; msg->thread = ReadType;
+	msg->conf = TestConf; msg->file = self;
+	if (strncmp(substr,pat,strlen(pat)) == 0) data.data.put(msg); else read.read.put(msg);}
 }
 
 void Read::wait()

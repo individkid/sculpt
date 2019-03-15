@@ -36,6 +36,7 @@ private:
 	off_t fpos;
 public:
 	Message<Command*> response; // get Command from Window
+	Message<Data*> reuse; // deallocate used Data
 	Read(int i, Window &gl, Polytope &r, const char *n);
 	virtual void init();
 	virtual void call();

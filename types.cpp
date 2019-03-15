@@ -17,7 +17,6 @@
 */
 
 #include <stdio.h>
-#include <string>
 #include "types.h"
 #include "message.hpp"
 
@@ -26,18 +25,10 @@ extern "C" void getUniform(int file, struct Update *update);
 extern "C" void putUniform(int file, struct Update *update);
 extern "C" void checkQuery(int file, struct Update *update);
 
-Pool<Command> commands;
-Pool<Update> updates;
-Pool<Render> renders;
-class Power {
-private:
-	Pool<char> *pools[10];
-public:
-	Power() {for (int i = 0; i < 10; i++) pools[i] = 0;}
-	Pool<char> &operator[](int i) {
-		if (!pools[i]) pools[i] = new Pool<char>(1<<i);
-		return *pools[i];}
-} pools;
+static Pool<Command> commands;
+static Pool<Update> updates;
+static Pool<Render> renders;
+static Power<char> chars;
 
 const char *field[] = {"AllocField","WriteField","BindField","ReadField",0};
 const char *buffer[] = {
@@ -70,21 +61,21 @@ Update *parseUpdate(const char *&ptr)
 	Update init = {0}; Update *update = updates.get(); *update = init; int opt, i;
 	if (sscanf(ptr," %d%n",&update->file,&opt) == 2) ptr += opt; else return 0;
 	for (i = 0; i < Buffers; i++) {
-		std::string str = " "; str += buffer[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; update->buffer = (Buffer)i; break;}}
+		const char *str = cleanup(chars,concat(chars,concat(chars," ",buffer[i]),"%n"));
+		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; update->buffer = (Buffer)i; break;}}
 	if (i == Buffers) return 0;
 	if (sscanf(ptr," %d%n",&update->offset,&opt) == 2) ptr += opt; else return 0;
 	if (sscanf(ptr," %d%n",&update->size,&opt) == 2) ptr += opt; else return 0;
 	int siz = (update->buffer == Texture0 || update->buffer == Texture1 ?
 		update->width*update->height*3 + (4-(update->width*3)%4)*update->height : update->size);
-	int pow = 0; while (siz>(1<<pow)) pow++; update->text = pools[pow].get();
+	update->text = chars.get(siz);
 	for (i = 0; i < siz; i++) {
 		unsigned val;
 		if (sscanf(ptr," %2x%n",&val,&opt) == 2) ptr += opt; else return 0;
 		update->text[i] = val;}
 	for (i = 0; name[i]; i++) {
-		std::string str = " "; str += name[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; update->function = function[i]; break;}}
+		const char *str = cleanup(chars,concat(chars,concat(chars," ",name[i]),"%n"));
+		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; update->function = function[i]; break;}}
 	return update;
 }
 
@@ -93,12 +84,12 @@ Render *parseRender(const char *&ptr)
 	Render init = {0}; Render *render = renders.get(); *render = init; int opt, i;
 	if (sscanf(ptr," %d%n",&render->file,&opt) == 2) ptr += opt; else return 0;
 	for (i = 0; i < Programs; i++) {
-		std::string str = " "; str += program[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; render->program = (Program)i; break;}}
+		const char *str = cleanup(chars,concat(chars,concat(chars," ",program[i]),"%n"));
+		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; render->program = (Program)i; break;}}
 	if (i == Programs) return 0;
 	for (i = 0; i < Spaces; i++) {
-		std::string str = " "; str += space[i]; str += "%n";
-		if (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt; render->space = (Space)i; break;}}
+		const char *str = cleanup(chars,concat(chars,concat(chars," ",space[i]),"%n"));
+		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; render->space = (Space)i; break;}}
 	if (i == Spaces) return 0;
 	if (sscanf(ptr," %d%n",&render->base,&opt) == 2) ptr += opt; else return 0;
 	if (sscanf(ptr," %d%n",&render->count,&opt) == 2) ptr += opt; else return 0;
@@ -111,8 +102,8 @@ Command *parseCommand(const char *&ptr)
 	Command init = {0}; Command *command = commands.get(); *command = init; int opt;
 	if (sscanf(ptr," feedback%n",&opt) == 1) {ptr += opt; command->feedback = 1;}
 	for (int i = 0; i < Fields; i++) {
-		std::string str = " "; str += field[i]; str += "%n";
-		while (sscanf(ptr,str.c_str(),&opt) == 1) {ptr += opt;
+		const char *str = cleanup(chars,concat(chars,concat(chars," ",field[i]),"%n"));
+		while (sscanf(ptr,str,&opt) == 1) {ptr += opt;
 			Update *update = parseUpdate(ptr);
 			if (!update) return 0;
 			insert(command->update[(Field)i],update);}}
@@ -137,9 +128,9 @@ void skip(const char *&ptr)
 	while (ptr[0] && (ptr[0] != '-' || ptr[1] != '-')) ptr++;
 }
 
-void parse(std::string str, Message<Command*> &request)
+void parse(const char *str, Message<Command*> &request)
 {
-	const char *ptr = str.c_str();
+	const char *ptr = str;
 	while (*ptr) {int opt;
 		if (sscanf(ptr,"--command%n",&opt) == 1) {ptr += opt;
 			Command *command = parseCommand(ptr);

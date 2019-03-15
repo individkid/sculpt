@@ -21,11 +21,30 @@
 
 #include <iostream>
 #include <pthread.h>
-#include <string>
 
 extern "C" {
 #include "types.h"
 }
+
+template <class T> class Power;
+
+char *concat(Power<char> &pool, const char *left, const char *right);
+char *concat(Power<char> &pool, char *left, const char *right);
+char *concat(Power<char> &pool, const char *left, char *right);
+char *concat(Power<char> &pool, char *left, char *right);
+char *concat(Power<char> &pool, const char *left, char right);
+char *concat(Power<char> &pool, char *left, char right);
+char *concat(Power<char> &pool, char left, const char *right);
+char *concat(Power<char> &pool, char left, char *right);
+char *prefix(Power<char> &pool, const char *str, int len);
+char *prefix(Power<char> &pool, char *str, int len);
+char *postfix(Power<char> &pool, const char *str, int len);
+char *postfix(Power<char> &pool, char *str, int len);
+char *setup(Power<char> &pool, const char *str);
+char *setup(Power<char> &pool, char *str);
+const char *cleanup(Power<char> &pool, char *str);
+extern "C" void *threadFunc(void *thread);
+extern "C" void signalFunc(int sig);
 
 template <class T> void error(const char *str, T wrt, const char *file, int line)
 {
@@ -37,30 +56,6 @@ template <class T> void message(const char *str, T wrt, const char *file, int li
 {
 	std::cerr << "message:" << str << " wrt:" << wrt << " file:" << file << " line:" << line << std::endl;
 }
-
-template <class T, int N> union Convert
-{
-	char array[N+1];
-	T value;
-};
-
-template <class T> std::string convert(T val)
-{
-	Convert<T,sizeof(T)> convert; convert.value = val;
-	std::string str = convert.array; return str;
-}
-
-template <class T> void convert(std::string str, T &val)
-{
-	Convert<T,sizeof(T)> convert; strcpy(convert.array,str.c_str());
-	val = convert.value;
-}
-
-int cmpstr(std::string str, const char *cstr);
-int prestr(std::string str, const char *cstr);
-
-extern "C" void *threadFunc(void *thread);
-extern "C" void signalFunc(int sig);
 
 class Thread
 {
@@ -146,6 +141,30 @@ public:
 		else ptr = new Next<T*>();
 		ptr->box = val;
 		insert(full,ptr);
+	}
+};
+
+template <class T>
+class Power {
+private:
+	Pool<T> *pool[10];
+public:
+	Power() {for (int i = 0; i < 10; i++) pool[i] = 0;}
+	Pool<T> &operator[](int i)
+	{
+		if (!pool[i]) pool[i] = new Pool<T>(1<<i);
+		return *pool[i];}
+	T *get(int siz)
+	{
+		int pow = 0; while (siz>(1<<pow)) pow++;
+		if (pow >= 10) error("string too size",siz,__FILE__,__LINE__);
+		return (*this)[pow].get();
+	}
+	void put(int siz, T *ptr)
+	{
+		int pow = 0; while (siz>(1<<pow)) pow++;
+		if (pow >= 10) error("string too size",siz,__FILE__,__LINE__);
+		(*this)[pow].put(ptr);
 	}
 };
 

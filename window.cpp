@@ -38,9 +38,25 @@ extern "C" {
 
 extern Window *window;
 
-extern "C" void sendData(struct Data *data)
+static Pool<Data> datas;
+static Power<float> floats;
+
+extern "C" void sendTopology(int file, int plane, float *point, enum Configure conf)
 {
-    window->sendData(data);
+    Data *data = datas.get(); data->file = file; data->plane = plane;
+    data->thread = WindowType; data->conf = conf;
+    if (conf == RefineConf) {data->matrix = floats.get(3);
+    for (int i = 0; i < 3; i++) data->matrix[i] = point[i];}
+    window->sendData(PolytopeType,data);
+}
+
+extern "C" void sendWrite(int file, int plane, float *matrix, enum Configure conf)
+{
+    Data *data = datas.get(); data->file = file; data->plane = plane;
+    data->thread = WindowType; data->conf = conf;
+    data->matrix = floats.get(3);
+    for (int i = 0; i < 3; i++) data->matrix[i] = matrix[i];
+    window->sendData(WriteType,data);
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -141,14 +157,13 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void Window::processData(std::string cmdstr)
+void Window::processData(Data &data)
 {
-    std::cout << cmdstr;
-    const char *pre = "--data";
-    int len = strlen(pre);
-    if (cmdstr.substr(0,len) == pre) {
-    std::string str = cmdstr.substr(len,std::string::npos);
-    struct Data data; convert(str,data); syncMatrix(&data);}
+    if (data.conf == TestConf) printf("%s",data.text);
+    else syncMatrix(&data);
+    switch (data.thread) {
+    case (ReadType): object[data.file].read->reuse.put(&data); break;
+    default: error("processData",data.thread,__FILE__,__LINE__); break;}
     glfwPollEvents();
 }
 
@@ -214,15 +229,17 @@ void Window::processCommand(Command &command)
     for (Update *next = command.update[BindField]; next; next = next->next) unbindBuffer(*next);
     glBindVertexArray(0); glUseProgram(0);}
     if (command.feedback) glFlush(); else glfwSwapBuffers(window);
+    for (Update *next = command.update[ReadField]; next; next = next->next) next->finish = 1;
     command.finish = 1;
 }
 
 void Window::finishCommand(Command &command)
 {
     for (Update *next = command.update[ReadField]; next; next = next->next) {
-    if (next->done == 0) {next->done = 1; readBuffer(*next);}
-    if (next->done == 0) return;}
+    if (next->finish) readBuffer(*next);
+    if (next->finish) return;}
     if (command.pierce && pierce.last != pierce.loop) return;
+    if (command.pierce && command.pierce->finish) return;
     if (command.pierce) swapQueue(pierce,command.pierce);
     if (command.redraw) swapQueue(redraw,command.redraw);
     for (Response *next = command.response; next; next = next->next)
@@ -230,7 +247,6 @@ void Window::finishCommand(Command &command)
     case (ReadType): object[next->file].read->response.put(&command); break;
     case (PolytopeType): object[next->file].polytope->response.put(&command); break;
     default: error("finishCommand",next->thread,__FILE__,__LINE__); break;}
-    for (Update *next = command.update[ReadType]; next; next = next->next) next->done = 0;
     command.finish = 0;
 }
 
@@ -256,12 +272,12 @@ void Window::connect(int i, Read *ptr)
     object[i].read = ptr;
 }
 
-void Window::sendData(Data *data)
+void Window::sendData(ThreadType thread, Data *data)
 {
-    switch (data->type) {
-    case (ClickType): object[data->file].polytope->action.put(data); break;
-    case (TargetType): object[data->file].write->data.put(convert(data)); break;
-    default: error("sendData",data->type,__FILE__,__LINE__); break;}
+    switch (thread) {
+    case (PolytopeType): object[data->file].polytope->action.put(data); break;
+    case (WriteType): object[data->file].write->data.put(data); break;
+    default: error("sendData",thread,__FILE__,__LINE__); break;}
 }
 
 void Window::warpCursor(float *cursor)
@@ -310,7 +326,7 @@ void Window::call()
     glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
     if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
     finishQueue(query); if (isSuspend()) startQueue(pierce); else startQueue(redraw);
-    std::string cmdstr; while (data.get(cmdstr)) processData(cmdstr);
+    Data *msg = 0; while (data.get(msg)) processData(*msg);
     Command *command = 0; while (request.get(command)) startCommand(query,*command);}
     glfwTerminate();
 }

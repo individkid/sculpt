@@ -29,8 +29,8 @@ private:
 	const char *name;
 	int pipe;
 public:
-	Message<std::string> write; // get -- from Polytope
-	Message<std::string> data; // get raw data from Window
+	Message<Data*> write; // get -- from Polytope
+	Message<Data*> data; // get raw data from Window
 	Write(int i, Window &gl, const char *n);
 	virtual void init();
 	virtual void call();

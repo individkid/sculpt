@@ -18,24 +18,122 @@
 
 #include <signal.h>
 #include <sys/select.h>
+#include <string.h>
 
 #include "message.hpp"
 
-int cmpstr(std::string str, const char *cstr)
+char *concat(Power<char> &pool, const char *left, const char *right)
 {
-	int i;
-	for (i = 0; cstr[i]; i++)
-	if (str[i] != cstr[i]) return 0;
-	return i;
+	char *str = pool.get(strlen(left)+strlen(right)+1);
+	return strcat(strcpy(str,left),right);
 }
 
-int prestr(std::string str, const char *cstr)
+char *concat(Power<char> &pool, char *left, const char *right)
 {
-	int i;
-	for (i = 0; i < str.size(); i++) {
-	std::string substr = str.substr(i,std::string::npos);
-	if (cmpstr(substr,cstr)) break;}
-	return i;
+	char *str = pool.get(strlen(left)+strlen(right)+1);
+	strcat(strcpy(str,left),right);
+	pool.put(strlen(left)+1,left);
+	return str;
+}
+
+char *concat(Power<char> &pool, const char *left, char *right)
+{
+	char *str = pool.get(strlen(left)+strlen(right)+1);
+	strcat(strcpy(str,left),right);
+	pool.put(strlen(right)+1,right);
+	return str;
+}
+
+char *concat(Power<char> &pool, char *left, char *right)
+{
+	char *str = pool.get(strlen(left)+strlen(right)+1);
+	strcat(strcpy(str,left),right);
+	pool.put(strlen(left)+1,left);
+	pool.put(strlen(right)+1,right);
+	return str;
+}
+
+char *concat(Power<char> &pool, const char *left, char right)
+{
+	char *str = pool.get(strlen(left)+1+1);
+	strcpy(str,left);
+	str[strlen(left)] = right;
+	str[strlen(left)+1] = 0;
+	return str;
+}
+
+char *concat(Power<char> &pool, char *left, char right)
+{
+	char *str = pool.get(strlen(left)+1+1);
+	strcpy(str,left);
+	str[strlen(left)] = right;
+	str[strlen(left)+1] = 0;
+	pool.put(strlen(left)+1,left);
+	return str;
+}
+
+char *concat(Power<char> &pool, char left, const char *right)
+{
+	char *str = pool.get(1+strlen(right)+1);
+	str[0] = left;
+	str[1] = 0;
+	strcat(str,right);
+	return str;
+}
+
+char *concat(Power<char> &pool, char left, char *right)
+{
+	char *str = pool.get(1+strlen(right)+1);
+	str[0] = left;
+	str[1] = 0;
+	strcat(str,right);
+	pool.put(strlen(right)+1,right);
+	return str;
+}
+
+char *prefix(Power<char> &pool, const char *str, int len)
+{
+	char *res = strncpy(pool.get(len+1),str,len+1);
+	return res;
+}
+
+char *prefix(Power<char> &pool, char *str, int len)
+{
+	char *res = strncpy(pool.get(len+1),str,len+1);
+	pool.put(strlen(str)+1,str);
+	return res;
+}
+
+char *postfix(Power<char> &pool, const char *str, int len)
+{
+	char *res = strcpy(pool.get(len+1),str+(strlen(str)-len));
+	return res;
+}
+
+char *postfix(Power<char> &pool, char *str, int len)
+{
+	char *res = strcpy(pool.get(len+1),str+(strlen(str)-len));
+	pool.put(strlen(str)+1,str);
+	return res;
+}
+
+char *setup(Power<char> &pool, const char *str)
+{
+	char *res = strcpy(pool.get(strlen(str)+1),str);
+	return res;
+}
+
+char *setup(Power<char> &pool, char *str)
+{
+	char *res = strcpy(pool.get(strlen(str)+1),str);
+	pool.put(strlen(str)+1,str);
+	return res;
+}
+
+const char *cleanup(Power<char> &pool, char *str)
+{
+	pool.put(strlen(str)+1,str);
+	return str;
 }
 
 extern "C" void *threadFunc(void *arg)
@@ -48,7 +146,6 @@ extern "C" void *threadFunc(void *arg)
 extern "C" void signalFunc(int sig)
 {
 }
-
 
 Thread::Thread(int m) : isMain(m), isDone(0)
 {

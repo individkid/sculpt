@@ -86,13 +86,51 @@ enum FixedMode {
 	InvariantMode,
 	SymbolicMode,
 	FixedModes};
-enum ModeType {
-	TargetType,
-	ClickType,
-	ModeTypes};
+enum Configure {
+	AdditiveConf,
+	SubtractiveConf,
+	RefineConf,
+	TransformConf,
+	RevealConf,
+	HideConf,
+	TweakConf,
+	RandomizeConf,
+	CylinderConf,
+	ClockConf,
+	NormalConf,
+	ParallelConf,
+	ScaleConf,
+	RotateConf,
+	TangetConf,
+	TranslateConf,
+	SessionConf,
+	PolytopeConf,
+	FacetConf,
+	NumericConf,
+	InvariantConf,
+	SymbolicConf,
+	IncludeConf,
+	ExcludeConf,
+	PlaneConf,
+	MatrixConf,
+	GlobalConf,
+	SharedConf,
+	SpaceConf,
+	RegionConf,
+	InflateConf,
+	PictureConf,
+	SoundConf,
+	MetricConf,
+	ScriptConf,
+	CommandConf,
+	ConfigureConf,
+	TestConf,
+	Configures};
 enum ThreadType {
 	ReadType,
+	WriteType,
 	PolytopeType,
+	WindowType,
 	ThreadTypes};
 enum Field {
 	AllocField,
@@ -126,14 +164,13 @@ struct Data
 	int file;
 	int plane;
 	enum ThreadType thread;
-	enum ModeType type;
-	union {enum TargetMode target; enum ClickMode click;};
-	union {float matrix[16]; char *text;};
+	enum Configure conf;
+	union {float *matrix; char *text;};
 };
 struct Update
 {
 	struct Update *next;
-	int file;
+	int file, finish;
 	enum Buffer buffer;
 	union {int offset; int width;};
 	union {int size; int height;};
@@ -141,7 +178,6 @@ struct Update
 	union {char *text; float *scalar; MYuint *query;
 	struct Format *format; struct Feedback *feedback; struct Data *data;};
 	void (*function)(int, struct Update *);
-	int done;
 };
 struct Render
 {
