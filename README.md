@@ -11,8 +11,6 @@ The -- commands are as follows.
 --subractive change click mode to hollow out region under clicked facet  
 --refine change click mode to add random plane through point on clicked facet  
 --transform change click mode to transform clicked target  
---reveal change click mode to make clicked facet transparent  
---hide change click mode to make clicked through facets opaque  
 --tweak change click mode to randomize target with fixed pierce point  
 --randomize change click mode to randomize target without fixed point  
 --cylinder change roller mode to rotate around rotate line  
@@ -34,7 +32,6 @@ The -- commands are as follows.
 --plane "bname" versor and table leg lengths  
 --matrix floats for per-file transformation  
 --global floats for per-session transformation  
---shared plane index for communicating to other sessions  
 --space list of optional bnames and lists of sidednesses  
 --region two lists of bnames and whether the indicated region is in the polytope  
 --inflate mark inside regions as in, and outside regions as not in the polytope  
@@ -45,6 +42,27 @@ The -- commands are as follows.
 --command send command to window thread  
 --configure change aspect ratio granularity base delay etc  
 --test run tests of functions in the polytope thread  
+
+Threads send structs to each other. Each sent struct is sent back to the sender for deallocation.  
+Source->Struct->Destination  
+Read->Command->Window for bringup  
+Read->Data->Window for changing modes  
+Read->Data->Window for applying transformations from other processes  
+Read->Data->Window for changing configurations  
+Read->Data->Polytope for adding or changing planes  
+Read->Data->Polytope for changing which regions are in the polytope  
+Read->Data->Polytope for creating sample of space  
+Read->Data->Polytope for decorating planes  
+Read->Data->System for changing sound  
+Read->Data->Script for setting up scripts  
+Window->Data->Write for recording transformations  
+Window->Data->Polytope for manipulating or randomizing planes  
+Window->Data->Polytope for changing which regions are in the polytope  
+Window->Invoke->Script for starting macro from click  
+Polytope->Data->Write for appending manipulated or randomized planes  
+Polytope->Command->Window for changing what is displayed  
+Script->Question->Polytope for feedback from topology  
+System->Invoke->Script for getting value from metric  
 
 For example, --plane sends a stuct to the Polytope thread that sends a Command to the Window thread to append the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.
 

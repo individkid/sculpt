@@ -41,12 +41,12 @@ extern Window *window;
 static Pool<Data> datas;
 static Power<float> floats;
 
-extern "C" void sendTopology(int file, int plane, float *point, enum Configure conf)
+extern "C" void sendPolytope(int file, int plane, float *matrix, enum Configure conf)
 {
     Data *data = datas.get(); data->file = file; data->plane = plane;
     data->thread = WindowType; data->conf = conf;
     if (conf == RefineConf) {data->matrix = floats.get(3);
-    for (int i = 0; i < 3; i++) data->matrix[i] = point[i];}
+    for (int i = 0; i < 3; i++) data->matrix[i] = matrix[i];}
     window->sendData(PolytopeType,data);
 }
 

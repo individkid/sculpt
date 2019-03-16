@@ -91,8 +91,6 @@ enum Configure {
 	SubtractiveConf,
 	RefineConf,
 	TransformConf,
-	RevealConf,
-	HideConf,
 	TweakConf,
 	RandomizeConf,
 	CylinderConf,
@@ -114,7 +112,6 @@ enum Configure {
 	PlaneConf,
 	MatrixConf,
 	GlobalConf,
-	SharedConf,
 	SpaceConf,
 	RegionConf,
 	InflateConf,
@@ -143,14 +140,12 @@ struct Format
 	float cursor[2];
 	float affine[16];
 	float perplane[16];
-	float perlast[16];
 	float cutoff;
 	float slope;
 	float aspect;
 	float feather;
 	float arrow;
 	MYuint tagplane;
-	char filler0[4-sizeof(MYuint)]; MYuint taglast;
 	char filler1[4-sizeof(MYuint)]; MYuint taggraph;
 };
 struct Feedback

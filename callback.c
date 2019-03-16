@@ -34,7 +34,7 @@ int testGoon = 1;
 
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
-void sendTopology(int file, int plane, float *point, enum Configure conf);
+void sendPolytope(int file, int plane, float *point, enum Configure conf);
 void sendWrite(int file, int plane, float *matrix, enum Configure conf);
 
 int isSuspend()
@@ -215,9 +215,9 @@ void adjustPolytope()
 void triggerAction()
 {
 	switch (state.click) {
-	case (AdditiveMode): sendTopology(current.file,current.plane,current.pierce,AdditiveConf); break;
-	case (SubtractiveMode): sendTopology(current.file,current.plane,current.pierce,SubtractiveConf); break;
-	case (RefineMode): sendTopology(current.file,current.plane,current.pierce,RefineConf); break;	
+	case (AdditiveMode): sendPolytope(current.file,current.plane,current.pierce,AdditiveConf); break;
+	case (SubtractiveMode): sendPolytope(current.file,current.plane,current.pierce,SubtractiveConf); break;
+	case (RefineMode): sendPolytope(current.file,current.plane,current.pierce,RefineConf); break;	
 	case (TransformMode): changeClick(PierceMode); break;
 	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
 	default: displayError(state.click,"invalid state.click"); exit(-1);}
@@ -254,7 +254,7 @@ void sendMatrix()
 	sendWrite(matrix.file,matrix.plane,matrix.session,PolytopeConf); break;
 	case (FacetMode):
 	for (int i = 0; i < 16; i++) last.facet[i] = matrix.facet[i];
-	sendWrite(matrix.file,matrix.plane,matrix.session,FacetConf); break;
+	sendPolytope(matrix.file,matrix.plane,matrix.session,FacetConf); break;
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
 }
 
@@ -269,9 +269,7 @@ void syncMatrix(struct Data *data)
 	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
 	timesmat(copymat(matrix.polytope[data->file],data->matrix,4),delta,4); break;}
-	case (FacetConf): {
-	if (data->file == matrix.file && data->plane == matrix.plane) identmat(matrix.facet,4);
-	if (data->file == last.file && data->plane == last.plane) identmat(last.facet,4); break;}
+	case (FacetConf): break;
 	default: displayError(data->conf,"invalid data->conf"); exit(-1);}
 }
 
@@ -285,19 +283,16 @@ void getUniform(int file, struct Update *update)
 	float *cursor = update->format->cursor;
 	float *affine = update->format->affine;
 	float *perplane = update->format->perplane;
-	float *perlast = update->format->perlast;
 	// float *cutoff = update->format->cutoff;
 	// float *slope = update->format->slope;
 	// float *aspect = update->format->aspect;
 	MYuint *tagplane = &update->format->tagplane;
-	MYuint *taglast = &update->format->taglast;
 	// MYuint *taggraph = &update->format->taggraph;
 	copyvec(cursor,current.cursor,2);
 	affineMatrix(file,affine);
 	if (state.target == FacetMode && file == matrix.file) {
 	if (state.toggle == 0) mouseMatrix(perplane); else rollerMatrix(perplane);
 	timesmat(perplane,matrix.facet,4); *tagplane = matrix.plane;} else identmat(perplane,4);
-	if (file == last.file) {copymat(perlast,last.facet,4); *taglast = last.plane;} else identmat(perlast,4);
 }
 
 void putUniform(int file, struct Update *update)
