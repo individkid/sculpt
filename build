@@ -1,2 +1,2 @@
 clang -I ../gl3w/include/ -c ../gl3w/src/gl3w.c arithmetic.c callback.c
-clang++ -I ../gl3w/include/ main.cpp message.cpp window.cpp microcode.cpp object.cpp write.cpp polytope.cpp read.cpp types.cpp gl3w.o arithmetic.o callback.o -lglfw3 -framework Cocoa -framework IOKit -framework OpenGL -framework CoreVideo
+clang++ -I ../gl3w/include/ main.cpp message.cpp window.cpp microcode.cpp object.cpp write.cpp polytope.cpp read.cpp types.cpp system.cpp script.cpp gl3w.o arithmetic.o callback.o -lglfw3 -framework Cocoa -framework IOKit -framework OpenGL -framework CoreVideo

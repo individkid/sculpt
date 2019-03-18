@@ -19,9 +19,7 @@
 #ifndef OBJECT_HPP
 #define OBJECT_HPP
 
-extern "C" {
-#include "types.h"
-}
+#include "message.hpp"
 
 class Write;
 class Polytope;
@@ -37,9 +35,18 @@ struct Handle
 
 struct Object
 {
-	Write *write; // send raw data to Write
-	Polytope *polytope; // send Action and response Command to Polytope
-	Read *read; // for completeness
+	// Read->Command->Window
+	Message<Command*> *rsp2command2read;
+	// Read->Data->Window
+	Message<Data*> *rsp2data2read;
+	// Window->Data->Write
+	Message<Data*> *req2data2write;
+	// Window->Data->Polytope
+	Message<Data*> *req2data2polytope;
+	// Window->Invoke->Script
+	Message<Invoke*> *req2invoke2script;
+	// Polytope->Command->Window
+	Message<Command*> *rsp2command2polytope;
 	Handle handle[Buffers];
 	MYuint vao[Programs][Spaces];
 	void initFile(int first);

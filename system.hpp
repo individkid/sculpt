@@ -1,5 +1,5 @@
 /*
-*    write.hpp thread for writing to pipe
+*    system.hpp thread for producing sound
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -16,29 +16,29 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef WRITE_HPP
-#define WRITE_HPP
+#ifndef SYSTEM_HPP
+#define SYSTEM_HPP
 
 #include "message.hpp"
 
-class Write : public Thread
+class Read;
+class Script;
+
+class System : public Thread
 {
 private:
-	const char *name;
-	int pipe;
-	// Window->Data->Write
-	Message<Data*> *rsp2data2window;
-	// Polytope->Data->Write
-	Message<Data*> *rsp2data2polytope;
+	int nfile;
+	// Read->Data->System  
+	Message<Data*> **rsp2data2read;
+	// System->Invoke->Script  
+	Message<Invoke*> *req2invoke2script;
 public:
-	Message<Data*> window2data2req;
-	Message<Data*> polytope2data2req;
-	Write(int i, const char *n);
-	void connect(class Window *ptr);
-	void connect(class Polytope *ptr);
-	virtual void init();
+	Message<Data*> read2data2req;
+	Message<Invoke*> script2invoke2rsp;
+	System(int n);
+	void connect(int i, Read *ptr);
+	void connect(Script *ptr);
 	virtual void call();
-	virtual void done();
 };
 
 #endif

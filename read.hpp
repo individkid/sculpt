@@ -23,21 +23,40 @@
 
 class Window;
 class Polytope;
+class System;
+class Script;
 
+	// Read->Command->Window
+	// Read->Data->Window
+	// Read->Data->Polytope
+	// Read->Data->System
+	// Read->Data->Script
 class Read : public Thread
 {
 private:
-	Window &data; // write mode and raw data to Window
-	Polytope &read; // write -- to Polytope
 	const char *name;
 	int file;
 	int pipe;
 	int self;
 	off_t fpos;
+	Message<Command*> *req2command2window;
+	Message<Data*> *req2data2window;
+	Message<Data*> *req2data2polytope;
+	Message<Data*> *req2data2system;
+	Message<Data*> *req2data2script;
+	Message<Data*> *req2data2thread(ThreadType i);
+	Message<Data*> &thread2data2rsp(ThreadType i);
 public:
-	Message<Command*> response; // get Command from Window
-	Message<Data*> reuse; // deallocate used Data
-	Read(int i, Window &gl, Polytope &r, const char *n);
+	Message<Command*> window2command2rsp;
+	Message<Data*> window2data2rsp;
+	Message<Data*> polytope2data2rsp;
+	Message<Data*> system2data2rsp;
+	Message<Data*> script2data2rsp;
+	Read(int i, const char *n);
+	void connect(Window *ptr);
+	void connect(Polytope *ptr);
+	void connect(System *ptr);
+	void connect(Script *ptr);
 	virtual void init();
 	virtual void call();
 	virtual void wait();

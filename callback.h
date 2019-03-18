@@ -22,6 +22,8 @@ struct Current
 {
 	float pierce[3];
 	float normal[3];
+	int color;
+	int tagbits;
 	int plane;
 	int file;
 	float point[2]; // amount of cursor rolled into matrix

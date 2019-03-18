@@ -1,5 +1,5 @@
 /*
-*    polytope.hpp thread for sample and classify
+*    script.hpp thread for calculating metrics
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -16,41 +16,42 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef POLYTOPE_HPP
-#define POLYTOPE_HPP
+#ifndef SCRIPT_HPP
+#define SCRIPT_HPP
 
 #include "message.hpp"
 
-class Polytope;
-class Window;
 class Read;
-class Write;
-class Script;
+class Window;
+class Polytope;
+class System;
 
-class Polytope : public Thread
+class Script : public Thread
 {
 private:
-	// Read->Data->Polytope
-	Message<Data*> *rsp2data2read;
-	// Window->Data->Polytope
-	Message<Data*> *rsp2data2window;
-	// Polytope->Data->Write
-	Message<Data*> *req2data2write;
-	// Polytope->Command->Window
-	Message<Command*> *req2command2window;
+	int nfile;
+	// Read->Data->Script
+	Message<Data*> **rsp2data2read;
+	// Window->Invoke->Script
+	Message<Invoke*> *rsp2invoke2window;
 	// Script->Question->Polytope
-	Message<Question*> *rsp2question2script;
+	Message<Question*> **req2question2polytope;
+	// System->Invoke->Script
+	Message<Invoke*> *rsp2invoke2system;
 public:
+	// Read->Data->Script
 	Message<Data*> read2data2req;
-	Message<Data*> window2data2req;
-	Message<Data*> write2data2rsp;
-	Message<Command*> window2command2rsp;
-	Message<Question*> script2question2req;
-	Polytope(int i);
-	void connect(Read *ptr);
+	// Window->Invoke->Script
+	Message<Invoke*> window2invoke2req;
+	// Script->Question->Polytope
+	Message<Question*> polytope2question2rsp;
+	// System->Invoke->Script
+	Message<Invoke*> system2invoke2req;
+	Script(int n);
+	void connect(int i, Read *ptr);
 	void connect(Window *ptr);
-	void connect(Write *ptr);
-	void connect(Script *ptr);
+	void connect(int i, Polytope *ptr);
+	void connect(System *ptr);
 	virtual void call();
 };
 

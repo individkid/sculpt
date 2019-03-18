@@ -23,10 +23,21 @@
 
 #include "write.hpp"
 #include "window.hpp"
+#include "polytope.hpp"
 
-Write::Write(int i, Window &gl, const char *n) : Thread(), name(n), pipe(-1), write(this), data(this)
+Write::Write(int i, const char *n) : Thread(), name(n), pipe(-1),
+	window2data2req(this), polytope2data2req(this)
 {
-	gl.connect(i,this);
+}
+
+void Write::connect(class Window *ptr)
+{
+	rsp2data2window = &ptr->write2data2rsp;
+}
+
+void Write::connect(class Polytope *ptr)
+{
+	rsp2data2polytope = &ptr->write2data2rsp;
 }
 
 void Write::init()

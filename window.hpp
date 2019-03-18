@@ -24,9 +24,10 @@
 
 class GLFWwindow;
 class Object;
+class Read;
 class Write;
 class Polytope;
-class Read;
+class Script;
 
 struct Queue
 {
@@ -39,12 +40,13 @@ class Window : public Thread
 {
 private:
 	GLFWwindow *window;
-	int nfile; Object *object;
+	int nfile;
+	Object *object;
+	Message<Invoke*> *req2invoke2script;
 	Microcode microcode[Programs];
 	Queue redraw;
 	Queue pierce;
 	Queue query;
-
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
 	void bindBuffer(Update &update);
@@ -54,23 +56,35 @@ private:
 	void writeTexture2d(Update &update);
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
+	void processInvoke(Invoke &invoke);
 	void processResponse(Data &data);
 	void processData(Data &data);
+	void processCommand(Command &command);
+	void finishCommand(Command &command);
 	void startQueue(Queue &queue);
 	void finishQueue(Queue &queue);
 	void swapQueue(Queue &queue, Command *&command);
 	void startCommand(Queue &queue, Command &command);
-	void processCommand(Command &command);
-	void finishCommand(Command &command);
 public:
-	Message<Data*> response; // deallocate matrix change sent to write
-	Message<Data*> data; // get mode change and raw data from Read
-	Message<Command*> request; // get Command from Polytope
+	// Read->Command->Window
+	Message<Command*> read2command2req;
+	// Read->Data->Window
+	Message<Data*> read2data2req;
+	// Window->Data->Write
+	Message<Data*> write2data2rsp;
+	// Window->Data->Polytope
+	Message<Data*> polytope2data2rsp;
+	// Window->Invoke->Script
+	Message<Invoke*> script2invoke2rsp;
+	// Polytope->Command->Window
+	Message<Command*> polytope2command2req;
 	Window(int n);
+	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
-	void connect(int i, Read *ptr);
+	void connect(Script *ptr);
 	void sendData(ThreadType thread, Data *data);
+	void sendInvoke();
 	void warpCursor(float *cursor);
 	virtual void call();
 	virtual void wake();

@@ -36,6 +36,7 @@ void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
 void sendPolytope(int file, int plane, float *point, enum Configure conf);
 void sendWrite(int file, int plane, float *matrix, enum Configure conf);
+void sendInvoke();
 
 int isSuspend()
 {
@@ -383,6 +384,6 @@ void displayScroll(struct GLFWwindow *ptr, double xoffset, double yoffset)
 void displayClick(struct GLFWwindow *ptr, int button, int action, int mods)
 {
 	int click = decodeClick(button,action,mods);
-	if (click == 0) triggerAction();
+	if (click == 0) triggerAction(); // TODO call sendInvoke if action postponed by tagbits
 	if (click == 1) toggleSuspend();
 }

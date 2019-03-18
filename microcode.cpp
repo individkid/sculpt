@@ -111,7 +111,6 @@ void Microcode::initShader(MYenum type, const char *source, MYuint &ident)
     float feather;\n\
     float arrow;\n\
     uint tagplane;\n\
-    uint taglast;\n\
     uint taggraph;\n\
     };",
     source};

@@ -31,6 +31,7 @@
 #include "write.hpp"
 #include "polytope.hpp"
 #include "read.hpp"
+#include "script.hpp"
 extern "C" {
 #include "arithmetic.h"
 #include "callback.h"
@@ -40,6 +41,7 @@ extern Window *window;
 
 static Pool<Data> datas;
 static Power<float> floats;
+static Pool<Invoke> invokes;
 
 extern "C" void sendPolytope(int file, int plane, float *matrix, enum Configure conf)
 {
@@ -57,6 +59,11 @@ extern "C" void sendWrite(int file, int plane, float *matrix, enum Configure con
     data->matrix = floats.get(3);
     for (int i = 0; i < 3; i++) data->matrix[i] = matrix[i];
     window->sendData(WriteType,data);
+}
+
+extern "C" void sendInvoke()
+{
+    window->sendInvoke();
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -114,7 +121,7 @@ void Window::readBuffer(Update &update)
     Handle &buffer = object[update.file].handle[update.buffer];
     if (buffer.target == GL_TEXTURE_2D) ; else
     if (buffer.target == GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN)
-                                             glGetQueryObjectuiv(update.handle, GL_QUERY_RESULT, update.query); else {
+    glGetQueryObjectuiv(update.handle, GL_QUERY_RESULT, update.query); else {
     glBindBuffer(buffer.target,buffer.handle);
     glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
     glBindBuffer(buffer.target,0);}
@@ -157,6 +164,12 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
+void Window::processInvoke(Invoke &invoke)
+{
+    // TODO spoof triggerAction if not suppressed by Invoke response
+    invokes.put(&invoke);
+}
+
 void Window::processResponse(Data &data)
 {
     if (data.matrix) floats.put(16,data.matrix); datas.put(&data);
@@ -167,7 +180,7 @@ void Window::processData(Data &data)
     if (data.conf == TestConf) printf("%s",data.text);
     else syncMatrix(&data);
     switch (data.thread) {
-    case (ReadType): object[data.file].read->reuse.put(&data); break;
+    case (ReadType): object[data.file].rsp2data2read->put(&data); break;
     default: error("processData",data.thread,__FILE__,__LINE__); break;}
     glfwPollEvents();
 }
@@ -249,40 +262,57 @@ void Window::finishCommand(Command &command)
     if (command.redraw) swapQueue(redraw,command.redraw);
     for (Response *next = command.response; next; next = next->next)
     switch (next->thread) {
-    case (ReadType): object[next->file].read->response.put(&command); break;
-    case (PolytopeType): object[next->file].polytope->response.put(&command); break;
+    case (ReadType): object[next->file].rsp2command2read->put(&command); break;
+    case (PolytopeType): object[next->file].rsp2command2polytope->put(&command); break;
     default: error("finishCommand",next->thread,__FILE__,__LINE__); break;}
     command.finish = 0;
 }
 
-Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]), response(this), data(this), request(this)
+Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]),
+    read2command2req(this), read2data2req(this), write2data2rsp(this),
+    polytope2data2rsp(this), script2invoke2rsp(this), polytope2command2req(this)
 {
-}
-
-void Window::connect(int i, Write *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].write = ptr;
-}
-
-void Window::connect(int i, Polytope *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].polytope = ptr;
 }
 
 void Window::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].read = ptr;
+    object[i].rsp2command2read = &ptr->window2command2rsp;
+    object[i].rsp2data2read = &ptr->window2data2rsp;
 }
+
+void Window::connect(int i, Write *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    object[i].req2data2write = &ptr->window2data2req;
+}
+
+void Window::connect(int i, Polytope *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    object[i].req2data2polytope = &ptr->window2data2req;
+    object[i].rsp2command2polytope = &ptr->window2command2rsp;
+}
+
+void Window::connect(Script *ptr)
+{
+    req2invoke2script = &ptr->window2invoke2req;
+}
+
 
 void Window::sendData(ThreadType thread, Data *data)
 {
     switch (thread) {
-    case (PolytopeType): object[data->file].polytope->action.put(data); break;
-    case (WriteType): object[data->file].write->data.put(data); break;
+    case (ReadType): object[data->file].rsp2data2read->put(data); break;
+    case (WriteType): object[data->file].req2data2write->put(data); break;
+    case (PolytopeType): object[data->file].req2data2polytope->put(data); break;
     default: error("sendData",thread,__FILE__,__LINE__); break;}
+}
+
+void Window::sendInvoke()
+{
+    Invoke *invoke = invokes.get();
+    req2invoke2script->put(invoke);
 }
 
 void Window::warpCursor(float *cursor)
@@ -331,9 +361,12 @@ void Window::call()
     glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
     if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
     finishQueue(query); if (isSuspend()) startQueue(pierce); else startQueue(redraw);
-    Data *msg = 0; while (response.get(msg)) processResponse(*msg);
-    msg = 0; while (data.get(msg)) processData(*msg);
-    Command *command = 0; while (request.get(command)) startCommand(query,*command);}
+    Invoke *response = 0; while (script2invoke2rsp.get(response)) processInvoke(*response);
+    Data *msg = 0; while (polytope2data2rsp.get(msg)) processResponse(*msg);
+    msg = 0; while (write2data2rsp.get(msg)) processResponse(*msg);
+    msg = 0; while (read2data2req.get(msg)) processData(*msg);
+    Command *command = 0; while (read2command2req.get(command)) startCommand(query,*command);
+    command = 0; while (polytope2command2req.get(command)) startCommand(query,*command);}
     glfwTerminate();
 }
 

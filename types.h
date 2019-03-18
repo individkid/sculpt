@@ -126,8 +126,10 @@ enum Configure {
 enum ThreadType {
 	ReadType,
 	WriteType,
-	PolytopeType,
 	WindowType,
+	PolytopeType,
+	SystemType,
+	ScriptType,
 	ThreadTypes};
 enum Field {
 	AllocField,
@@ -152,6 +154,8 @@ struct Feedback
 {
 	float pierce[3];
 	float normal[3];
+	int color;
+	int tagbits;
 	int plane;
 };
 struct Data
@@ -199,6 +203,14 @@ struct Command
 	struct Command *redraw;
 	struct Command *pierce;
 	struct Response *response;
+};
+struct Invoke
+{
+	int file;
+};
+struct Question
+{
+	int file;
 };
 
 #endif
