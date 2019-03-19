@@ -207,10 +207,13 @@ struct Command
 struct Invoke
 {
 	int tagbits;
+	union {
+	float *stock;
+	struct {
 	enum ClickMode click;
 	int file;
 	int plane;
-	float *pierce;
+	float *pierce;};};
 };
 struct Question
 {
