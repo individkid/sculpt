@@ -55,9 +55,9 @@ Message<Data*> &Read::thread2data2rsp(ThreadType i)
 	return window2data2rsp;
 }
 
-Read::Read(int i, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(i), fpos(0) // ,
-	// window2command2rsp(this), window2data2rsp(this),
-	// polytope2data2rsp(this), system2data2rsp(this), script2data2rsp(this)
+Read::Read(int i, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(i), fpos(0),
+	window2command2rsp(this), window2data2rsp(this),
+	polytope2data2rsp(this), system2data2rsp(this), script2data2rsp(this)
 {
 }
 
@@ -111,7 +111,7 @@ void Read::call()
 	Data *data = datas.get();
 	data->text = substr; data->thread = ReadType;
 	data->conf = TestConf; data->file = self;
-	req2data2thread(WindowType)->put(data);}}
+	req2data2thread(PolytopeType)->put(data);}}
 }
 
 void Read::wait()

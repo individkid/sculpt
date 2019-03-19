@@ -206,7 +206,11 @@ struct Command
 };
 struct Invoke
 {
+	int tagbits;
+	enum ClickMode click;
 	int file;
+	int plane;
+	float *pierce;
 };
 struct Question
 {

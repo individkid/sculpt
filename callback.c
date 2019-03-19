@@ -36,7 +36,7 @@ void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
 void sendPolytope(int file, int plane, float *point, enum Configure conf);
 void sendWrite(int file, int plane, float *matrix, enum Configure conf);
-void sendInvoke();
+void sendInvoke(int tagbits, enum ClickMode click, int file, int plane, float *pierce);
 
 int isSuspend()
 {
@@ -199,51 +199,6 @@ void affineMatrix(int file, float *affine)
 	default: displayError(state.target,"invalid state.target"); exit(-1);}
 }
 
-void adjustSession()
-{
-	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
-	timesmat(timesmat(affine,matrix.polytope[matrix.file],4),matrix.session,4);
-	copymat(matrix.polytope[matrix.file],affine,4);
-}
-
-void adjustPolytope()
-{
-	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
-	jumpmat(jumpmat(affine,matrix.polytope[matrix.file],4),matrix.session,4);
-	copymat(matrix.polytope[matrix.file],affine,4);
-}
-
-void triggerAction()
-{
-	switch (state.click) {
-	case (AdditiveMode): sendPolytope(current.file,current.plane,current.pierce,AdditiveConf); break;
-	case (SubtractiveMode): sendPolytope(current.file,current.plane,current.pierce,SubtractiveConf); break;
-	case (RefineMode): sendPolytope(current.file,current.plane,current.pierce,RefineConf); break;	
-	case (TransformMode): changeClick(PierceMode); break;
-	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
-	default: displayError(state.click,"invalid state.click"); exit(-1);}
-}
-
-void toggleSuspend()
-{
-	if (state.click == TransformMode) changeClick(SuspendMode);
-	else if (state.click == SuspendMode) changeClick(TransformMode);
-	else changeClick(state.click);
-}
-
-void foldMatrix()
-{
-	float affine[16];
-	if (state.toggle == 0) mouseMatrix(affine); else rollerMatrix(affine);
-	switch (state.target) {
-	case (SessionMode): jumpmat(matrix.session,affine,4); break;
-	case (PolytopeMode): jumpmat(matrix.polytope[matrix.file],affine,4); break;
-	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
-	default: displayError(state.target,"invalid state.target"); exit(-1);}
-	copyvec(pointer->point,pointer->cursor,2);
-	pointer->roller = 0;
-}
-
 void sendMatrix()
 {
 	switch (state.target) {
@@ -311,6 +266,33 @@ void checkQuery(int file, struct Update *update)
 	if (*update->query >= update->size) update->finish = 0;
 }
 
+void adjustSession()
+{
+	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
+	timesmat(timesmat(affine,matrix.polytope[matrix.file],4),matrix.session,4);
+	copymat(matrix.polytope[matrix.file],affine,4);
+}
+
+void adjustPolytope()
+{
+	float affine[16]; invmat(copymat(affine,matrix.session,4),4);
+	jumpmat(jumpmat(affine,matrix.polytope[matrix.file],4),matrix.session,4);
+	copymat(matrix.polytope[matrix.file],affine,4);
+}
+
+void foldMatrix()
+{
+	float affine[16];
+	if (state.toggle == 0) mouseMatrix(affine); else rollerMatrix(affine);
+	switch (state.target) {
+	case (SessionMode): jumpmat(matrix.session,affine,4); break;
+	case (PolytopeMode): jumpmat(matrix.polytope[matrix.file],affine,4); break;
+	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
+	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	copyvec(pointer->point,pointer->cursor,2);
+	pointer->roller = 0;
+}
+
 void changeClick(enum ClickMode mode)
 {
 	foldMatrix(); if (state.click == TransformMode) sendMatrix();
@@ -357,6 +339,30 @@ void changeToggle(int toggle)
 	state.toggle = toggle;
 }
 
+void performAction(enum ClickMode click, int file, int plane, float *pierce)
+{
+	switch (click) {
+	case (AdditiveMode): sendPolytope(file,plane,pierce,AdditiveConf); break;
+	case (SubtractiveMode): sendPolytope(file,plane,pierce,SubtractiveConf); break;
+	case (RefineMode): sendPolytope(file,plane,pierce,RefineConf); break;	
+	case (TransformMode): changeClick(PierceMode); break;
+	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
+	default: displayError(click,"invalid state.click"); exit(-1);}
+}
+
+void triggerAction()
+{
+	if (current.tagbits) performAction(state.click,current.file,current.plane,current.pierce);
+	else sendInvoke(current.tagbits,state.click,current.file,current.plane,current.pierce);
+}
+
+void toggleSuspend()
+{
+	if (state.click == TransformMode) changeClick(SuspendMode);
+	else if (state.click == SuspendMode) changeClick(TransformMode);
+	else changeClick(state.click);
+}
+
 void displayError(int error, const char *description)
 {
     fprintf(stderr,"GLFW error %d %s\n",error,description);
@@ -384,6 +390,6 @@ void displayScroll(struct GLFWwindow *ptr, double xoffset, double yoffset)
 void displayClick(struct GLFWwindow *ptr, int button, int action, int mods)
 {
 	int click = decodeClick(button,action,mods);
-	if (click == 0) triggerAction(); // TODO call sendInvoke if action postponed by tagbits
+	if (click == 0) triggerAction();
 	if (click == 1) toggleSuspend();
 }

@@ -25,6 +25,7 @@ class Read;
 class Window;
 class Polytope;
 class System;
+class Write;
 
 class Script : public Thread
 {
@@ -38,20 +39,23 @@ private:
 	Message<Question*> **req2question2polytope;
 	// System->Invoke->Script
 	Message<Invoke*> *rsp2invoke2system;
+	// Script->Data->Write
+	Message<Data*> **req2data2write;
+	// Script->Question->System
+	Message<Question*> *req2question2system;
 public:
-	// Read->Data->Script
 	Message<Data*> read2data2req;
-	// Window->Invoke->Script
 	Message<Invoke*> window2invoke2req;
-	// Script->Question->Polytope
 	Message<Question*> polytope2question2rsp;
-	// System->Invoke->Script
 	Message<Invoke*> system2invoke2req;
+	Message<Data*> write2data2rsp;
+	Message<Question*> system2question2rsp;
 	Script(int n);
 	void connect(int i, Read *ptr);
 	void connect(Window *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(System *ptr);
+	void connect(int i, Write *ptr);
 	virtual void call();
 };
 

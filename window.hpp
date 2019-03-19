@@ -84,7 +84,7 @@ public:
 	void connect(int i, Polytope *ptr);
 	void connect(Script *ptr);
 	void sendData(ThreadType thread, Data *data);
-	void sendInvoke();
+	void sendInvoke(Invoke *invoke);
 	void warpCursor(float *cursor);
 	virtual void call();
 	virtual void wake();

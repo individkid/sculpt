@@ -21,10 +21,12 @@
 #include "system.hpp"
 #include "read.hpp"
 #include "polytope.hpp"
+#include "write.hpp"
 
-Script::Script(int n) : nfile(n),
-	rsp2data2read(new Message<Data*>*[n]), req2question2polytope(new Message<Question*>*[n]),
-	read2data2req(this), window2invoke2req(this), polytope2question2rsp(this), system2invoke2req(this)
+Script::Script(int n) : nfile(n), rsp2data2read(new Message<Data*>*[n]),
+	req2question2polytope(new Message<Question*>*[n]), req2data2write(new Message<Data*>*[n]),
+	read2data2req(this), window2invoke2req(this), polytope2question2rsp(this), system2invoke2req(this),
+	write2data2rsp(this), system2question2rsp(this)
 {
 }
 
@@ -48,6 +50,13 @@ void Script::connect(int i, Polytope *ptr)
 void Script::connect(System *ptr)
 {
 	rsp2invoke2system = &ptr->script2invoke2rsp;
+	req2question2system = &ptr->script2question2req;
+}
+
+void Script::connect(int i, Write *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    req2data2write[i] = &ptr->script2data2req;
 }
 
 void Script::call()

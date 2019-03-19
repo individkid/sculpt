@@ -21,7 +21,7 @@
 #include "script.hpp"
 
 System::System(int n) : nfile(n), rsp2data2read(new Message<Data*>*[n]),
-	read2data2req(this), script2invoke2rsp(this)
+	read2data2req(this), script2invoke2rsp(this), script2question2req(this)
 {
 }
 
@@ -34,6 +34,7 @@ void System::connect(int i, Read *ptr)
 void System::connect(Script *ptr)
 {
 	req2invoke2script = &ptr->system2invoke2req;
+	rsp2question2script = &ptr->system2question2rsp;
 }
 
 void System::call()

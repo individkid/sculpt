@@ -62,6 +62,8 @@ Window->Invoke->Script for starting macro from click
 Polytope->Data->Write for appending manipulated or randomized planes  
 Polytope->Command->Window for changing what is displayed  
 Script->Question->Polytope for feedback from topology  
+Script->Data->Write for side effects  
+Script->Question->System for getting stock values  
 System->Invoke->Script for getting value from metric  
 
 For example, --plane sends a stuct to the Polytope thread that sends a Command to the Window thread to append the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.

@@ -56,14 +56,16 @@ extern "C" void sendWrite(int file, int plane, float *matrix, enum Configure con
 {
     Data *data = datas.get(); data->file = file; data->plane = plane;
     data->thread = WindowType; data->conf = conf;
-    data->matrix = floats.get(3);
-    for (int i = 0; i < 3; i++) data->matrix[i] = matrix[i];
+    data->matrix = floats.get(3); for (int i = 0; i < 3; i++) data->matrix[i] = matrix[i];
     window->sendData(WriteType,data);
 }
 
-extern "C" void sendInvoke()
+extern "C" void sendInvoke(int tagbits, enum ClickMode click, int file, int plane, float *pierce)
 {
-    window->sendInvoke();
+    Invoke *invoke = invokes.get(); invoke->tagbits = tagbits;
+    invoke->click = click; invoke->file = file; invoke->plane = plane;
+    invoke->pierce = floats.get(3); for (int i = 0; i < 3; i++) invoke->pierce[i] = pierce[i];
+    window->sendInvoke(invoke);
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -177,11 +179,8 @@ void Window::processResponse(Data &data)
 
 void Window::processData(Data &data)
 {
-    if (data.conf == TestConf) printf("%s",data.text);
-    else syncMatrix(&data);
-    switch (data.thread) {
-    case (ReadType): object[data.file].rsp2data2read->put(&data); break;
-    default: error("processData",data.thread,__FILE__,__LINE__); break;}
+    syncMatrix(&data);
+    sendData(ReadType,&data);
     glfwPollEvents();
 }
 
@@ -309,9 +308,8 @@ void Window::sendData(ThreadType thread, Data *data)
     default: error("sendData",thread,__FILE__,__LINE__); break;}
 }
 
-void Window::sendInvoke()
+void Window::sendInvoke(Invoke *invoke)
 {
-    Invoke *invoke = invokes.get();
     req2invoke2script->put(invoke);
 }
 
@@ -362,9 +360,9 @@ void Window::call()
     if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
     finishQueue(query); if (isSuspend()) startQueue(pierce); else startQueue(redraw);
     Invoke *response = 0; while (script2invoke2rsp.get(response)) processInvoke(*response);
-    Data *msg = 0; while (polytope2data2rsp.get(msg)) processResponse(*msg);
-    msg = 0; while (write2data2rsp.get(msg)) processResponse(*msg);
-    msg = 0; while (read2data2req.get(msg)) processData(*msg);
+    Data *data = 0; while (polytope2data2rsp.get(data)) processResponse(*data);
+    data = 0; while (write2data2rsp.get(data)) processResponse(*data);
+    data = 0; while (read2data2req.get(data)) processData(*data);
     Command *command = 0; while (read2command2req.get(command)) startCommand(query,*command);
     command = 0; while (polytope2command2req.get(command)) startCommand(query,*command);}
     glfwTerminate();

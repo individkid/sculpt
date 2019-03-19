@@ -21,6 +21,10 @@
 
 #include "message.hpp"
 
+class Window;
+class Polytope;
+class Script;
+
 class Write : public Thread
 {
 private:
@@ -30,12 +34,16 @@ private:
 	Message<Data*> *rsp2data2window;
 	// Polytope->Data->Write
 	Message<Data*> *rsp2data2polytope;
+	// Script->Data->Write
+	Message<Data*> *rsp2data2script;
 public:
 	Message<Data*> window2data2req;
 	Message<Data*> polytope2data2req;
+	Message<Data*> script2data2req;
 	Write(int i, const char *n);
-	void connect(class Window *ptr);
-	void connect(class Polytope *ptr);
+	void connect(Window *ptr);
+	void connect(Polytope *ptr);
+	void connect(Script *ptr);
 	virtual void init();
 	virtual void call();
 	virtual void done();
