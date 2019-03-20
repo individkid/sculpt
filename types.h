@@ -31,22 +31,15 @@ typedef unsigned MYenum;
 typedef unsigned MYuint;
 enum Buffer {
 	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
-	Face, Frame, Coface, Coframe, Incidence, Block,
-	Construct, Dimension, Vertex, Vector, Pierce, Side,
-	Uniform, Global, Query, Texture0, Texture1, Buffers};
+	Facet, Element,
+	Vector,
+    Uniform, Query, Texture0, Texture1, Buffers};
 enum Program {
-    Diplane, // Plane,Versor,Face -> display
-    Dipoint, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
-    Coplane, // Plane,Versor,Incidence -> Vertex
-    Copoint, // Point,Block -> Construct,Dimension
-    Adplane, // Plane,Versor,Face -> Side
-    Adpoint, // Point,Frame -> Side
-    Perplane, // Plane,Versor,Face -> Pierce
-    Perpoint, // Point,Frame -> Pierce
-    Replane, // Plane,Versor -> Vertex
-    Repoint, // Point -> Construct,Dimension
-    Explane, // Plane,Versor -> Vector
-    Expoint, // Point -> Vector
+    Draw, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Facet -> display
+    Intersect, // Plane,Versor,Element -> Vector
+    Cross, // Point,Element -> Vector
+    Regard, // Point,Element -> Vector
+    Pierce, // Point,Facet -> Vector
     Programs};
 enum Space {
 	Small, // specified space

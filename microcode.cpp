@@ -25,22 +25,15 @@
 void Microcode::initProgram(Program program)
 {
     switch (program) {
-    case (Diplane): break;
-    case (Dipoint): initDipoint(); break;
-    case (Coplane): break;
-    case (Copoint): break;
-    case (Adplane): break;
-    case (Adpoint): break;
-    case (Perplane): break;
-    case (Perpoint): break;
-    case (Replane): break;
-    case (Repoint): break;
-    case (Explane): break;
-    case (Expoint): break;
+    case (Draw): initDraw(); break;
+    case (Intersect): break;
+    case (Cross): break;
+    case (Regard): break;
+    case (Pierce): break;
     default: error("invalid program",program,__FILE__,__LINE__);}
 }
 
-void Microcode::initDipoint()
+void Microcode::initDraw()
 {
 	const char *vertex = "\
     layout (location = 0) in vec3 point;\n\

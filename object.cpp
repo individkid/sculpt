@@ -43,21 +43,20 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
 	switch (buffer) {
 	case (Texture0): handle.unit = GL_TEXTURE0; break;
     case (Texture1): handle.unit = GL_TEXTURE1; break;
-    case (Uniform): case (Global): if (!first) {handle.handle = 0; break;}
     case (Query): glGenQueries(1,&handle.handle); break;
+    case (Uniform): if (!first) {handle.handle = 0; break;}
 	default: glGenBuffers(1,&handle.handle); break;}
     switch (buffer) {
-    case (Face): case (Frame): case (Coface): case (Coframe): case (Incidence): case (Block): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
-    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
-    case (Uniform): case (Global): handle.target = GL_UNIFORM_BUFFER; break;
+    case (Facet): case (Element): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
+    case (Vector): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
+    case (Uniform): handle.target = GL_UNIFORM_BUFFER; break;
     case (Texture0): case (Texture1): handle.target = GL_TEXTURE_2D; break;
     case (Query): handle.target = GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN; break;
     default: handle.target = GL_ARRAY_BUFFER; break;}
     switch (buffer) {
-    case (Construct): case (Dimension): case (Vertex): case (Vector): case (Pierce): case (Side): handle.usage = GL_STATIC_READ; break;
+    case (Vector): handle.usage = GL_STATIC_READ; break;
     default: handle.usage = GL_STATIC_DRAW; break;}
     switch (buffer) {
-    case (Dimension): case (Global): handle.index = 1; break;
     default: handle.index = 0;}
 }
 
@@ -65,10 +64,8 @@ void Object::initVao(enum Buffer buffer, enum Program program, enum Space space,
 {
 	glBindVertexArray(vao);
 	switch (program) {
-    case (Diplane): break;
-	case (Dipoint): switch (buffer) {
-	case (Frame): if (space == Small) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
-	case (Coframe): if (space == Large) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+	case (Draw): switch (buffer) {
+	case (Facet): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
 	case (Point): initVao3f(0,handle); break;
 	case (Normal): for (int i = 1; i < 4; i++) initVao3f(i,handle); break;
 	case (Coordinate): for (int i = 4; i < 7; i++) initVao2f(i,handle); break;
@@ -76,16 +73,10 @@ void Object::initVao(enum Buffer buffer, enum Program program, enum Space space,
 	case (Color): for (int i = 10; i < 13; i++) initVao3f(i,handle); break;
 	case (Tag): for (int i = 13; i < 16; i++) initVao2u(i,handle); break;
 	default: break;}
-    case (Coplane): break;
-    case (Copoint): break;
-    case (Adplane): break;
-    case (Adpoint): break;
-    case (Perplane): break;
-    case (Perpoint): break;
-    case (Replane): break;
-    case (Repoint): break;
-    case (Explane): break;
-    case (Expoint): break;
+    case (Intersect): break;
+    case (Cross): break;
+    case (Regard): break;
+    case (Pierce): break;
 	default: error("invalid program",program,__FILE__,__LINE__);}
 	glBindVertexArray(0);
 }

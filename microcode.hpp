@@ -29,7 +29,7 @@ struct Microcode
 	MYenum mode;
 	MYenum primitive;
 	void initProgram(Program program);
-	void initDipoint();
+	void initDraw();
 	void initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback);
 	void initShader(MYenum type, const char *source, MYuint &handle);
 };
