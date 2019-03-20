@@ -29,6 +29,7 @@ static Pool<Command> commands;
 static Pool<Update> updates;
 static Pool<Render> renders;
 static Power<char> chars;
+static Pool<Data> datas;
 
 const char *field[] = {"AllocField","WriteField","BindField","ReadField",0};
 const char *buffer[] = {
@@ -128,16 +129,28 @@ void skip(const char *&ptr)
 	while (ptr[0] && (ptr[0] != '-' || ptr[1] != '-')) ptr++;
 }
 
-void parse(const char *str, Message<Command*> &request)
+int parse(const char *ptr, Command *&command, Data *&data, ThreadType &thread)
 {
-	const char *ptr = str;
-	while (*ptr) {int opt;
-		if (sscanf(ptr,"--command%n",&opt) == 1) {ptr += opt;
-			Command *command = parseCommand(ptr);
-			if (!command) {skip(ptr); continue;}
-			request.put(command);}}
+	const char *pat; int len; int num;
+	pat = "--command"; len = strlen(pat); num = strncmp(ptr,pat,len);
+	if (num == 0) {ptr += len;
+	command = parseCommand(ptr);
+	if (command) {data = 0; return 1;}}
+	pat = "--test"; len = strlen(pat); num = strncmp(ptr,pat,len);
+	if (num == 0) {ptr += len;
+	data = datas.get(); data->thread = ReadType; data->conf = TestConf;
+	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
+	data->text = prefix(chars,ptr,len+1); data->text[len] = 0;
+	thread = PolytopeType; command = 0; return 1;}
+	return 0;
 }
 
 void unparseCommand(Command *command)
 {
+}
+
+void unparseData(Data *data)
+{
+	if (data->conf == TestConf) chars.put(strlen(data->text)+1,data->text);
+	datas.put(data);
 }

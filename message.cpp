@@ -93,26 +93,38 @@ char *concat(Power<char> &pool, char left, char *right)
 
 char *prefix(Power<char> &pool, const char *str, int len)
 {
-	char *res = strncpy(pool.get(len+1),str,len+1);
+	char *res; const char *src; int num;
+	if (len > 0) {num = len; src = str;}
+	else {int num = -len; src = str+strlen(str)+len;}
+	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	return res;
 }
 
 char *prefix(Power<char> &pool, char *str, int len)
 {
-	char *res = strncpy(pool.get(len+1),str,len+1);
+	char *res; const char *src; int num;
+	if (len > 0) {num = len; src = str;}
+	else {int num = -len; src = str+strlen(str)+len;}
+	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	pool.put(strlen(str)+1,str);
 	return res;
 }
 
 char *postfix(Power<char> &pool, const char *str, int len)
 {
-	char *res = strcpy(pool.get(len+1),str+(strlen(str)-len));
+	char *res; const char *src; int num;
+	if (len > 0) {num = strlen(str)-len; src = str+len;}
+	else {int num = strlen(str)+len; src = str;}
+	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	return res;
 }
 
 char *postfix(Power<char> &pool, char *str, int len)
 {
-	char *res = strcpy(pool.get(len+1),str+(strlen(str)-len));
+	char *res; const char *src; int num;
+	if (len > 0) {num = strlen(str)-len; src = str+len;}
+	else {int num = strlen(str)+len; src = str;}
+	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	pool.put(strlen(str)+1,str);
 	return res;
 }

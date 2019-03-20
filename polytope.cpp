@@ -53,5 +53,5 @@ void Polytope::connect(Script *ptr)
 void Polytope::call()
 {
     Data *data = 0; while (read2data2req.get(data)) {
-    printf("%s",data->text); rsp2data2read->put(data);}
+    printf("polytope:%s",data->text); rsp2data2read->put(data);}
 }

@@ -28,9 +28,10 @@
 #include "system.hpp"
 #include "script.hpp"
 
-static Pool<Data> datas;
 static Power<char> chars;
 
+int parse(const char *str, Command *&command, Data *&data, ThreadType &thread);
+void unparseData(Data *data);
 void unparseCommand(Command *command);
 
 Message<Data*> *Read::req2data2thread(ThreadType i)
@@ -92,26 +93,24 @@ void Read::init()
 
 void Read::call()
 {
-    Command *command = 0; while (window2command2rsp.get(command)) unparseCommand(command);
-    Data *data = 0; for (int i = (int)WindowType; i < ThreadTypes; i++)
-    while (thread2data2rsp((ThreadType)i).get(data)) {
-    if (data->conf == TestConf) chars.put(strlen(data->text)+1,data->text); datas.put(data);}
+    Command *command; Data *data;
+    while (window2command2rsp.get(command)) unparseCommand(command);
+    for (int i = (int)WindowType; i < ThreadTypes; i++)
+    while (thread2data2rsp((ThreadType)i).get(data)) unparseData(data);
 	// read to eof
 	char *cmdstr = setup(chars,""); int num; char chr;
 	while ((num = ::read(file, &chr, 1)) == 1) {
 	cmdstr = concat(chars,cmdstr,chr); fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
 	while (*cmdstr) {
-	int len = 0; while (cmdstr[len])
-	if (len > 1 && cmdstr[len+1] == '-' && cmdstr[len+2] == '-') break; else len++;
+	int len = 0; if (cmdstr[len] == '-' && cmdstr[len+1] == '-') len += 2;
+	while (cmdstr[len] && !(cmdstr[len] == '-' && cmdstr[len+1] == '-')) len++;
 	char *substr = prefix(chars,cmdstr,len);
-	cmdstr = postfix(chars,cmdstr,strlen(cmdstr)-len);
-	const char *pat = "--test";
-	if (strncmp(substr,pat,strlen(pat)) == 0) {
-	Data *data = datas.get();
-	data->text = substr; data->thread = ReadType;
-	data->conf = TestConf; data->file = self;
-	req2data2thread(PolytopeType)->put(data);}}
+	cmdstr = postfix(chars,cmdstr,len);
+	Command *command; Data *data; ThreadType thread;
+	if (parse(cleanup(chars,substr),command,data,thread)) {
+	if (command) req2command2window->put(command);
+	if (data) {data->file = self; req2data2thread(thread)->put(data);}}}
 }
 
 void Read::wait()

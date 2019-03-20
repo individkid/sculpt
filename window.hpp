@@ -31,6 +31,7 @@ class Script;
 
 struct Queue
 {
+	Queue() : first(0), last(0), loop(0) {}
 	Command *first;
 	Command *last;
 	Command *loop;

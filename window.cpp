@@ -223,6 +223,7 @@ void Window::swapQueue(Queue &queue, Command *&command)
 void Window::startCommand(Queue &queue, Command &command)
 {
     Command *next = &command;
+printf("startCommand %p\n",next);
     while (next) {
     if (!next->finish) processCommand(*next);
     if (next->finish) finishCommand(*next);
