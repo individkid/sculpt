@@ -28,6 +28,7 @@ extern "C" void checkQuery(int file, struct Update *update);
 static Pool<Command> commands;
 static Pool<Update> updates;
 static Pool<Render> renders;
+static Pool<Response> responses;
 static Power<char> chars;
 static Pool<Data> datas;
 
@@ -129,19 +130,22 @@ void skip(const char *&ptr)
 	while (ptr[0] && (ptr[0] != '-' || ptr[1] != '-')) ptr++;
 }
 
-int parse(const char *ptr, Command *&command, Data *&data, ThreadType &thread)
+int parse(const char *ptr, Command *&command, Data *&data, ThreadType &dest, ThreadType source, int file)
 {
 	const char *pat; int len; int num;
 	pat = "--command"; len = strlen(pat); num = strncmp(ptr,pat,len);
 	if (num == 0) {ptr += len;
 	command = parseCommand(ptr);
-	if (command) {data = 0; return 1;}}
+	if (command) {
+	Response *response = responses.get(); command->response = response;
+	response->next = 0; response->file = file; response->thread = source;
+	data = 0; return 1;}}
 	pat = "--test"; len = strlen(pat); num = strncmp(ptr,pat,len);
 	if (num == 0) {ptr += len;
-	data = datas.get(); data->thread = ReadType; data->conf = TestConf;
+	data = datas.get(); data->thread = ReadType; data->conf = TestConf; data->file = file;
 	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
 	data->text = prefix(chars,ptr,len+1); data->text[len] = 0;
-	thread = PolytopeType; command = 0; return 1;}
+	dest = PolytopeType; command = 0; return 1;}
 	return 0;
 }
 

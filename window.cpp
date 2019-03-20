@@ -272,6 +272,7 @@ Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]),
     read2command2req(this), read2data2req(this), write2data2rsp(this),
     polytope2data2rsp(this), script2invoke2rsp(this), polytope2command2req(this)
 {
+    Queue init = {0}; redraw = pierce = query = init;
 }
 
 void Window::connect(int i, Read *ptr)

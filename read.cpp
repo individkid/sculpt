@@ -30,7 +30,7 @@
 
 static Power<char> chars;
 
-int parse(const char *str, Command *&command, Data *&data, ThreadType &thread);
+int parse(const char *str, Command *&command, Data *&data, ThreadType &thread, ThreadType response, int file);
 void unparseData(Data *data);
 void unparseCommand(Command *command);
 
@@ -108,9 +108,9 @@ void Read::call()
 	char *substr = prefix(chars,cmdstr,len);
 	cmdstr = postfix(chars,cmdstr,len);
 	Command *command; Data *data; ThreadType thread;
-	if (parse(cleanup(chars,substr),command,data,thread)) {
+	if (parse(cleanup(chars,substr),command,data,thread,ReadType,self)) {
 	if (command) req2command2window->put(command);
-	if (data) {data->file = self; req2data2thread(thread)->put(data);}}}
+	if (data) req2data2thread(thread)->put(data);}}
 }
 
 void Read::wait()
