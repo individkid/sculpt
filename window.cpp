@@ -84,50 +84,60 @@ extern "C" int decodeClick(int button, int action, int mods)
 void Window::allocBuffer(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) allocTexture2d(update); else {
+    switch(update.buffer) {
+    case (Texture0): case (Texture1): allocTexture2d(update); break;
+    default: {
     glBindBuffer(buffer.target,buffer.handle);
     glBufferData(buffer.target,update.size,NULL,buffer.usage);
-    glBindBuffer(buffer.target,0);}
+    glBindBuffer(buffer.target,0);
+    break;}}
 }
 
 void Window::writeBuffer(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
-    if (update.function) update.function(update.file,&update);
-    if (buffer.target == GL_TEXTURE_2D) writeTexture2d(update); else {
+    if (update.function) update.function(&update);
+    switch(update.buffer) {
+    case (Texture0): case (Texture1):  writeTexture2d(update); break;
+    default: {
     glBindBuffer(buffer.target,buffer.handle);
     glBufferSubData(buffer.target,update.offset,update.size,update.data);
-    glBindBuffer(buffer.target,0);}
+    glBindBuffer(buffer.target,0);
+    break;}}
 }
 
 void Window::bindBuffer(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) bindTexture2d(update); else
-    if (buffer.target == GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN)
-    glBeginQuery(buffer.target,buffer.handle); else
+    switch(update.buffer) {
+    case (Texture0): case (Texture1): bindTexture2d(update); break;
+    case (Query): glBeginQuery(buffer.target,buffer.handle); break;
+    default: {
     glBindBufferBase(buffer.target,buffer.index,buffer.handle);
+    break;}}
 }
 
 void Window::unbindBuffer(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) unbindTexture2d(); else
-    if (buffer.target == GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN)
-    glEndQuery(buffer.target); else
-    glBindBufferBase(buffer.target,buffer.index,0);
+    switch(update.buffer) {
+    case (Texture0): case (Texture1): unbindTexture2d(); break;
+    case (Query): glEndQuery(buffer.target); break;
+    default: glBindBufferBase(buffer.target,buffer.index,0); break;}
 }
 
 void Window::readBuffer(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
-    if (buffer.target == GL_TEXTURE_2D) ; else
-    if (buffer.target == GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN)
-    glGetQueryObjectuiv(update.handle, GL_QUERY_RESULT, update.query); else {
+    switch(update.buffer) {
+    case (Texture0): case (Texture1): break;
+    case (Query): glGetQueryObjectuiv(update.handle, GL_QUERY_RESULT, update.query); break;
+    default: {
     glBindBuffer(buffer.target,buffer.handle);
     glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
-    glBindBuffer(buffer.target,0);}
-    if (update.function) update.function(update.file,&update);
+    glBindBuffer(buffer.target,0);
+    break;}}
+    if (update.function) update.function(&update);
 }
 
 void Window::allocTexture2d(Update &update)
@@ -148,7 +158,7 @@ void Window::writeTexture2d(Update &update)
     Handle &buffer = object[update.file].handle[update.buffer];
     glActiveTexture(buffer.handle);
     glBindTexture(GL_TEXTURE_2D,update.handle);
-    if (update.function) update.function(update.file,&update);
+    if (update.function) update.function(&update);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D,0);
@@ -168,7 +178,6 @@ void Window::unbindTexture2d()
 
 void Window::processInvoke(Invoke &invoke)
 {
-    // TODO spoof triggerAction if not suppressed by Invoke response
     invokes.put(&invoke);
 }
 

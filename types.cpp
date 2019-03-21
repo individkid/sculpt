@@ -20,10 +20,9 @@
 #include "types.h"
 #include "message.hpp"
 
-extern "C" void setData(int file, struct Update *update);
-extern "C" void getUniform(int file, struct Update *update);
-extern "C" void putUniform(int file, struct Update *update);
-extern "C" void checkQuery(int file, struct Update *update);
+extern "C" void getUniform(struct Update *update);
+extern "C" void putUniform(struct Update *update);
+extern "C" void checkQuery(struct Update *update);
 
 static Pool<Command> commands;
 static Pool<Update> updates;
@@ -39,8 +38,8 @@ const char *buffer[] = {
 	"Construct", "Dimension", "Vertex", "Vector", "Pierce", "Side",
 	"Uniform", "Global", "Query", "Texture0", "Texture1", "Programs"};
 const char *data[] = {"data","scalar","query"};
-const char *name[] = {"setData","getUniform","putUniform","checkQuery",0};
-void (*function[])(int, struct Update *) = {setData,getUniform,putUniform,checkQuery};
+const char *name[] = {"getUniform","putUniform","checkQuery",0};
+void (*function[])(struct Update *) = {getUniform,putUniform,checkQuery};
 const char *program[] = {
     "Diplane", // Plane,Versor,Face -> display
     "Dipoint", // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
@@ -60,88 +59,98 @@ const char *space[] = {
 
 Update *parseUpdate(const char *&ptr)
 {
-	Update init = {0}; Update *update = updates.get(); *update = init; int opt, i;
-	if (sscanf(ptr," %d%n",&update->file,&opt) == 2) ptr += opt; else return 0;
+	Update init = {0}; Update *update = updates.get(); *update = init; int len, i; const char *pat;
+	len = number(ptr,update->file);
+	if (len) ptr += len; else return 0;
 	for (i = 0; i < Buffers; i++) {
-		const char *str = cleanup(chars,concat(chars,concat(chars," ",buffer[i]),"%n"));
-		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; update->buffer = (Buffer)i; break;}}
+		pat = cleanup(chars,concat(chars," ",buffer[i]));
+		len = literal(ptr,pat);
+		if (len) {ptr += len; update->buffer = (Buffer)i; break;}}
 	if (i == Buffers) return 0;
-	if (sscanf(ptr," %d%n",&update->offset,&opt) == 2) ptr += opt; else return 0;
-	if (sscanf(ptr," %d%n",&update->size,&opt) == 2) ptr += opt; else return 0;
+	len = number(ptr,update->offset);
+	if (len) ptr += len; else return 0;
+	len = number(ptr,update->size);
+	if (len) ptr += len; else return 0;
 	int siz = (update->buffer == Texture0 || update->buffer == Texture1 ?
-		update->width*update->height*3 + (4-(update->width*3)%4)*update->height : update->size);
+		update->width*update->height*3 + (4-(update->width*3)%4)*update->height :
+		update->size);
 	update->text = chars.get(siz);
 	for (i = 0; i < siz; i++) {
-		unsigned val;
-		if (sscanf(ptr," %2x%n",&val,&opt) == 2) ptr += opt; else return 0;
-		update->text[i] = val;}
+		int val; len = number(ptr,val); update->text[i] = val;
+		if (len) ptr += len; else return 0;}
 	for (i = 0; name[i]; i++) {
-		const char *str = cleanup(chars,concat(chars,concat(chars," ",name[i]),"%n"));
-		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; update->function = function[i]; break;}}
+		pat = cleanup(chars,concat(chars," ",name[i]));
+		len = literal(ptr,pat);
+		if (len) {ptr += len; update->function = function[i]; break;}}
 	return update;
 }
 
 Render *parseRender(const char *&ptr)
 {
-	Render init = {0}; Render *render = renders.get(); *render = init; int opt, i;
-	if (sscanf(ptr," %d%n",&render->file,&opt) == 2) ptr += opt; else return 0;
+	Render init = {0}; Render *render = renders.get(); *render = init; int len, i; const char *pat;
+	len = number(ptr,render->file);
+	if (len) ptr += len; else return 0;
 	for (i = 0; i < Programs; i++) {
-		const char *str = cleanup(chars,concat(chars,concat(chars," ",program[i]),"%n"));
-		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; render->program = (Program)i; break;}}
+		pat = cleanup(chars,concat(chars," ",program[i]));
+		len = literal(ptr,pat);
+		if (len) {ptr += len; render->program = (Program)i; break;}}
 	if (i == Programs) return 0;
 	for (i = 0; i < Spaces; i++) {
-		const char *str = cleanup(chars,concat(chars,concat(chars," ",space[i]),"%n"));
-		if (sscanf(ptr,str,&opt) == 1) {ptr += opt; render->space = (Space)i; break;}}
+		pat = cleanup(chars,concat(chars," ",space[i]));
+		len = literal(ptr,pat);
+		if (len) {ptr += len; render->space = (Space)i; break;}}
 	if (i == Spaces) return 0;
-	if (sscanf(ptr," %d%n",&render->base,&opt) == 2) ptr += opt; else return 0;
-	if (sscanf(ptr," %d%n",&render->count,&opt) == 2) ptr += opt; else return 0;
-	if (sscanf(ptr," %d%n",&render->size,&opt) == 2) ptr += opt; else return 0;
+	len = number(pat,render->base);
+	if (len) ptr += len; else return 0;
+	len = number(pat,render->count);
+	if (len) ptr += len; else return 0;
+	len = number(pat,render->size);
+	if (len) ptr += len; else return 0;
 	return render;
 }
 
 Command *parseCommand(const char *&ptr)
 {
-	Command init = {0}; Command *command = commands.get(); *command = init; int opt;
-	if (sscanf(ptr," feedback%n",&opt) == 1) {ptr += opt; command->feedback = 1;}
+	Command init = {0}; Command *command = commands.get(); *command = init; int len; const char *pat;
+	len = literal(ptr," feedback");
+	if (len) {ptr += len; command->feedback = 1;}
 	for (int i = 0; i < Fields; i++) {
-		const char *str = cleanup(chars,concat(chars,concat(chars," ",field[i]),"%n"));
-		while (sscanf(ptr,str,&opt) == 1) {ptr += opt;
-			Update *update = parseUpdate(ptr);
-			if (!update) return 0;
-			insert(command->update[(Field)i],update);}}
-	while (sscanf(ptr," render%n",&opt) == 1) {ptr += opt;
-		Render *render = parseRender(ptr);
-		if (!render) return 0;
-		insert(command->render,render);}
-	if (sscanf(ptr," redraw%n",&opt) == 1) {ptr += opt;
-		Command *redraw = parseCommand(ptr);
-		if (!redraw) return 0;
-		command->redraw = redraw;}
-	if (sscanf(ptr," pierce%n",&opt) == 1) {ptr += opt;
-		Command *pierce = parseCommand(ptr);
-		if (!pierce) return 0;
-		command->pierce = pierce;}
+		pat = cleanup(chars,concat(chars," ",field[i]));
+		Update *update = 0;
+		while ((len = literal(ptr,pat))) {ptr += len;
+			insert(update,parseUpdate(ptr));
+			if (!update) return 0;}
+		while (update) {
+            insert(command->update[(Field)i],update);
+            remove(update,update);}}
+    Render *render = 0;
+	while ((len = literal(ptr," render"))) {ptr += len;
+		insert(render,parseRender(ptr));
+		if (!render) return 0;}
+	while (render) {
+		insert(command->render,render);
+		remove(render,render);}
+	if ((len = literal(ptr," redraw"))) {ptr += len;
+		command->redraw = parseCommand(ptr);
+		if (!command->redraw) return 0;}
+	if ((len = literal(ptr," pierce"))) {ptr += len;
+		command->pierce = parseCommand(ptr);
+		if (!command->pierce) return 0;}
 	return command;
-}
-
-void skip(const char *&ptr)
-{
-	if (ptr[0] == '-' && ptr[1] == '-') ptr += 2;
-	while (ptr[0] && (ptr[0] != '-' || ptr[1] != '-')) ptr++;
 }
 
 int parse(const char *ptr, Command *&command, Data *&data, ThreadType &dest, ThreadType source, int file)
 {
-	const char *pat; int len; int num;
-	pat = "--command"; len = strlen(pat); num = strncmp(ptr,pat,len);
-	if (num == 0) {ptr += len;
+	int len;
+	len = literal(ptr,"--command");
+	if (len) {ptr += len;
 	command = parseCommand(ptr);
 	if (command) {
 	Response *response = responses.get(); command->response = response;
 	response->next = 0; response->file = file; response->thread = source;
 	data = 0; return 1;}}
-	pat = "--test"; len = strlen(pat); num = strncmp(ptr,pat,len);
-	if (num == 0) {ptr += len;
+	len = literal(ptr,"--test");
+	if (len) {ptr += len;
 	data = datas.get(); data->thread = ReadType; data->conf = TestConf; data->file = file;
 	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
 	data->text = prefix(chars,ptr,len+1); data->text[len] = 0;

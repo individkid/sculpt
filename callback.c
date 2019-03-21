@@ -229,12 +229,7 @@ void syncMatrix(struct Data *data)
 	default: displayError(data->conf,"invalid data->conf"); exit(-1);}
 }
 
-void setData(int file, struct Update *update)
-{
-	syncMatrix(update->data);
-}
-
-void getUniform(int file, struct Update *update)
+void getUniform(struct Update *update)
 {
 	float *cursor = update->format->cursor;
 	float *affine = update->format->affine;
@@ -245,23 +240,23 @@ void getUniform(int file, struct Update *update)
 	MYuint *tagplane = &update->format->tagplane;
 	// MYuint *taggraph = &update->format->taggraph;
 	copyvec(cursor,current.cursor,2);
-	affineMatrix(file,affine);
-	if (state.target == FacetMode && file == matrix.file) {
+	affineMatrix(update->file,affine);
+	if (state.target == FacetMode && update->file == matrix.file) {
 	if (state.toggle == 0) mouseMatrix(perplane); else rollerMatrix(perplane);
 	timesmat(perplane,matrix.facet,4); *tagplane = matrix.plane;} else identmat(perplane,4);
 }
 
-void putUniform(int file, struct Update *update)
+void putUniform(struct Update *update)
 {
-	current.pierce[2] = INVALID;
+	if (update->first) current.pierce[2] = INVALID;
 	for (int i = 0; i < update->size; i++)
 	if (current.pierce[2] > update->feedback[i].pierce[2]) {
 	for (int j = 0; j < 3; j++) current.pierce[j] = update->feedback[i].pierce[j];
 	for (int j = 0; j < 3; j++) current.normal[j] = update->feedback[i].normal[j];
-	current.file = file; current.plane = update->feedback[i].plane;}
+	current.file = update->file; current.plane = update->feedback[i].plane;}
 }
 
-void checkQuery(int file, struct Update *update)
+void checkQuery(struct Update *update)
 {
 	if (*update->query >= update->size) update->finish = 0;
 }
@@ -339,21 +334,16 @@ void changeToggle(int toggle)
 	state.toggle = toggle;
 }
 
-void performAction(enum ClickMode click, int file, int plane, float *pierce)
-{
-	switch (click) {
-	case (AdditiveMode): sendPolytope(file,plane,pierce,AdditiveConf); break;
-	case (SubtractiveMode): sendPolytope(file,plane,pierce,SubtractiveConf); break;
-	case (RefineMode): sendPolytope(file,plane,pierce,RefineConf); break;	
-	case (TransformMode): changeClick(PierceMode); break;
-	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
-	default: displayError(click,"invalid state.click"); exit(-1);}
-}
-
 void triggerAction()
 {
-	if (current.tagbits) performAction(state.click,current.file,current.plane,current.pierce);
-	else sendInvoke(current.tagbits,state.click,current.file,current.plane,current.pierce);
+	if (current.tagbits) sendInvoke(current.tagbits,state.click,current.file,current.plane,current.pierce);
+	switch (state.click) {
+	case (AdditiveMode): sendPolytope(current.file,current.plane,current.pierce,AdditiveConf); break;
+	case (SubtractiveMode): sendPolytope(current.file,current.plane,current.pierce,SubtractiveConf); break;
+	case (RefineMode): sendPolytope(current.file,current.plane,current.pierce,RefineConf); break;	
+	case (TransformMode): changeClick(PierceMode); break;
+	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
+	default: displayError(state.click,"invalid state.click"); exit(-1);}
 }
 
 void toggleSuspend()

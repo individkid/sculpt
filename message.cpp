@@ -148,6 +148,30 @@ const char *cleanup(Power<char> &pool, char *str)
 	return str;
 }
 
+int number(const char *str, int &val)
+{
+	char *ptr;
+	val = strtol(str,&ptr,0);
+	return ptr-str;
+}
+
+int scalar(const char *str, float &val)
+{
+	char *ptr;
+	val = strtof(str,&ptr);
+	return ptr-str;
+}
+
+int literal(const char *str, const char *pat)
+{
+	const char *ptr = str;
+	if (*pat && isspace(*pat)) {
+	while (*pat && isspace(*pat)) pat++;
+	while (*ptr && isspace(*ptr)) ptr++;}
+	while (*pat && *ptr == *pat) {ptr++; pat++;}
+	return (*pat ? 0 : ptr-str);
+}
+
 extern "C" void *threadFunc(void *arg)
 {
 	Thread *thread = (Thread *)arg;

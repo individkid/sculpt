@@ -164,12 +164,12 @@ struct Update
 	struct Update *next;
 	int file, finish;
 	enum Buffer buffer;
-	union {int offset; int width;};
+	union {int offset; int width; int first;};
 	union {int size; int height;};
 	MYuint handle;
-	union {char *text; float *scalar; MYuint *query;
-	struct Format *format; struct Feedback *feedback; struct Data *data;};
-	void (*function)(int, struct Update *);
+	union {void *data; char *text; float *scalar; MYuint *query;
+	struct Format *format; struct Feedback *feedback;};
+	void (*function)(struct Update *);
 };
 struct Render
 {
