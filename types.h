@@ -30,15 +30,17 @@ struct GLFWwindow;
 typedef unsigned MYenum;
 typedef unsigned MYuint;
 enum Buffer {
-	Plane, Versor, Point, Normal, Coordinate, Weight, Color, Tag,
-	Facet, Element,
-	Vector,
+	Point0, Versor, Point1, Normal, Coordinate, Weight, Color, Tag, Point2,
+	Face1, Face2, Triple0, Triple1,
+	Vector, Plane, Tagbits,
     Uniform, Query, Texture0, Texture1, Buffers};
 enum Program {
-    Draw, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Facet -> display
-    Intersect, // Plane,Versor,Element -> Vector
-    Regard, // Point,Element -> Vector
-    Pierce, // Point,Facet -> Vector
+    Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
+    Pierce, // Point1,Face1 -> Vector,Plane,Tagbits
+    Sect0, // Point0,Triple0 -> Vector
+    Sect1, // Point1,Triple1 -> Vector
+    Side1, // Point1,Face1 -> Vector
+    Side2, // Point2,Face2 -> Vector
     Programs};
 enum ClickMode {
 	AdditiveMode,

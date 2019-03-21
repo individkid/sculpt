@@ -26,9 +26,11 @@ void Microcode::initProgram(Program program)
 {
     switch (program) {
     case (Draw): initDraw(); break;
-    case (Intersect): break;
-    case (Regard): break;
     case (Pierce): break;
+    case (Sect0): break;
+    case (Sect1): break;
+    case (Side1): break;
+    case (Side2): break;
     default: error("invalid program",program,__FILE__,__LINE__);}
 }
 

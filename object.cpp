@@ -45,7 +45,7 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
     case (Uniform): if (!first) {handle.handle = 0; break;}
 	default: glGenBuffers(1,&handle.handle); break;}
     switch (buffer) {
-    case (Facet): case (Element): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
+    case (Face1): case (Face2): case (Triple0): case (Triple1): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
     case (Vector): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
     case (Uniform): handle.target = GL_UNIFORM_BUFFER; break;
     case (Texture0): case (Texture1): handle.target = GL_TEXTURE_2D; break;
@@ -63,17 +63,34 @@ void Object::initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuin
 	glBindVertexArray(vao);
 	switch (program) {
 	case (Draw): switch (buffer) {
-	case (Facet): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
-	case (Point): initVao3f(0,handle); break;
+	case (Point1): initVao3f(0,handle); break;
 	case (Normal): for (int i = 1; i < 4; i++) initVao3f(i,handle); break;
 	case (Coordinate): for (int i = 4; i < 7; i++) initVao2f(i,handle); break;
 	case (Weight): for (int i = 7; i < 10; i++) initVao4u(i,handle); break;
 	case (Color): for (int i = 10; i < 13; i++) initVao3f(i,handle); break;
 	case (Tag): for (int i = 13; i < 16; i++) initVao2u(i,handle); break;
-	default: break;}
-    case (Intersect): break;
-    case (Regard): break;
-    case (Pierce): break;
+	case (Face1): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+	default: break;} break;
+    case (Pierce): switch (buffer) {
+	case (Point1): initVao3f(0,handle); break;
+    case (Face1): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+    default: break;} break;
+    case (Sect0): switch (buffer) {
+	case (Point0): initVao3f(0,handle); break;
+    case (Triple0): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+    default: break;} break;
+    case (Sect1): switch (buffer) {
+	case (Point1): initVao3f(0,handle); break;
+    case (Triple1): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+    default: break;} break;
+    case (Side1): switch (buffer) {
+	case (Point1): initVao3f(0,handle); break;
+    case (Face1): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+    default: break;} break;
+    case (Side2): switch (buffer) {
+	case (Point2): initVao3f(0,handle); break;
+    case (Face2): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+    default: break;} break;
 	default: error("invalid program",program,__FILE__,__LINE__);}
 	glBindVertexArray(0);
 }
