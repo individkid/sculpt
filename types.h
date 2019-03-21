@@ -40,10 +40,6 @@ enum Program {
     Regard, // Point,Element -> Vector
     Pierce, // Point,Facet -> Vector
     Programs};
-enum Space {
-	Small, // specified space
-	Large, // cospace
-	Spaces};
 enum ClickMode {
 	AdditiveMode,
 	SubtractiveMode,
@@ -134,6 +130,7 @@ struct Format
 	float cursor[2];
 	float affine[16];
 	float perplane[16];
+	float basis[9][3];
 	float cutoff;
 	float slope;
 	float aspect;
@@ -175,7 +172,6 @@ struct Render
 	struct Render *next;
 	int file;
 	enum Program program;
-	enum Space space;
 	int base;
 	int count;
 	int size;

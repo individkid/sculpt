@@ -30,12 +30,10 @@ void Object::initFile(int first)
 	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
 	initHandle(b,(first),handle[b]);
 	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
-	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
-	glGenVertexArrays(1, &vao[p][s]);
+	glGenVertexArrays(1, &vao[p]);
 	for (Buffer b = (Buffer)0; b < Buffers; b = (Buffer)((int)b+1))
 	for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1))
-	for (Space s = (Space)0; s < Spaces; s = (Space)((int)s+1))
-	initVao(b,p,s,vao[p][s],handle[b].handle);
+	initVao(b,p,vao[p],handle[b].handle);
 }
 
 void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
@@ -60,7 +58,7 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
     default: handle.index = 0;}
 }
 
-void Object::initVao(enum Buffer buffer, enum Program program, enum Space space, MYuint vao, MYuint handle)
+void Object::initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuint handle)
 {
 	glBindVertexArray(vao);
 	switch (program) {

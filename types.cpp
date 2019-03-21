@@ -95,11 +95,6 @@ Render *parseRender(const char *&ptr)
 		len = literal(ptr,pat);
 		if (len) {ptr += len; render->program = (Program)i; break;}}
 	if (i == Programs) return 0;
-	for (i = 0; i < Spaces; i++) {
-		pat = cleanup(chars,concat(chars," ",space[i]));
-		len = literal(ptr,pat);
-		if (len) {ptr += len; render->space = (Space)i; break;}}
-	if (i == Spaces) return 0;
 	len = number(pat,render->base);
 	if (len) ptr += len; else return 0;
 	len = number(pat,render->count);

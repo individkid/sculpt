@@ -96,7 +96,7 @@ void Microcode::initShader(MYenum type, const char *source, MYuint &ident)
     vec2 cursor;\n\
     mat4 affine;\n\
     mat4 perplane;\n\
-    mat4 perlast;\n\
+    mat3 basis[3];\n\
     float cutoff;\n\
     float slope;\n\
     float aspect;\n\

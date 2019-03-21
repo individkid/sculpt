@@ -48,10 +48,10 @@ struct Object
 	// Polytope->Command->Window
 	Message<Command*> *rsp2command2polytope;
 	Handle handle[Buffers];
-	MYuint vao[Programs][Spaces];
+	MYuint vao[Programs];
 	void initFile(int first);
 	void initHandle(enum Buffer buffer, int first, Handle &handle);
-	void initVao(enum Buffer buffer, enum Program program, enum Space space, MYuint vao, MYuint handle);
+	void initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuint handle);
 	void initVao3f(MYuint index, MYuint handle);
 	void initVao2f(MYuint index, MYuint handle);
 	void initVao4u(MYuint index, MYuint handle);

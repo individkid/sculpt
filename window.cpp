@@ -247,7 +247,7 @@ void Window::processCommand(Command &command)
     for (Update *next = command.update[WriteField]; next; next = next->next) writeBuffer(*next);
     for (Render *next = command.render; next; next = next->next) {
     Render &render = *next; Microcode &program = microcode[render.program];
-    glUseProgram(program.handle); glBindVertexArray(object[render.file].vao[render.program][render.space]);
+    glUseProgram(program.handle); glBindVertexArray(object[render.file].vao[render.program]);
     for (Update *next = command.update[BindField]; next; next = next->next) bindBuffer(*next);
     if (command.feedback) {glEnable(GL_RASTERIZER_DISCARD); glBeginTransformFeedback(program.primitive);}
     if (render.count) glDrawElements(program.mode,render.count,GL_UNSIGNED_INT,reinterpret_cast<void*>(render.base));

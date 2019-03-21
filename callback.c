@@ -234,6 +234,7 @@ void getUniform(struct Update *update)
 	float *cursor = update->format->cursor;
 	float *affine = update->format->affine;
 	float *perplane = update->format->perplane;
+	// float *basis = update->format->basis;
 	// float *cutoff = update->format->cutoff;
 	// float *slope = update->format->slope;
 	// float *aspect = update->format->aspect;
