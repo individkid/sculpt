@@ -341,6 +341,9 @@ void triggerAction()
 	case (AdditiveMode): sendPolytope(current.file,current.plane,current.pierce,AdditiveConf); break;
 	case (SubtractiveMode): sendPolytope(current.file,current.plane,current.pierce,SubtractiveConf); break;
 	case (RefineMode): sendPolytope(current.file,current.plane,current.pierce,RefineConf); break;	
+	case (TweakMode): sendPolytope(current.file,current.plane,current.pierce,TweakConf); break;	
+	case (RandomizeMode): sendPolytope(current.file,current.plane,current.pierce,RandomizeConf); break;	
+	case (PerformMode): break;
 	case (TransformMode): changeClick(PierceMode); break;
 	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
 	default: displayError(state.click,"invalid state.click"); exit(-1);}

@@ -74,7 +74,6 @@ void Object::initVao(enum Buffer buffer, enum Program program, enum Space space,
 	case (Tag): for (int i = 13; i < 16; i++) initVao2u(i,handle); break;
 	default: break;}
     case (Intersect): break;
-    case (Cross): break;
     case (Regard): break;
     case (Pierce): break;
 	default: error("invalid program",program,__FILE__,__LINE__);}

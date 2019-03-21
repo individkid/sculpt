@@ -10,9 +10,10 @@ The -- commands are as follows.
 --additive change click mode to fill in region over clicked facet  
 --subractive change click mode to hollow out region under clicked facet  
 --refine change click mode to add random plane through point on clicked facet  
---transform change click mode to transform clicked target  
 --tweak change click mode to randomize target with fixed pierce point  
 --randomize change click mode to randomize target without fixed point  
+--perform change click mode to do nothing  
+--transform change click mode to transform clicked target  
 --cylinder change roller mode to rotate around rotate line  
 --clock change roller mode to rotate around normal to picture plane through pierce point  
 --normal change roller mode to rotate around normal to clicked facet through pierce point  

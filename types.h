@@ -37,7 +37,6 @@ enum Buffer {
 enum Program {
     Draw, // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Facet -> display
     Intersect, // Plane,Versor,Element -> Vector
-    Cross, // Point,Element -> Vector
     Regard, // Point,Element -> Vector
     Pierce, // Point,Facet -> Vector
     Programs};
@@ -49,13 +48,12 @@ enum ClickMode {
 	AdditiveMode,
 	SubtractiveMode,
 	RefineMode,
+	TweakMode,
+	RandomizeMode,
+	PerformMode,
 	TransformMode,
 	SuspendMode,
 	PierceMode,
-	RevealMode,
-	HideMode,
-	TweakMode,
-	RandomizeMode,
 	ClickModes};
 enum MouseMode {
 	RotateMode,
@@ -83,9 +81,10 @@ enum Configure {
 	AdditiveConf,
 	SubtractiveConf,
 	RefineConf,
-	TransformConf,
 	TweakConf,
 	RandomizeConf,
+	PerformConf,
+	TransformConf,
 	CylinderConf,
 	ClockConf,
 	NormalConf,
