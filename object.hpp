@@ -56,6 +56,7 @@ struct Object
 	void initVao2f(MYuint index, MYuint handle);
 	void initVao4u(MYuint index, MYuint handle);
 	void initVao2u(MYuint index, MYuint handle);
+	void initVao1u(MYuint index, MYuint handle);
 };
 
 #endif

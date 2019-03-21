@@ -37,7 +37,7 @@ enum Buffer {
 enum Program {
     Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
     Pierce, // Point1,Face1 -> Vector,Plane,Tagbits
-    Sect0, // Point0,Triple0 -> Vector
+    Sect0, // Point0,Versor,Triple0 -> Vector
     Sect1, // Point1,Triple1 -> Vector
     Side1, // Point1,Face1 -> Vector
     Side2, // Point2,Face2 -> Vector

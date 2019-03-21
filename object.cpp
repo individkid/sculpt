@@ -46,7 +46,7 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
 	default: glGenBuffers(1,&handle.handle); break;}
     switch (buffer) {
     case (Face1): case (Face2): case (Triple0): case (Triple1): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
-    case (Vector): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
+    case (Vector): case (Plane): case (Tagbits): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
     case (Uniform): handle.target = GL_UNIFORM_BUFFER; break;
     case (Texture0): case (Texture1): handle.target = GL_TEXTURE_2D; break;
     case (Query): handle.target = GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN; break;
@@ -55,6 +55,8 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
     case (Vector): handle.usage = GL_STATIC_READ; break;
     default: handle.usage = GL_STATIC_DRAW; break;}
     switch (buffer) {
+    case (Plane): handle.index = 1; break;
+    case (Tagbits): handle.index = 2; break;
     default: handle.index = 0;}
 }
 
@@ -77,6 +79,7 @@ void Object::initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuin
     default: break;} break;
     case (Sect0): switch (buffer) {
 	case (Point0): initVao3f(0,handle); break;
+	case (Versor): initVao1u(1,handle); break;
     case (Triple0): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
     default: break;} break;
     case (Sect1): switch (buffer) {
@@ -123,6 +126,14 @@ void Object::initVao2u(MYuint index, MYuint handle)
 {
 	glBindBuffer(GL_ARRAY_BUFFER,handle);
 	glVertexAttribIPointer(index, 2, GL_UNSIGNED_INT, 2 * sizeof(unsigned), (void*)0);
+	glEnableVertexAttribArray(index);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+}
+
+void Object::initVao1u(MYuint index, MYuint handle)
+{
+	glBindBuffer(GL_ARRAY_BUFFER,handle);
+	glVertexAttribIPointer(index, 1, GL_UNSIGNED_INT, 2 * sizeof(unsigned), (void*)0);
 	glEnableVertexAttribArray(index);
     glBindBuffer(GL_ARRAY_BUFFER,0);
 }
