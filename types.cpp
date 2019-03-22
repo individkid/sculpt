@@ -21,6 +21,7 @@
 #include "message.hpp"
 
 extern "C" void getUniform(struct Update *update);
+extern "C" void firstUniform(struct Update *update);
 extern "C" void putUniform(struct Update *update);
 extern "C" void checkQuery(struct Update *update);
 
@@ -33,29 +34,16 @@ static Pool<Data> datas;
 
 const char *field[] = {"AllocField","WriteField","BindField","ReadField",0};
 const char *buffer[] = {
-	"Plane", "Versor", "Point", "Normal", "Coordinate", "Weight", "Color", "Tag",
-	"Face", "Frame", "Coface", "Coframe", "Incidence", "Block",
-	"Construct", "Dimension", "Vertex", "Vector", "Pierce", "Side",
-	"Uniform", "Global", "Query", "Texture0", "Texture1", "Programs"};
+	"Point0","Versor",
+	"Point1","Normal","Coordinate","Weight","Color","Tag",
+	"Point2",
+	"Face1","Triple0","Triple1",
+	"Vector","Plane","Tagbits",
+	"Uniform","Query","Texture0","Texture1"};
 const char *data[] = {"data","scalar","query"};
-const char *name[] = {"getUniform","putUniform","checkQuery",0};
-void (*function[])(struct Update *) = {getUniform,putUniform,checkQuery};
-const char *program[] = {
-    "Diplane", // Plane,Versor,Face -> display
-    "Dipoint", // Point,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Frame -> display
-    "Coplane", // Plane,Versor,Incidence -> Vertex
-    "Copoint", // Point,Block -> Construct,Dimension
-    "Adplane", // Plane,Versor,Face -> Side
-    "Adpoint", // Point,Frame -> Side
-    "Perplane", // Plane,Versor,Face -> Pierce
-    "Perpoint", // Point,Frame -> Pierce
-    "Replane", // Plane,Versor -> Vertex
-    "Repoint", // Point -> Construct,Dimension
-    "Explane", // Plane,Versor -> Vector
-    "Expoint"}; // Point -> Vector
-const char *space[] = {
-	"Small", // specified space
-	"Large"}; // cospace
+const char *name[] = {"getUniform","firstUniform","putUniform","checkQuery",0};
+void (*function[])(struct Update *) = {getUniform,firstUniform,putUniform,checkQuery};
+const char *program[] = {"Draw","Pierce","Sect0","Sect1","Side1","Side2"};
 
 Update *parseUpdate(const char *&ptr)
 {

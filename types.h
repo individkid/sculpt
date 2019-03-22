@@ -26,21 +26,27 @@
 #define LENGTH (1.0/30.0)
 
 struct GLFWwindow;
-
 typedef unsigned MYenum;
 typedef unsigned MYuint;
+
 enum Buffer {
-	Point0, Versor, Point1, Normal, Coordinate, Weight, Color, Tag, Point2,
-	Face1, Face2, Triple0, Triple1,
-	Vector, Plane, Tagbits,
+	Point0, // planes from file, only appended to
+	Versor, // suppliment to Point0
+	Point1, // intersections of Point0, only appended to
+	Normal, Coordinate, Weight, Color, Tag, // supplement to Point1
+	Point2, // intersections of threat vertices, from Point1 as planes
+	Face1, // corners of facets, rewritten when polytope changes
+	Triple0, // every triple in Point0, is only appended to
+	Triple1, // triples of threat points of boundary to sample
+	Vector, Plane, Tagbits, // feedback
     Uniform, Query, Texture0, Texture1, Buffers};
 enum Program {
     Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
     Pierce, // Point1,Face1 -> Vector,Plane,Tagbits
     Sect0, // Point0,Triple0 -> Vector
     Sect1, // Point1,Triple1 -> Vector
-    Side1, // Point1,Face1 -> Vector
-    Side2, // Point2,Face2 -> Vector
+    Side1, // Point1 -> Vector
+    Side2, // Point2 -> Vector
     Programs};
 enum ClickMode {
 	AdditiveMode,
@@ -162,9 +168,8 @@ struct Update
 	struct Update *next;
 	int file, finish;
 	enum Buffer buffer;
-	union {int offset; int width; int first;};
+	union {int offset; int width;};
 	union {int size; int height;};
-	MYuint handle;
 	union {void *data; char *text; float *scalar; MYuint *query;
 	struct Format *format; struct Feedback *feedback;};
 	void (*function)(struct Update *);

@@ -43,8 +43,6 @@ struct Object
 	Message<Data*> *req2data2write;
 	// Window->Data->Polytope
 	Message<Data*> *req2data2polytope;
-	// Window->Invoke->Script
-	Message<Invoke*> *req2invoke2script;
 	// Polytope->Command->Window
 	Message<Command*> *rsp2command2polytope;
 	Handle handle[Buffers];

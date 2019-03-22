@@ -45,7 +45,7 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
     case (Uniform): if (!first) {handle.handle = 0; break;}
 	default: glGenBuffers(1,&handle.handle); break;}
     switch (buffer) {
-    case (Face1): case (Face2): case (Triple0): case (Triple1): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
+    case (Face1): case (Triple0): case (Triple1): handle.target = GL_ELEMENT_ARRAY_BUFFER; break;
     case (Vector): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
     case (Uniform): handle.target = GL_UNIFORM_BUFFER; break;
     case (Texture0): case (Texture1): handle.target = GL_TEXTURE_2D; break;
@@ -85,11 +85,9 @@ void Object::initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuin
     default: break;} break;
     case (Side1): switch (buffer) {
 	case (Point1): initVao3f(0,handle); break;
-    case (Face1): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
     default: break;} break;
     case (Side2): switch (buffer) {
 	case (Point2): initVao3f(0,handle); break;
-    case (Face2): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
     default: break;} break;
 	default: error("invalid program",program,__FILE__,__LINE__);}
 	glBindVertexArray(0);

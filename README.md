@@ -62,6 +62,7 @@ Window->Data->Polytope for manipulating or randomizing planes
 Window->Data->Polytope for changing which regions are in the polytope  
 Window->Invoke->Script for starting macro from click  
 Polytope->Data->Write for appending manipulated or randomized planes  
+Polytope->Data->Write for changing whether region is in polytope  
 Polytope->Command->Window for changing what is displayed  
 Script->Question->Polytope for feedback from topology  
 Script->Data->Write for side effects  

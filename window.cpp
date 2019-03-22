@@ -131,7 +131,7 @@ void Window::readBuffer(Update &update)
     Handle &buffer = object[update.file].handle[update.buffer];
     switch(update.buffer) {
     case (Texture0): case (Texture1): break;
-    case (Query): glGetQueryObjectuiv(update.handle, GL_QUERY_RESULT, update.query); break;
+    case (Query): glGetQueryObjectuiv(buffer.handle, GL_QUERY_RESULT, update.query); break;
     default: {
     glBindBuffer(buffer.target,buffer.handle);
     glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
@@ -143,9 +143,9 @@ void Window::readBuffer(Update &update)
 void Window::allocTexture2d(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
-    glGenTextures(1,&update.handle);
+    glGenTextures(1,&buffer.handle);
     glActiveTexture(buffer.unit);
-    glBindTexture(GL_TEXTURE_2D,update.handle);
+    glBindTexture(GL_TEXTURE_2D,buffer.handle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -157,7 +157,7 @@ void Window::writeTexture2d(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
     glActiveTexture(buffer.handle);
-    glBindTexture(GL_TEXTURE_2D,update.handle);
+    glBindTexture(GL_TEXTURE_2D,buffer.handle);
     if (update.function) update.function(&update);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, update.width, update.height, 0, GL_RGB, GL_UNSIGNED_BYTE, update.data);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -168,7 +168,7 @@ void Window::bindTexture2d(Update &update)
 {
     Handle &buffer = object[update.file].handle[update.buffer];
     glActiveTexture(buffer.handle);
-    glBindTexture(GL_TEXTURE_2D,update.handle);
+    glBindTexture(GL_TEXTURE_2D,buffer.handle);
 }
 
 void Window::unbindTexture2d()

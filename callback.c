@@ -247,9 +247,13 @@ void getUniform(struct Update *update)
 	timesmat(perplane,matrix.facet,4); *tagplane = matrix.plane;} else identmat(perplane,4);
 }
 
+void firstUniform(struct Update *update)
+{
+	current.pierce[2] = INVALID;
+}
+
 void putUniform(struct Update *update)
 {
-	if (update->first) current.pierce[2] = INVALID;
 	for (int i = 0; i < update->size; i++)
 	if (current.pierce[2] > update->feedback[i].pierce[2]) {
 	for (int j = 0; j < 3; j++) current.pierce[j] = update->feedback[i].pierce[j];
