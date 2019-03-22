@@ -33,20 +33,19 @@ enum Buffer {
 	Point0, // planes from file, only appended to
 	Versor, // suppliment to Point0
 	Point1, // intersections of Point0, only appended to
-	Normal, Coordinate, Weight, Color, Tag, // supplement to Point1
+	Normal, Coordinate, Color, Tag, // supplement to Point1
 	Point2, // intersections of threat vertices, from Point1 as planes
 	Face1, // corners of facets, rewritten when polytope changes
 	Triple0, // every triple in Point0, is only appended to
 	Triple1, // triples of threat points of boundary to sample
-	Vector, Plane, Tagbits, // feedback
-    Uniform, Query, Texture0, Texture1, Buffers};
+	Feedback, Uniform, Query, Texture0, Texture1, Buffers};
 enum Program {
     Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
-    Pierce, // Point1,Face1 -> Vector,Plane,Tagbits
-    Sect0, // Point0,Triple0 -> Vector
-    Sect1, // Point1,Triple1 -> Vector
-    Side1, // Point1 -> Vector
-    Side2, // Point2 -> Vector
+    Pierce, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> Pierce,Normal,Color,Plane,Tagbits
+    Sect0, // Point0,Versor,Triple0 -> Vertex
+    Sect1, // Point1,Triple1 -> Vertex
+    Side1, // Point1 -> Scalar
+    Side2, // Point2 -> Scalar
     Programs};
 enum ClickMode {
 	AdditiveMode,
@@ -151,7 +150,7 @@ struct Feedback
 {
 	float pierce[3];
 	float normal[3];
-	int color;
+	float color[3];
 	int tagbits;
 	int plane;
 };

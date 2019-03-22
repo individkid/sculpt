@@ -38,7 +38,7 @@ const char *buffer[] = {
 	"Point1","Normal","Coordinate","Weight","Color","Tag",
 	"Point2",
 	"Face1","Triple0","Triple1",
-	"Vector","Plane","Tagbits",
+	"Pierce","Vector","Plane","Tagbits","Scalar",
 	"Uniform","Query","Texture0","Texture1"};
 const char *data[] = {"data","scalar","query"};
 const char *name[] = {"getUniform","firstUniform","putUniform","checkQuery",0};

@@ -52,8 +52,9 @@ struct Object
 	void initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuint handle);
 	void initVao3f(MYuint index, MYuint handle);
 	void initVao2f(MYuint index, MYuint handle);
-	void initVao4u(MYuint index, MYuint handle);
+	void initVao3u(MYuint index, MYuint handle);
 	void initVao2u(MYuint index, MYuint handle);
+	void initVao1u(MYuint index, MYuint handle);
 };
 
 #endif

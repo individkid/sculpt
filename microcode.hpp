@@ -30,6 +30,10 @@ struct Microcode
 	MYenum primitive;
 	void initProgram(Program program);
 	void initDraw();
+	void initPierce();
+	void initSect0();
+	void initSect1();
+	void initSide();
 	void initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback);
 	void initShader(MYenum type, const char *source, MYuint &handle);
 };
