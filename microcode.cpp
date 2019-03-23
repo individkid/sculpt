@@ -40,11 +40,13 @@ void Microcode::initDraw()
     layout (location = 1) in vec3 normal[3];\n\
     layout (location = 4) in vec2 coordinate[3];\n\
     layout (location = 7) in vec3 color[3];\n\
-    layout (location = 10) in uvec2 tag[3];\n\
+    layout (location = 10) in vec3 weight[3];\n\
+    layout (location = 13) in uvec2 tag[3];\n\
     out data {\n\
         vec3 normal;\n\
         vec2 coordinate;\n\
         vec3 color;\n\
+        vec3 weight;\n\
     } od;\n\
     void main()\n\
     {\n\
@@ -60,12 +62,14 @@ void Microcode::initDraw()
         od.normal = normal[index];\n\
         od.coordinate = coordinate[index];\n\
         od.color = color[index];\n\
+        od.weight = weight[index];\n\
     }\n";
     const char *fragment = "\
     in data {\n\
         vec3 normal;\n\
         vec2 coordinate;\n\
         vec3 color;\n\
+        vec3 weight;\n\
     } id;\n\
     out vec4 color;\n\
     void main()\n\
@@ -82,12 +86,10 @@ void Microcode::initPierce()
     layout (location = 0) in vec3 point;\n\
     layout (location = 1) in vec3 normal[3];\n\
     layout (location = 4) in vec2 coordinate[3];\n\
-    layout (location = 7) in vec3 color[3];\n\
-    layout (location = 10) in uvec2 tag[3];\n\
+    layout (location = 7) in uvec2 tag[3];\n\
     out data {\n\
         vec3 point;\n\
         vec3 normal;\n\
-        vec3 color;\n\
         uvec2 tag;\n\
     } od;\n\
     void main()\n\
@@ -102,7 +104,6 @@ void Microcode::initPierce()
         else if (taggraph == tag[1].x) index = 1u;\n\
         else index = 2u;\n\
         od.normal = normal[index];\n\
-        od.color = color[index];\n\
         od.tag = tag[index];\n\
     }\n";
     const char *geometry = "\
@@ -111,12 +112,10 @@ void Microcode::initPierce()
     in data {\n\
         vec3 point;\n\
         vec3 normal;\n\
-        vec3 color;\n\
         uvec2 tag;\n\
     } id[3];\n\
     out vec3 pierce;\n\
     out vec3 normal;\n\
-    out vec3 color;\n\
     out uint tagbits;\n\
     out uint plane;\n\
     void main()\n\
@@ -125,14 +124,13 @@ void Microcode::initPierce()
         pierce = id[0].point;\n\
         // interpolate normal, etc, by pierce in points\n\
         normal = id[0].normal;\n\
-        color = id[0].color;\n\
         tagbits = id[0].tag.x;\n\
         plane = id[0].tag.y;\n\
         EmitVertex();\n\
         EndPrimitive();\n\
     }\n";
-    const char *feedback[5] = {"pierce","normal","color","tagbits","plane"};
-    initConfigure(vertex,geometry,0,5,feedback);
+    const char *feedback[4] = {"pierce","normal","tagbits","plane"};
+    initConfigure(vertex,geometry,0,4,feedback);
 }
 
 void Microcode::initSect0()

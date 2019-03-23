@@ -62,12 +62,20 @@ void Object::initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuin
 {
 	glBindVertexArray(vao);
 	switch (program) {
-	case (Draw): case (Pierce): switch (buffer) {
+	case (Draw): switch (buffer) {
 	case (Point1): initVao3f(0,handle); break;
 	case (Normal): for (int i = 1; i < 4; i++) initVao3f(i,handle); break;
 	case (Coordinate): for (int i = 4; i < 7; i++) initVao2f(i,handle); break;
 	case (Color): for (int i = 7; i < 10; i++) initVao3f(i,handle); break;
-	case (Tag): for (int i = 10; i < 13; i++) initVao2u(i,handle); break;
+	case (Weight): for (int i = 10; i < 13; i++) initVao3f(i,handle); break;
+	case (Tag): for (int i = 13; i < 16; i++) initVao2u(i,handle); break;
+	case (Face1): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
+	default: break;} break;
+	case (Pierce): switch (buffer) {
+	case (Point1): initVao3f(0,handle); break;
+	case (Normal): for (int i = 1; i < 4; i++) initVao3f(i,handle); break;
+	case (Coordinate): for (int i = 4; i < 7; i++) initVao2f(i,handle); break;
+	case (Tag): for (int i = 7; i < 10; i++) initVao2u(i,handle); break;
 	case (Face1): glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); break;
 	default: break;} break;
     case (Sect0): switch (buffer) {

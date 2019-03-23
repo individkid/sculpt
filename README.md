@@ -38,9 +38,9 @@ The -- commands are as follows.
 --inflate mark inside regions as in, and outside regions as not in the polytope  
 --picture "bname" filename for texture  
 --sound "sname" coefficients, variables as references to snames and mnames, equations as quotients of sums of terms of one coefficients and up to three variables, value as equation, value change delay as equation, reschedule delay as equation, sound contribution as equation  
---metric "mname" tagbits, rate, list of sname, scipts returns value  
---script "cname" tagbits, script, has side effects, first one is bootscript  
---macro "bname" tagbits, script returns whether click does its thing  
+--metric "mname" cname, rate, list of sname, returns value  
+--script "cname" script, has side effects, mapped to tagbits  
+--macro "bname" cname, triggered by mouse click  
 --command send command to window thread  
 --configure change aspect ratio granularity base delay etc  
 --test run tests of functions in the polytope thread  

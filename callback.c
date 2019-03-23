@@ -55,7 +55,7 @@ void globalInit(int nfile)
     last.polytope = malloc(sizeof(float)*nfile*16); for (int i = 0; i < nfile; i++) identmat(last.polytope[i],4);
     identmat(last.facet,4);
     pointer = &warp;
-    state.click = PierceMode;
+    state.click = PerformMode;
     state.target = SessionMode;
     state.mouse = RotateMode;
     state.roller = CylinderMode;
@@ -217,6 +217,13 @@ void sendMatrix()
 void syncMatrix(struct Data *data)
 {
 	switch (data->conf) {
+	case (AdditiveConf): changeClick(AdditiveMode); break;
+	case (SubtractiveConf): changeClick(SubtractiveMode); break;
+	case (RefineConf): changeClick(RefineMode); break;
+	case (TweakConf): changeClick(TweakMode); break;
+	case (RandomizeConf): changeClick(RandomizeMode); break;
+	case (PerformConf): changeClick(PerformMode); break;
+	case (TransformConf): changeClick(PierceMode/*!*/); break;
 	case (SessionConf): {
 	float invert[16]; invmat(copymat(invert,last.session,4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
@@ -238,6 +245,7 @@ void getUniform(struct Update *update)
 	// float *cutoff = update->format->cutoff;
 	// float *slope = update->format->slope;
 	// float *aspect = update->format->aspect;
+	// Myuint *enable = update->format->enable;
 	MYuint *tagplane = &update->format->tagplane;
 	// MYuint *taggraph = &update->format->taggraph;
 	copyvec(cursor,current.cursor,2);

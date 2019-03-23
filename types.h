@@ -33,7 +33,7 @@ enum Buffer {
 	Point0, // planes from file, only appended to
 	Versor, // suppliment to Point0
 	Point1, // intersections of Point0, only appended to
-	Normal, Coordinate, Color, Tag, // supplement to Point1
+	Normal, Coordinate, Color, Weight, Tag, // supplement to Point1
 	Point2, // intersections of threat vertices, from Point1 as planes
 	Face1, // corners of facets, rewritten when polytope changes
 	Triple0, // every triple in Point0, is only appended to
@@ -143,14 +143,16 @@ struct Format
 	float aspect;
 	float feather;
 	float arrow;
-	MYuint tagplane;
-	char filler1[4-sizeof(MYuint)]; MYuint taggraph;
+	MYuint enable;
+	char filler1[4-sizeof(MYuint)]; MYuint tagplane;
+	char filler2[4-sizeof(MYuint)]; MYuint taggraph;
 };
 struct Feedback
 {
 	float pierce[3];
 	float normal[3];
 	float color[3];
+	float weight[3];
 	int tagbits;
 	int plane;
 };
