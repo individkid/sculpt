@@ -104,7 +104,7 @@ void Microcode::initPierce()
         else if (taggraph == (tag[1].x&7u)) index = 1u;\n\
         else index = 2u;\n\
         od.normal = normal[index];\n\
-        od.tag = tag[index];\n\
+        od.tag = tag[index]<<3;\n\
     }\n";
     const char *geometry = "\
     layout (triangles) in;\n\
