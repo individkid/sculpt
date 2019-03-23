@@ -56,8 +56,8 @@ void Microcode::initDraw()
         vector.z = vector.z/cutoff;\n\
         gl_Position = vec4(vector,1.0);\n\
         uint index;\n\
-        if (taggraph == tag[0].x) index = 0u;\n\
-        else if (taggraph == tag[1].x) index = 1u;\n\
+        if (taggraph == (tag[0].x&7u)) index = 0u;\n\
+        else if (taggraph == (tag[1].x&7u)) index = 1u;\n\
         else index = 2u;\n\
         od.normal = normal[index];\n\
         od.coordinate = coordinate[index];\n\
@@ -100,8 +100,8 @@ void Microcode::initPierce()
         vector.z = vector.z/cutoff;\n\
         od.point = vector;\n\
         uint index;\n\
-        if (taggraph == tag[0].x) index = 0u;\n\
-        else if (taggraph == tag[1].x) index = 1u;\n\
+        if (taggraph == (tag[0].x&7u)) index = 0u;\n\
+        else if (taggraph == (tag[1].x&7u)) index = 1u;\n\
         else index = 2u;\n\
         od.normal = normal[index];\n\
         od.tag = tag[index];\n\
