@@ -73,6 +73,11 @@ extern "C" void warpCursor(float *cursor)
     window->warpCursor(cursor);
 }
 
+extern "C" void maybeKill(int seq)
+{
+    window->maybeKill(seq);
+}
+
 extern "C" int decodeClick(int button, int action, int mods)
 {
     if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 0;
@@ -277,7 +282,7 @@ void Window::finishCommand(Command &command)
     command.finish = 0;
 }
 
-Window::Window(int n) : Thread(1), window(0), nfile(n), object(new Object[n]),
+Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
     read2command2req(this), read2data2req(this), write2data2rsp(this),
     polytope2data2rsp(this), script2invoke2rsp(this), polytope2command2req(this)
 {
@@ -339,14 +344,21 @@ void Window::warpCursor(float *cursor)
 #endif
 }
 
-void Window::call()
+void Window::maybeKill(int seq)
+{
+    if (seq == 0) finish = 0;
+    if (seq == 1 && finish == 0) finish = 1;
+    if (seq == 2 && finish == 1) kill();
+}
+
+void Window::init()
 {
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
     if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
     if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
     if (sizeof(float)%4 != 0) error("sizeof float",sizeof(float)%4,__FILE__,__LINE__);
     globalInit(nfile);
-	glfwInit();
+    glfwInit();
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -367,19 +379,33 @@ void Window::call()
     glfwSwapBuffers(window);
     for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) microcode[p].initProgram(p);
     for (int f = 0; f < nfile; f++) object[f].initFile(f==0);
-    glfwSetTime(0.0); while (testGoon) {double time = glfwGetTime();
-    if (time < DELAY) {glfwWaitEventsTimeout(DELAY-time); continue;} glfwSetTime(0.0);
+    glfwSetTime(0.0);
+}
+
+void Window::call()
+{
     finishQueue(query); if (isSuspend()) startQueue(pierce); else startQueue(redraw);
     Invoke *response = 0; while (script2invoke2rsp.get(response)) processInvoke(*response);
     Data *data = 0; while (polytope2data2rsp.get(data)) processResponse(*data);
     data = 0; while (write2data2rsp.get(data)) processResponse(*data);
     data = 0; while (read2data2req.get(data)) processData(*data);
     Command *command = 0; while (read2command2req.get(command)) startCommand(query,*command);
-    command = 0; while (polytope2command2req.get(command)) startCommand(query,*command);}
-    glfwTerminate();
+    command = 0; while (polytope2command2req.get(command)) startCommand(query,*command);
+}
+
+void Window::wait()
+{
+    double time = glfwGetTime();
+    if (time < DELAY) glfwWaitEventsTimeout(DELAY-time);
+    else glfwSetTime(0.0);
 }
 
 void Window::wake()
 {
 	glfwPostEmptyEvent();
+}
+
+void Window::done()
+{
+    glfwTerminate();
 }

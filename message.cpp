@@ -210,6 +210,6 @@ void Thread::wake()
 
 void Thread::kill()
 {
-	if (isMain) call(); else {isDone = 1; wake();
+	isDone = 1; wake(); if (!isMain) {
 	if (pthread_join(thread,NULL) != 0) error("cannot join thread",errno,__FILE__,__LINE__);}
 }

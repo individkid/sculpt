@@ -29,14 +29,13 @@ struct Current *pointer = 0;
 struct Matrix matrix = {0};
 struct Matrix last = {0};
 struct State state = {0};
-int fileCount = 0;
-int testGoon = 1;
 
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
 void sendPolytope(int file, int plane, float *point, enum Configure conf);
 void sendWrite(int file, int plane, float *matrix, enum Configure conf);
 void sendInvoke(int tagbits, enum ClickMode click, int file, int plane, float *pierce);
+void maybeKill(int seq);
 
 int isSuspend()
 {
@@ -45,7 +44,6 @@ int isSuspend()
 
 void globalInit(int nfile)
 {
-	fileCount = nfile;
 	unitvec(current.normal,3,0);
 	unitvec(warp.normal,3,0);
 	identmat(matrix.session,4);
@@ -377,8 +375,9 @@ void displayError(int error, const char *description)
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mods)
 {
     if (action == 1) printf("GLFW key %d %d %d %d\n",key,scancode,action,mods);
-    if (key == 256 && action == 1 && testGoon == 1) testGoon = 2;
-    if (key == 257 && action == 1 && testGoon == 2) testGoon = 0;
+    if (key == 256 && action == 1) maybeKill(1);
+    else if (key == 257 && action == 1) maybeKill(2);
+    else if (action == 1) maybeKill(0);
 }
 
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos)

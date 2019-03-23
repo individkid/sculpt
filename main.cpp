@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < argc; i++) {script->connect(i,polytope[i]); polytope[i]->connect(script);}
 	// System->Invoke->Script
 	system->connect(script); script->connect(system);
-	window->kill(); script->kill(); system->kill();
+	window->run(); script->kill(); system->kill();
 	for (int i = 0; i < argc; i++) write[i]->kill();
 	for (int i = 0; i < argc; i++) polytope[i]->kill();
 	for (int i = 0; i < argc; i++) read[i]->kill();

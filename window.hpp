@@ -40,6 +40,7 @@ class Window : public Thread
 {
 private:
 	GLFWwindow *window;
+	int finish;
 	int nfile;
 	Object *object;
 	Message<Invoke*> *req2invoke2script;
@@ -86,8 +87,12 @@ public:
 	void sendData(ThreadType thread, Data *data);
 	void sendInvoke(Invoke *invoke);
 	void warpCursor(float *cursor);
+	void maybeKill(int seq);
+	virtual void init();
 	virtual void call();
+	virtual void wait();
 	virtual void wake();
+	virtual void done();
 };
 
 #endif
