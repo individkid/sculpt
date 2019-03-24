@@ -264,7 +264,9 @@ void putUniform(struct Update *update)
 	if (current.pierce[2] > update->feedback[i].pierce[2]) {
 	for (int j = 0; j < 3; j++) current.pierce[j] = update->feedback[i].pierce[j];
 	for (int j = 0; j < 3; j++) current.normal[j] = update->feedback[i].normal[j];
-	current.file = update->file; current.plane = update->feedback[i].plane;}
+	current.tagbits = update->feedback[i].tagbits;
+	current.plane = update->feedback[i].plane;
+	current.file = update->file;}
 }
 
 void checkQuery(struct Update *update)

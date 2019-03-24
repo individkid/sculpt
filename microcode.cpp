@@ -80,67 +80,6 @@ void Microcode::initDraw()
     initConfigure(vertex,0,fragment,0,0);
 }
 
-void Microcode::initPierce()
-{
-    const char *vertex = "\
-    layout (location = 0) in vec3 point;\n\
-    layout (location = 1) in vec3 normal[3];\n\
-    layout (location = 4) in vec2 coordinate[3];\n\
-    layout (location = 7) in uvec2 tag[3];\n\
-    out data {\n\
-        vec3 point;\n\
-        vec3 normal;\n\
-        uvec2 tag;\n\
-    } od;\n\
-    void main()\n\
-    {\n\
-        vec3 vector = (affine*vec4(point,1.0)).xyz;\n\
-        vector.x = vector.x/(vector.z*slope+1.0);\n\
-        vector.y = vector.y/(vector.z*slope*aspect+aspect);\n\
-        vector.z = vector.z/cutoff;\n\
-        od.point = vector;\n\
-        uint index;\n\
-        if (taggraph == (tag[0].x&7u)) index = 0u;\n\
-        else if (taggraph == (tag[1].x&7u)) index = 1u;\n\
-        else index = 2u;\n\
-        od.normal = normal[index];\n\
-        od.tag = tag[index]<<3;\n\
-    }\n";
-    const char *geometry = "\
-    layout (triangles) in;\n\
-    layout (points, max_vertices = 1) out;\n\
-    in data {\n\
-        vec3 point;\n\
-        vec3 normal;\n\
-        uvec2 tag;\n\
-    } id[3];\n\
-    out vec3 pierce;\n\
-    out vec3 normal;\n\
-    out uint tagbits;\n\
-    out uint plane;\n\
-    void main()\n\
-    {\n\
-        // pierce points by feather arrow\n\
-        pierce = id[0].point;\n\
-        // interpolate normal, etc, by pierce in points\n\
-        normal = id[0].normal;\n\
-        tagbits = id[0].tag.x;\n\
-        plane = id[0].tag.y;\n\
-        EmitVertex();\n\
-        EndPrimitive();\n\
-    }\n";
-    const char *feedback[4] = {"pierce","normal","tagbits","plane"};
-    initConfigure(vertex,geometry,0,4,feedback);
-}
-
-static const char *convert = "\
-    void convert(in vec3 plane, in uint versor, out mat3 point)\n\
-    {\n\
-        for (uint i = 0u; i < 3u; i++) {\n\
-            point[i] = basis[versor][i];\n\
-            point[i][versor] = plane[i];\n\
-        }\n\
-    }\n";
 static const char *intersect = "\
     // minimum difference between first and other points wrt versor\n\
     void minimum(in vec3 point0, in vec3 point1, in vec3 point2, in uint versor, out float result)\n\
@@ -205,6 +144,121 @@ static const char *intersect = "\
         scalar0 = point0.x*solve.x+point0.y*solve.y+solve.z - point0[versor];\n\
         scalar1 = point1[versor] - point1.x*solve.x+point1.y*solve.y+solve.z;\n\
         point = point0 + (diff * (scalar0 / (scalar0 + scalar1)));\n\
+    }\n";
+
+static const char *triangle = "\
+void dimension(in mat3 point, out uint versor)\n\
+{\n\
+    vec3 dif, max, min;\n\
+    versor = 0u;\n\
+    for (uint i = 0u; i < 3u; i++)\n\
+    for (uint j = 0u; j < 3u; j++)\n\
+    if (i == 0u) min[j] = max[j] = point[i][j]; else {\n\
+        if (point[i][j] < min[j]) min[j] = point[i][j];\n\
+        if (point[i][j] > max[j]) max[j] = point[i][j];\n\
+    }\n\
+    dif = max-min;\n\
+    versor = 0u;\n\
+    for (uint i = 0u; i < 3u; i++)\n\
+        if (abs(dif[i]) < abs(dif[versor])) versor = i;\n\
+}\n\
+void triangle(in vec3 length, out float area)\n\
+{\n\
+    // Area=SQRT(s(s-a)(s-b)(s-c))\n\
+    float s = (length.x+length.y+length.z)/2.0;\n\
+    area = sqrt(s*(s-length.x)*(s-length.y)*(s-length.z));\n\
+}\n\
+void distance(in vec3 point0, in vec3 point1, out float length)\n\
+{\n\
+    vec3 diff = point1 - point0;\n\
+    float product = 0.0;\n\
+    for (uint i = 0u; i < 3u; i++)\n\
+        product = product + diff[i]*diff[i];\n\
+    length = sqrt(product);\n\
+}\n";
+
+void Microcode::initPierce()
+{
+    const char *vertex = "\
+    layout (location = 0) in vec3 point;\n\
+    layout (location = 1) in vec3 normal[3];\n\
+    layout (location = 7) in uvec2 tag[3];\n\
+    out data {\n\
+        vec3 point;\n\
+        vec3 normal;\n\
+        uvec2 tag;\n\
+    } od;\n\
+    void main()\n\
+    {\n\
+        vec3 vector = (affine*vec4(point,1.0)).xyz;\n\
+        vector.x = vector.x/(vector.z*slope+1.0);\n\
+        vector.y = vector.y/(vector.z*slope*aspect+aspect);\n\
+        vector.z = vector.z/cutoff;\n\
+        od.point = vector;\n\
+        uint index;\n\
+        if (taggraph == (tag[0].x&7u)) index = 0u;\n\
+        else if (taggraph == (tag[1].x&7u)) index = 1u;\n\
+        else index = 2u;\n\
+        od.normal = normal[index];\n\
+        od.tag.x = tag[index].x>>3;\n\
+        od.tag.y = tag[index].y;\n\
+    }\n";
+    const char *geometry = "\
+    layout (triangles) in;\n\
+    layout (points, max_vertices = 1) out;\n\
+    in data {\n\
+        vec3 point;\n\
+        vec3 normal;\n\
+        uvec2 tag;\n\
+    } id[3];\n\
+    out vec3 pierce;\n\
+    out vec3 normal;\n\
+    out uint tagbits;\n\
+    out uint plane;\n\
+    void main()\n\
+    {\n\
+        mat3 point;\n\
+        vec3 solve;\n\
+        vec3 perimeter;\n\
+        mat3 interior;\n\
+        vec3 barrycentric;\n\
+        float area;\n\
+        uint versor;\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+            point[i] = id[i].point;\n\
+        dimension(point,versor);\n\
+        project(point,versor,solve);\n\
+        intersect(solve,versor,vec3(0.0,0.0,-1.0),vec3(cursor,0.0),pierce);\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+            distance(id[i].point,id[(i+1u)%3u].point,perimeter[i]);\n\
+        triangle(perimeter,area);\n\
+        for (uint i = 0u; i < 3u; i++) for (uint j = 0u; j < 3u; j++) if (i == j)\n\
+            interior[i][j] = perimeter[i]; else\n\
+            distance(id[j].point,pierce,interior[i][j]);\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+            triangle(interior[i],barrycentric[i]);\n\
+        barrycentric = barrycentric/area;\n\
+        normal = vec3(0.0,0.0,0.0);\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+            normal = normal + id[i].normal*barrycentric[i];\n\
+        tagbits = id[0].tag.x;\n\
+        plane = id[0].tag.y;\n\
+        EmitVertex();\n\
+        EndPrimitive();\n\
+    }\n";
+    const char *feedback[4] = {"pierce","normal","tagbits","plane"};
+    char str[strlen(triangle)+strlen(intersect)+strlen(geometry)+1];
+    *str = 0; strcat(strcat(strcat(str,triangle),intersect),geometry);
+    initConfigure(vertex,str,0,4,feedback);
+}
+
+static const char *convert = "\
+    void convert(in vec3 plane, in uint versor, out mat3 point)\n\
+    {\n\
+        for (uint i = 0u; i < 3u; i++) {\n\
+            point[i] = basis[versor][i];\n\
+            point[i][versor] = plane[i];\n\
+        }\n\
     }\n";
 
 void Microcode::initSect0()
@@ -272,13 +326,22 @@ void Microcode::initSect1()
     out vec3 vertex;\n\
     void main()\n\
     {\n\
-        // intersect id into vertex\n\
-        vertex = id[0].plane;\n\
+        uint corner[3];\n\
+        vec3 pierce[2];\n\
+        vec3 solve;\n\
+        maximum(id[0].plane,0u,corner);\n\
+        project(id[1].plane,0u,solve);\n\
+        intersect(solve,0u,id[0].plane[corner[0]],id[0].plane[corner[1]],pierce[0]);\n\
+        intersect(solve,0u,id[0].plane[corner[0]],id[0].plane[corner[2]],pierce[1]);\n\
+        project(id[2].plane,0u,solve);\n\
+        intersect(solve,0u,pierce[0],pierce[1],vertex);\n\
         EmitVertex();\n\
         EndPrimitive();\n\
     }\n";
     const char *feedback[1] = {"vertex"};
-    initConfigure(vertex,geometry,0,1,feedback);
+    char str[strlen(intersect)+strlen(geometry)+1];
+    *str = 0; strcat(strcat(str,intersect),geometry);
+    initConfigure(vertex,str,0,1,feedback);
 }
 
 void Microcode::initSide()
@@ -293,16 +356,18 @@ void Microcode::initSide()
         od.point = point;\n\
     }\n";
     const char *geometry = "\
-    layout (triangles) in;\n\
+    layout (points) in;\n\
     layout (points, max_vertices = 1) out;\n\
     in data {\n\
         vec3 point;\n\
-    } id[3];\n\
+    } id[1];\n\
     out float scalar;\n\
     void main()\n\
     {\n\
-        // subtract feather from arrow pierce\n\
-        scalar = id[0].point.x;\n\
+        vec3 diff = id[0].point-feather;\n\
+        scalar = 0.0;\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+        scalar = scalar + diff[i]*arrow[i];\n\
         EmitVertex();\n\
         EndPrimitive();\n\
     }\n";

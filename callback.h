@@ -22,7 +22,6 @@ struct Current
 {
 	float pierce[3];
 	float normal[3];
-	int color;
 	int tagbits;
 	int plane;
 	int file;

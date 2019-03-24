@@ -151,8 +151,6 @@ struct Feedback
 {
 	float pierce[3];
 	float normal[3];
-	float color[3];
-	float weight[3];
 	int tagbits;
 	int plane;
 };
