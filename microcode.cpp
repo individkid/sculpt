@@ -72,10 +72,16 @@ void Microcode::initDraw()
         vec3 weight;\n\
     } id;\n\
     out vec4 color;\n\
+    uniform sampler2D texture0;\n\
+    uniform sampler2D texture1;\n\
     void main()\n\
     {\n\
-        color.xyz = id.color;\n\
-        color.w = 1.0;\n\
+        vec4 color0;\n\
+        color0.xyz = id.color;\n\
+        color0.w = 1.0;\n\
+        vec4 color1 = texture(texture0,id.coordinate);\n\
+        vec4 color2 = texture(texture1,id.coordinate);\n\
+        color = color0*id.weight.x+color1*id.weight.y+color2*id.weight.z;\n\
     }\n";
     initConfigure(vertex,0,fragment,0,0);
 }
