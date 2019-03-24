@@ -368,6 +368,9 @@ void Window::init()
     window = glfwCreateWindow(1024, 768, "SideGeo", NULL, NULL);
     if (!window) {std::cerr << "Failed to open GLFW window" << std::endl; glfwTerminate(); exit(-1);}
     glfwSetKeyCallback(window, displayKey);
+    glfwSetCursorPosCallback(window, displayCursor);
+    glfwSetScrollCallback(window, displayScroll);
+    glfwSetMouseButtonCallback(window, displayClick);
     glfwMakeContextCurrent(window);
     if (gl3wInit()) {std::cerr << "Failed to initialize OpenGL" << std::endl; exit(-1);}
     if (!gl3wIsSupported(3, 3)) {std::cerr << "OpenGL 3.3 not supported\n" << std::endl; exit(-1);}
