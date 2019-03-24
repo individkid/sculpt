@@ -133,6 +133,80 @@ void Microcode::initPierce()
     initConfigure(vertex,geometry,0,4,feedback);
 }
 
+static const char *convert = "\
+    void convert(in vec3 plane, in uint versor, out mat3 point)\n\
+    {\n\
+        for (uint i = 0u; i < 3u; i++) {\n\
+            point[i] = basis[versor][i];\n\
+            point[i][versor] = plane[i];\n\
+        }\n\
+    }\n";
+static const char *intersect = "\
+    // minimum difference between first and other points wrt versor\n\
+    void minimum(in vec3 point0, in vec3 point1, in vec3 point2, in uint versor, out float result)\n\
+    {\n\
+        float diff0, diff1;\n\
+        diff0 = point1[versor] - point0[versor];\n\
+        diff1 = point2[versor] - point0[versor];\n\
+        if (abs(diff0) < abs(diff1)) result = diff0; else result = diff1;\n\
+    }\n\
+    // minimum distance of index[0] to others wrt versor is maximum\n\
+    void maximum(in mat3 point, in uint versor, out uint index[3])\n\
+    {\n\
+        vec3 diff;\n\
+        uint vertex;\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+            minimum(point[i],point[(i+1u)%3u],point[(i+2u)%3u],versor,diff[i]);\n\
+        vertex = 0u;\n\
+        for (uint i = 1u; i < 3u; i++)\n\
+            if (abs(diff[i]) < abs(diff[vertex])) vertex = i;\n\
+        for (uint i = 0u; i < 3u; i++) {\n\
+            index[i] = vertex;\n\
+            vertex = (vertex + 1u) % 3u;\n\
+        }\n\
+    }\n\
+    // project point onto plane\n\
+    void project(in mat3 plane, in uint versor, out vec3 solve)\n\
+    {\n\
+        // x0*s+y0*t+u=z0\n\
+        // x1*s+y1*t+u=z1\n\
+        // x2*s+y2*t+u=z2\n\
+        // (x1-x0)*s+(y1-y0)*t=z1-z0 d1.xy*(s,t)=d1.z\n\
+        // (x2-x0)*s+(y2-y0)*t=z2-z0 d2.xy*(s,t)=d2.z\n\
+        // ((x1-x0)/(y1-y0))*s+t=((z1-z0)/(y1-y0)) (d1.x/d1.y)*s+t=d1.z/d1.y e1*s+t=f1\n\
+        // ((x2-x0)/(y2-y0))*s+t=((z2-z0)/(y2-y0)) (d2.x/d2.y)*s+t=d2.z/d2.y e2*s+t+f2\n\
+        // ((x2-x0)/(y2-y0)-(x1-x0)/(y1-y0))*s=((z2-z0)/(y2-y0)-(z1-z0)/(y1-y0)) (e2-e1)*s=(f2-f1) g1*s=g2\n\
+        // s=((z2-z0)/(y2-y0)-(z1-z0)/(y1-y0))/((x2-x0)/(y2-y0)-(x1-x0)/(y1-y0)) s=g2/g1\n\
+        // t=((z1-z0)/(y1-y0))-((x2-x0)/(y2-y0))*s t=f1-e2*s\n\
+        // u=z0-y0*t-x0*s\n\
+        vec3 v0, v1, v2; // (x0,y0,z0), (x1,y1,z1), (x2,y2,z2)\n\
+        vec3 d1, d2; // (v1-v0), (v2-v0)\n\
+        float e1, e2; // d1[0]/d1[1], d2[0]/d2[1]\n\
+        float f1, f2; // d1[2]/d1[1], d2[2]/d2[1]\n\
+        float g1, g2; // e2-e1, f2-f1\n\
+        float s, t, u; // g2/g1, f1-e2 z0-y0*t-x0*s\n\
+        uint index[3];\n\
+        for (uint i = 0u; i < 3u; i++) {\n\
+            index[i] = versor;\n\
+            versor = (versor + 1u) % 3u;\n\
+        }\n\
+        v0 = plane[index[0]]; v1 = plane[index[1]]; v2 = plane[index[2]];\n\
+        d1 = v1-v0; d2 = v2-v0;\n\
+        e1 = d1.x/d1.y; e2 = d2.x/d2.y;\n\
+        f1 = d1.z/d1.y; f2 = d2.z/d2.y;\n\
+        g1 = e2-e1; g2 = f2-f1;\n\
+        solve.x = g2/g1; solve.y = f1-e2; solve.z = v0.z-v0.y*t-v0.x*s;\n\
+    }\n\
+    // find intersecton between line through points and plane\n\
+    void intersect(in vec3 solve, in uint versor, in vec3 point0, in vec3 point1, out vec3 point)\n\
+    {\n\
+        float scalar0, scalar1;\n\
+        vec3 diff = point1 - point0;\n\
+        scalar0 = point0.x*solve.x+point0.y*solve.y+solve.z - point0[versor];\n\
+        scalar1 = point1[versor] - point1.x*solve.x+point1.y*solve.y+solve.z;\n\
+        point = point0 + (diff * (scalar0 / (scalar0 + scalar1)));\n\
+    }\n";
+
 void Microcode::initSect0()
 {
     const char *vertex = "\
@@ -157,14 +231,25 @@ void Microcode::initSect0()
     out vec3 vertex;\n\
     void main()\n\
     {\n\
-        // intersect id into vertex\n\
-        if (id[0].versor == 0u) vertex = id[0].plane;\n\
-        else vertex = id[1].plane;\n\
+        mat3 point[3];\n\
+        uint corner[3];\n\
+        vec3 pierce[2];\n\
+        vec3 solve;\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+            convert(id[i].plane,id[i].versor,point[i]);\n\
+        maximum(point[0],id[1].versor,corner);\n\
+        project(point[1],id[1].versor,solve);\n\
+        intersect(solve,id[1].versor,point[0][corner[0]],point[0][corner[1]],pierce[0]);\n\
+        intersect(solve,id[1].versor,point[0][corner[0]],point[0][corner[2]],pierce[1]);\n\
+        project(point[2],id[2].versor,solve);\n\
+        intersect(solve,id[2].versor,pierce[0],pierce[1],vertex);\n\
         EmitVertex();\n\
         EndPrimitive();\n\
     }\n";
     const char *feedback[1] = {"vertex"};
-    initConfigure(vertex,geometry,0,1,feedback);
+    char str[strlen(convert)+strlen(intersect)+strlen(geometry)+1];
+    *str = 0; strcat(strcat(strcat(str,convert),intersect),geometry);
+    initConfigure(vertex,str,0,1,feedback);
 }
 
 void Microcode::initSect1()
@@ -261,8 +346,9 @@ void Microcode::initShader(MYenum type, const char *source, MYuint &ident)
     float cutoff;\n\
     float slope;\n\
     float aspect;\n\
-    float feather;\n\
-    float arrow;\n\
+    vec3 feather;\n\
+    vec3 arrow;\n\
+    uint enable;\n\
     uint tagplane;\n\
     uint taggraph;\n\
     };",

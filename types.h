@@ -141,8 +141,8 @@ struct Format
 	float cutoff;
 	float slope;
 	float aspect;
-	float feather;
-	float arrow;
+	float feather[3];
+	float arrow[3];
 	MYuint enable;
 	char filler1[4-sizeof(MYuint)]; MYuint tagplane;
 	char filler2[4-sizeof(MYuint)]; MYuint taggraph;
