@@ -152,7 +152,7 @@ static const char *intersect = "\
         point = point0 + (diff * (scalar0 / (scalar0 + scalar1)));\n\
     }\n";
 
-static const char *triangle = "\
+static const char *dimension = "\
 void dimension(in mat3 point, out uint versor)\n\
 {\n\
     vec3 dif, max, min;\n\
@@ -167,20 +167,6 @@ void dimension(in mat3 point, out uint versor)\n\
     versor = 0u;\n\
     for (uint i = 0u; i < 3u; i++)\n\
         if (abs(dif[i]) < abs(dif[versor])) versor = i;\n\
-}\n\
-void triangle(in vec3 length, out float area)\n\
-{\n\
-    // Area=SQRT(s(s-a)(s-b)(s-c))\n\
-    float s = (length.x+length.y+length.z)/2.0;\n\
-    area = sqrt(s*(s-length.x)*(s-length.y)*(s-length.z));\n\
-}\n\
-void distance(in vec3 point0, in vec3 point1, out float length)\n\
-{\n\
-    vec3 diff = point1 - point0;\n\
-    float product = 0.0;\n\
-    for (uint i = 0u; i < 3u; i++)\n\
-        product = product + diff[i]*diff[i];\n\
-    length = sqrt(product);\n\
 }\n";
 
 void Microcode::initPierce()
@@ -225,36 +211,24 @@ void Microcode::initPierce()
     {\n\
         mat3 point;\n\
         vec3 solve;\n\
-        vec3 perimeter;\n\
-        mat3 interior;\n\
-        vec3 barrycentric;\n\
-        float area;\n\
         uint versor;\n\
         for (uint i = 0u; i < 3u; i++)\n\
             point[i] = id[i].point;\n\
         dimension(point,versor);\n\
         project(point,versor,solve);\n\
         intersect(solve,versor,vec3(0.0,0.0,-1.0),vec3(cursor,0.0),pierce);\n\
-        for (uint i = 0u; i < 3u; i++)\n\
-            distance(id[i].point,id[(i+1u)%3u].point,perimeter[i]);\n\
-        triangle(perimeter,area);\n\
-        for (uint i = 0u; i < 3u; i++) for (uint j = 0u; j < 3u; j++) if (i == j)\n\
-            interior[i][j] = perimeter[i]; else\n\
-            distance(id[j].point,pierce,interior[i][j]);\n\
-        for (uint i = 0u; i < 3u; i++)\n\
-            triangle(interior[i],barrycentric[i]);\n\
-        barrycentric = barrycentric/area;\n\
         normal = vec3(0.0,0.0,0.0);\n\
         for (uint i = 0u; i < 3u; i++)\n\
-            normal = normal + id[i].normal*barrycentric[i];\n\
+            normal = normal + id[i].normal;\n\
+        normal = normal / 3.0;\n\
         tagbits = id[0].tag.x;\n\
         plane = id[0].tag.y;\n\
         EmitVertex();\n\
         EndPrimitive();\n\
     }\n";
     const char *feedback[4] = {"pierce","normal","tagbits","plane"};
-    char str[strlen(triangle)+strlen(intersect)+strlen(geometry)+1];
-    *str = 0; strcat(strcat(strcat(str,triangle),intersect),geometry);
+    char str[strlen(dimension)+strlen(intersect)+strlen(geometry)+1];
+    *str = 0; strcat(strcat(strcat(str,dimension),intersect),geometry);
     initConfigure(vertex,str,0,4,feedback);
 }
 
