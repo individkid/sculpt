@@ -145,7 +145,7 @@ struct Data
 	struct {int boundaries; int regions; int *planes; int **sides;};
 	struct {int *inside; int *outside; int side;};
 	struct {int versor; float *vector;};
-	float *matrix;
+	struct {enum TargetMode target; float *matrix;};
 	char *text;};
 };
 struct Sync
