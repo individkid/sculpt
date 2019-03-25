@@ -33,7 +33,7 @@ public:
 	void get(const char *&ptr, Update *&update);
 	void get(const char *&ptr, Render *&render);
 	void get(const char *&ptr, int file, Command *&command);
-	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode, Sync *&polytope);
+	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode, Data *&polytope);
 	void put(Command *command);
 	void put(Sync *sync);
 	void put(Mode *mode);

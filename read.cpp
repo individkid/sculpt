@@ -30,9 +30,10 @@
 
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s), fpos(0),
 	window2command2rsp(this), window2sync2rsp(this), window2mode2rsp(this),
-	polytope2sync2rsp(this,"Read<-Sync<-Polytope"), system2data2rsp(this), script2data2rsp(this)
+	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
 {
 	int i = 0;
+	thread2data2rsp[i++] = &polytope2data2rsp;
 	thread2data2rsp[i++] = &system2data2rsp;
 	thread2data2rsp[i++] = &script2data2rsp;
 	thread2data2rsp[i] = 0;
@@ -47,7 +48,7 @@ void Read::connect(Window *ptr)
 
 void Read::connect(Polytope *ptr)
 {
-	req2sync2polytope = &ptr->read2sync2req;
+	req2data2polytope = &ptr->read2data2req;
 }
 
 void Read::connect(System *ptr)
@@ -84,12 +85,12 @@ void Read::call()
 	while (cmdstr[len] && !(cmdstr[len] == '-' && cmdstr[len+1] == '-')) len++;
 	char *substr = prefix(parse.chars,cmdstr,len);
 	cmdstr = postfix(parse.chars,cmdstr,len);
-    command = 0; Sync *sync = 0; Mode *mode = 0; Sync *polytope = 0;
+    command = 0; Sync *sync = 0; Mode *mode = 0; Data *polytope = 0;
 	parse.get(cleanup(parse.chars,substr),self,command,sync,mode,polytope);
 	if (command) req2command2window->put(command);
 	if (sync) req2sync2window->put(sync);
 	if (mode) req2mode2window->put(mode);
-	if (polytope) req2sync2polytope->put(polytope);}
+	if (polytope) req2data2polytope->put(polytope);}
 }
 
 void Read::wait()

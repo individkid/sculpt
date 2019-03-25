@@ -116,7 +116,7 @@ void Parse::get(const char *&ptr, int file, Command *&command)
 	response->next = 0; response->file = file;
 }
 
-void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode, Sync *&polytope)
+void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode, Data *&polytope)
 {
 	int len; command = 0; sync = 0; mode = 0; polytope = 0;
 	len = literal(ptr,"--additive");
@@ -189,15 +189,14 @@ void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode 
 	if (len) {ptr += len; get(ptr,file,command);
 	if (command) return;}
 	len = literal(ptr,"--test");
-	if (len) {ptr += len; polytope = syncs.get();
-	polytope->target = TargetModes; polytope->file = file;
+	if (len) {ptr += len; polytope = datas.get();
+	polytope->conf = TestConf; polytope->file = file;
 	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
 	polytope->text = prefix(chars,ptr,len+1); polytope->text[len] = 0; return;}
 }
 
 void Parse::put(Sync *sync)
 {
-	if (sync->target == TargetModes) chars.put(strlen(sync->text)+1,sync->text);
 	syncs.put(sync);
 }
 
@@ -208,6 +207,7 @@ void Parse::put(Mode *mode)
 
 void Parse::put(Data *data)
 {
+	if (data->conf == TestConf) chars.put(strlen(data->text)+1,data->text);
 	datas.put(data);
 }
 

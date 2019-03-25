@@ -145,16 +145,15 @@ struct Data
 	struct {int boundaries; int regions; int *planes; int **sides;};
 	struct {int *inside; int *outside; int side;};
 	struct {int versor; float *vector;};
-	float *matrix;};
+	float *matrix;
+	char *text;};
 };
 struct Sync
 {
 	int file;
 	int plane;
 	enum TargetMode target;
-	union {
 	float *matrix;
-	char *text;};
 };
 struct Mode
 {

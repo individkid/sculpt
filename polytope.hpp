@@ -30,8 +30,8 @@ class Script;
 class Polytope : public Thread
 {
 private:
-	// Read->Sync->Polytope
-	Message<Sync*> *rsp2sync2read;
+	// Read->Data->Polytope
+	Message<Data*> *rsp2data2read;
 	// Window->Action->Polytope
 	Message<Action*> *rsp2action2window;
 	// Polytope->Data->Write
@@ -41,7 +41,7 @@ private:
 	// Script->Question->Polytope
 	Message<Question*> *rsp2question2script;
 public:
-	Message<Sync*> read2sync2req;
+	Message<Data*> read2data2req;
 	Message<Action*> window2action2req;
 	Message<Data*> write2data2rsp;
 	Message<Command*> window2command2rsp;
