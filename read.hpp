@@ -28,8 +28,9 @@ class System;
 class Script;
 
 	// Read->Command->Window
-	// Read->Data->Window
-	// Read->Data->Polytope
+	// Read->Sync->Window
+	// Read->Mode->Window
+	// Read->Sync->Polytope
 	// Read->Data->System
 	// Read->Data->Script
 class Read : public Thread
@@ -41,16 +42,18 @@ private:
 	int self;
 	off_t fpos;
 	Message<Command*> *req2command2window;
-	Message<Data*> *req2data2window;
-	Message<Data*> *req2data2polytope;
+	Message<Sync*> *req2sync2window;
+	Message<Mode*> *req2mode2window;
+	Message<Sync*> *req2sync2polytope;
 	Message<Data*> *req2data2system;
 	Message<Data*> *req2data2script;
-	Message<Data*> *thread2data2rsp[5];
+	Message<Data*> *thread2data2rsp[3];
 	Parse parse;
 public:
 	Message<Command*> window2command2rsp;
-	Message<Data*> window2data2rsp;
-	Message<Data*> polytope2data2rsp;
+	Message<Sync*> window2sync2rsp;
+	Message<Mode*> window2mode2rsp;
+	Message<Sync*> polytope2sync2rsp;
 	Message<Data*> system2data2rsp;
 	Message<Data*> script2data2rsp;
 	Read(int i, const char *n);

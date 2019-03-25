@@ -96,7 +96,7 @@ enum Configure {
 	ParallelConf,
 	ScaleConf,
 	RotateConf,
-	TangetConf,
+	TangentConf,
 	TranslateConf,
 	SessionConf,
 	PolytopeConf,
@@ -128,6 +128,14 @@ enum Field {
 	BindField,
 	ReadField,
 	Fields};
+enum ModeType {
+	ClickType,
+	MouseType,
+	RollerType,
+	TargetType,
+	TopologyType,
+	FixedType,
+	ModeTypes};
 struct Data
 {
 	int file;
@@ -137,8 +145,29 @@ struct Data
 	struct {int boundaries; int regions; int *planes; int **sides;};
 	struct {int *inside; int *outside; int side;};
 	struct {int versor; float *vector;};
+	float *matrix;};
+};
+struct Sync
+{
+	int file;
+	int plane;
+	enum TargetMode target;
+	union {
 	float *matrix;
 	char *text;};
+};
+struct Mode
+{
+	int file;
+	int plane;
+	enum ModeType mode;
+	union {
+	enum ClickMode click;
+	enum MouseMode mouse;
+	enum RollerMode roller;
+	enum TargetMode target;
+	enum TopologyMode topology;
+	enum FixedMode fixed;};
 };
 struct Action
 {

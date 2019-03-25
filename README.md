@@ -10,8 +10,7 @@ The -- commands are as follows.
 --additive change click mode to fill in region over clicked facet  
 --subractive change click mode to hollow out region under clicked facet  
 --refine change click mode to add random plane through point on clicked facet  
---tweak change click mode to randomize target with fixed pierce point  
---randomize change click mode to randomize target without fixed point  
+--tweak change click mode to randomize target  
 --perform change click mode to do nothing  
 --transform change click mode to transform clicked target  
 --cylinder change roller mode to rotate around rotate line  
@@ -50,9 +49,9 @@ The -- commands are as follows.
 Threads send structs to each other. Each sent struct is sent back to the sender for deallocation.  
 Source->Struct->Destination  
 Read->Command->Window for bringup  
-Read->Data->Window for changing modes  
-Read->Data->Window for applying transformations from other processes  
-Read->Data->Window for changing configurations  
+Read->Sync->Window for applying transformations from other processes  
+Read->Mode->Window for changing modes  
+Read->Mode->Window for changing configurations  
 Read->Data->Polytope for adding or changing planes  
 Read->Data->Polytope for changing which regions are in the polytope  
 Read->Data->Polytope for creating sample of space  

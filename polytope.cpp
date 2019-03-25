@@ -23,7 +23,7 @@
 #include "script.hpp"
 
 Polytope::Polytope(int i) : Thread(),
-	read2data2req(this,"Read->Data->Polytope"), window2action2req(this),
+	read2sync2req(this,"Read->Sync->Polytope"), window2action2req(this),
 	write2data2rsp(this), window2command2rsp(this),
 	script2question2req(this)
 {
@@ -31,7 +31,7 @@ Polytope::Polytope(int i) : Thread(),
 
 void Polytope::connect(Read *ptr)
 {
-	rsp2data2read = &ptr->polytope2data2rsp;
+	rsp2sync2read = &ptr->polytope2sync2rsp;
 }
 
 void Polytope::connect(Window *ptr)
@@ -52,6 +52,6 @@ void Polytope::connect(Script *ptr)
 
 void Polytope::call()
 {
-    Data *data = 0; while (read2data2req.get(data)) {
-    printf("polytope:%s",data->text); rsp2data2read->put(data);}
+    Sync *sync = 0; while (read2sync2req.get(sync)) {
+    printf("polytope:%s",sync->text); rsp2sync2read->put(sync);}
 }

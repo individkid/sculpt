@@ -60,7 +60,8 @@ private:
 	void processResponse(Invoke &invoke);
 	void processResponse(Action &action);
 	void processResponse(Data &data);
-	void processData(Data &data);
+	void processSync(Sync &sync);
+	void processMode(Mode &mode);
 	void processCommand(Command &command);
 	void finishCommand(Command &command, Message<Command*> *Object::*response);
 	void startCommand(Queue &queue, Command &command, Message<Command*> *Object::*response);
@@ -70,8 +71,10 @@ private:
 public:
 	// Read->Command->Window
 	Message<Command*> read2command2req;
-	// Read->Data->Window
-	Message<Data*> read2data2req;
+	// Read->Sync->Window
+	Message<Sync*> read2sync2req;
+	// Read->Mode->Window
+	Message<Mode*> read2mode2req;
 	// Window->Data->Write
 	Message<Data*> write2data2rsp;
 	// Window->Data->Polytope

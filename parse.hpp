@@ -26,12 +26,16 @@ public:
 	Pool<Update> updates;
 	Pool<Render> renders;
 	Pool<Response> responses;
+	Pool<Sync> syncs;
+	Pool<Mode> modes;
 	Pool<Data> datas;
 	Power<char> chars;
 	void get(const char *&ptr, Update *&update);
 	void get(const char *&ptr, Render *&render);
 	void get(const char *&ptr, int file, Command *&command);
-	void get(const char *ptr, int file, Command *&command, Data *&window, Data *&polytope);
+	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode, Sync *&polytope);
 	void put(Command *command);
+	void put(Sync *sync);
+	void put(Mode *mode);
 	void put(Data *data);
 };
