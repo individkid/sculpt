@@ -28,38 +28,48 @@
 #include "system.hpp"
 #include "script.hpp"
 
+static Pool<Data> datas;
 static Power<char> chars;
 
-int parse(const char *str, Command *&command, Data *&data, ThreadType &thread, ThreadType response, int file);
-void unparseData(Data *data);
+Command *parseCommand(const char *&ptr, int file);
 void unparseCommand(Command *command);
 
-Message<Data*> *Read::req2data2thread(ThreadType i)
+void Read::parse(const char *ptr, int file)
 {
-	switch (i) {
-	case (WindowType): return req2data2window;
-	case (PolytopeType): return req2data2polytope;
-	case (SystemType): return req2data2system;
-	case (ScriptType): return req2data2script;
-	default: error("invalid thread",i,__FILE__,__LINE__); break;}
-	return 0;
+	int len;
+	len = len = literal(ptr,"--command");
+	if (len) {ptr += len;
+	Command *command = parseCommand(ptr,file);
+	if (command) req2command2window->put(command);}
+	len = literal(ptr,"--test");
+	if (len) {ptr += len;
+	Data *data = datas.get(); data->conf = TestConf; data->file = file;
+	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
+	data->text = prefix(chars,ptr,len+1); data->text[len] = 0;
+	req2data2polytope->put(data);}
 }
 
-Message<Data*> &Read::thread2data2rsp(ThreadType i)
+void Read::unparse(Data *data)
 {
-	switch (i) {
-	case (WindowType): return window2data2rsp;
-	case (PolytopeType): return polytope2data2rsp;
-	case (SystemType): return system2data2rsp;
-	case (ScriptType): return script2data2rsp;
-	default: error("invalid thread",i,__FILE__,__LINE__); break;}
-	return window2data2rsp;
+	if (data->conf == TestConf) chars.put(strlen(data->text)+1,data->text);
+	datas.put(data);
 }
 
-Read::Read(int i, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(i), fpos(0),
+void Read::unparse(Command *command)
+{
+	unparseCommand(command);
+}
+
+Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s), fpos(0),
 	window2command2rsp(this), window2data2rsp(this),
 	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
 {
+	int i = 0;
+	thread2data2rsp[i++] = &window2data2rsp;
+	thread2data2rsp[i++] = &polytope2data2rsp;
+	thread2data2rsp[i++] = &system2data2rsp;
+	thread2data2rsp[i++] = &script2data2rsp;
+	thread2data2rsp[i] = 0;
 }
 
 void Read::connect(Window *ptr)
@@ -94,9 +104,9 @@ void Read::init()
 void Read::call()
 {
     Command *command; Data *data;
-    while (window2command2rsp.get(command)) unparseCommand(command);
-    for (int i = (int)WindowType; i < ThreadTypes; i++)
-    while (thread2data2rsp((ThreadType)i).get(data)) unparseData(data);
+    while (window2command2rsp.get(command)) unparse(command);
+    for (int i = 0; thread2data2rsp[i]; i++)
+    while (thread2data2rsp[i]->get(data)) unparse(data);
 	// read to eof
 	char *cmdstr = setup(chars,""); int num; char chr;
 	while ((num = ::read(file, &chr, 1)) == 1) {
@@ -107,10 +117,7 @@ void Read::call()
 	while (cmdstr[len] && !(cmdstr[len] == '-' && cmdstr[len+1] == '-')) len++;
 	char *substr = prefix(chars,cmdstr,len);
 	cmdstr = postfix(chars,cmdstr,len);
-	Command *command; Data *data; ThreadType thread;
-	if (parse(cleanup(chars,substr),command,data,thread,ReadType,self)) {
-	if (command) req2command2window->put(command);
-	if (data) req2data2thread(thread)->put(data);}}
+	parse(cleanup(chars,substr),self);}
 }
 
 void Read::wait()

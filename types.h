@@ -122,14 +122,6 @@ enum Configure {
 	ConfigureConf,
 	TestConf,
 	Configures};
-enum ThreadType {
-	ReadType,
-	WriteType,
-	WindowType,
-	PolytopeType,
-	SystemType,
-	ScriptType,
-	ThreadTypes};
 enum Field {
 	AllocField,
 	WriteField,
@@ -215,7 +207,6 @@ struct Response
 {
 	struct Response *next;
 	int file;
-	enum ThreadType thread;
 };
 struct Command
 {

@@ -62,10 +62,10 @@ private:
 	void processResponse(Data &data);
 	void processData(Data &data);
 	void processCommand(Command &command);
-	void finishCommand(Command &command);
-	void startCommand(Queue &queue, Command &command);
-	void startQueue(Queue &queue);
-	void finishQueue(Queue &queue);
+	void finishCommand(Command &command, Message<Command*> *Object::*response);
+	void startCommand(Queue &queue, Command &command, Message<Command*> *Object::*response);
+	void startQueue(Queue &queue, Message<Command*> *Object::*response);
+	void finishQueue(Queue &queue, Message<Command*> *Object::*response);
 	void swapQueue(Queue &queue, Command *&command);
 public:
 	// Read->Command->Window

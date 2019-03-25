@@ -44,8 +44,10 @@ private:
 	Message<Data*> *req2data2polytope;
 	Message<Data*> *req2data2system;
 	Message<Data*> *req2data2script;
-	Message<Data*> *req2data2thread(ThreadType i);
-	Message<Data*> &thread2data2rsp(ThreadType i);
+	Message<Data*> *thread2data2rsp[5];
+	void parse(const char *ptr, int file);
+	void unparse(Data *data);
+	void unparse(Command *command);
 public:
 	Message<Command*> window2command2rsp;
 	Message<Data*> window2data2rsp;

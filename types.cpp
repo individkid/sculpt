@@ -30,7 +30,6 @@ static Pool<Update> updates;
 static Pool<Render> renders;
 static Pool<Response> responses;
 static Power<char> chars;
-static Pool<Data> datas;
 
 const char *field[] = {"AllocField","WriteField","BindField","ReadField",0};
 const char *buffer[] = {
@@ -44,7 +43,6 @@ const char *data[] = {"data","scalar","query"};
 const char *name[] = {"getUniform","firstUniform","putUniform","checkQuery",0};
 void (*function[])(struct Update *) = {getUniform,firstUniform,putUniform,checkQuery};
 const char *program[] = {"Draw","Pierce","Sect0","Sect1","Side1","Side2"};
-const char *thread[] = {"ReadType","WriteType","WindowType","PolytopeType","SystemType","ScriptType"};
 
 Update *parseUpdate(const char *&ptr)
 {
@@ -93,7 +91,7 @@ Render *parseRender(const char *&ptr)
 	return render;
 }
 
-Command *parseCommand(const char *&ptr)
+Command *parseCommand(const char *&ptr, int file)
 {
 	Command init = {0}; Command *command = commands.get(); *command = init; int len; const char *pat;
 	len = literal(ptr," feedback");
@@ -115,39 +113,16 @@ Command *parseCommand(const char *&ptr)
 		insert(command->render,render);
 		remove(render,render);}
 	if ((len = literal(ptr," redraw"))) {ptr += len;
-		command->redraw = parseCommand(ptr);
+		command->redraw = parseCommand(ptr,file);
 		if (!command->redraw) return 0;}
 	if ((len = literal(ptr," pierce"))) {ptr += len;
-		command->pierce = parseCommand(ptr);
+		command->pierce = parseCommand(ptr,file);
 		if (!command->pierce) return 0;}
-	return command;
-}
-
-int parse(const char *ptr, Command *&command, Data *&data, ThreadType &dest, ThreadType source, int file)
-{
-	int len;
-	len = literal(ptr,"--command");
-	if (len) {ptr += len;
-	command = parseCommand(ptr);
-	if (command) {
 	Response *response = responses.get(); command->response = response;
-	response->next = 0; response->file = file; response->thread = source;
-	data = 0; return 1;}}
-	len = literal(ptr,"--test");
-	if (len) {ptr += len;
-	data = datas.get(); data->conf = TestConf; data->file = file;
-	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
-	data->text = prefix(chars,ptr,len+1); data->text[len] = 0;
-	dest = PolytopeType; command = 0; return 1;}
-	return 0;
+	response->next = 0; response->file = file;
+	return command;
 }
 
 void unparseCommand(Command *command)
 {
-}
-
-void unparseData(Data *data)
-{
-	if (data->conf == TestConf) chars.put(strlen(data->text)+1,data->text);
-	datas.put(data);
 }
