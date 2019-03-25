@@ -20,6 +20,7 @@
 #define READ_HPP
 
 #include "message.hpp"
+#include "parse.hpp"
 
 class Window;
 class Polytope;
@@ -45,9 +46,7 @@ private:
 	Message<Data*> *req2data2system;
 	Message<Data*> *req2data2script;
 	Message<Data*> *thread2data2rsp[5];
-	void parse(const char *ptr, int file);
-	void unparse(Data *data);
-	void unparse(Command *command);
+	Parse parse;
 public:
 	Message<Command*> window2command2rsp;
 	Message<Data*> window2data2rsp;

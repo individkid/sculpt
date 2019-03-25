@@ -28,38 +28,6 @@
 #include "system.hpp"
 #include "script.hpp"
 
-static Pool<Data> datas;
-static Power<char> chars;
-
-Command *parseCommand(const char *&ptr, int file);
-void unparseCommand(Command *command);
-
-void Read::parse(const char *ptr, int file)
-{
-	int len;
-	len = len = literal(ptr,"--command");
-	if (len) {ptr += len;
-	Command *command = parseCommand(ptr,file);
-	if (command) req2command2window->put(command);}
-	len = literal(ptr,"--test");
-	if (len) {ptr += len;
-	Data *data = datas.get(); data->conf = TestConf; data->file = file;
-	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
-	data->text = prefix(chars,ptr,len+1); data->text[len] = 0;
-	req2data2polytope->put(data);}
-}
-
-void Read::unparse(Data *data)
-{
-	if (data->conf == TestConf) chars.put(strlen(data->text)+1,data->text);
-	datas.put(data);
-}
-
-void Read::unparse(Command *command)
-{
-	unparseCommand(command);
-}
-
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s), fpos(0),
 	window2command2rsp(this), window2data2rsp(this),
 	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
@@ -103,21 +71,25 @@ void Read::init()
 
 void Read::call()
 {
-    Command *command; Data *data;
-    while (window2command2rsp.get(command)) unparse(command);
+	Command *command; Data *data;
+    while (window2command2rsp.get(command)) parse.put(command);
     for (int i = 0; thread2data2rsp[i]; i++)
-    while (thread2data2rsp[i]->get(data)) unparse(data);
+    while (thread2data2rsp[i]->get(data)) parse.put(data);
 	// read to eof
-	char *cmdstr = setup(chars,""); int num; char chr;
+	char *cmdstr = setup(parse.chars,""); int num; char chr;
 	while ((num = ::read(file, &chr, 1)) == 1) {
-	cmdstr = concat(chars,cmdstr,chr); fpos++;}
+	cmdstr = concat(parse.chars,cmdstr,chr); fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
 	while (*cmdstr) {
 	int len = 0; if (cmdstr[len] == '-' && cmdstr[len+1] == '-') len += 2;
 	while (cmdstr[len] && !(cmdstr[len] == '-' && cmdstr[len+1] == '-')) len++;
-	char *substr = prefix(chars,cmdstr,len);
-	cmdstr = postfix(chars,cmdstr,len);
-	parse(cleanup(chars,substr),self);}
+	char *substr = prefix(parse.chars,cmdstr,len);
+	cmdstr = postfix(parse.chars,cmdstr,len);
+    command = 0; Data *window = 0; Data *polytope = 0;
+	parse.get(cleanup(parse.chars,substr),self,command,window,polytope);
+	if (command) req2command2window->put(command);
+	if (window) req2data2window->put(window);
+	if (polytope) req2data2polytope->put(polytope);}
 }
 
 void Read::wait()
