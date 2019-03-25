@@ -58,7 +58,7 @@ Message<Data*> &Read::thread2data2rsp(ThreadType i)
 
 Read::Read(int i, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(i), fpos(0),
 	window2command2rsp(this), window2data2rsp(this),
-	polytope2data2rsp(this), system2data2rsp(this), script2data2rsp(this)
+	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
 {
 }
 

@@ -52,7 +52,6 @@ enum ClickMode {
 	SubtractiveMode,
 	RefineMode,
 	TweakMode,
-	RandomizeMode,
 	PerformMode,
 	TransformMode,
 	SuspendMode,
@@ -75,17 +74,20 @@ enum TargetMode {
 	PolytopeMode,
 	FacetMode,
 	TargetModes};
-enum FixedMode {
+enum TopologyMode {
 	NumericMode,
 	InvariantMode,
 	SymbolicMode,
+	TopologyModes};
+enum FixedMode {
+	RelativeMode,
+	AbsoluteMode,
 	FixedModes};
 enum Configure {
 	AdditiveConf,
 	SubtractiveConf,
 	RefineConf,
 	TweakConf,
-	RandomizeConf,
 	PerformConf,
 	TransformConf,
 	CylinderConf,
@@ -102,6 +104,8 @@ enum Configure {
 	NumericConf,
 	InvariantConf,
 	SymbolicConf,
+	RelativeConf,
+	AbsoluteConf,
 	IncludeConf,
 	ExcludeConf,
 	PlaneConf,
@@ -132,6 +136,39 @@ enum Field {
 	BindField,
 	ReadField,
 	Fields};
+struct Data
+{
+	int file;
+	int plane;
+	enum Configure conf;
+	union {
+	struct {int boundaries; int regions; int *planes; int **sides;};
+	struct {int *inside; int *outside; int side;};
+	struct {int versor; float *vector;};
+	float *matrix;
+	char *text;};
+};
+struct Action
+{
+	int file;
+	int plane;
+	enum ClickMode click; // additive subtractive refine tweak or transform facet
+	enum TopologyMode topology; // tweak
+	enum FixedMode fixed; // tweak
+	union {float *pierce; // refine or tweak relative
+	float *matrix;}; // transform facet
+};
+struct Invoke
+{
+	int file;
+	int plane;
+	int tagbits;
+	float *vector;
+};
+struct Question
+{
+	int file;
+};
 struct Format
 {
 	float cursor[2];
@@ -153,14 +190,6 @@ struct Feedback
 	float normal[3];
 	int tagbits;
 	int plane;
-};
-struct Data
-{
-	int file;
-	int plane;
-	enum ThreadType thread;
-	enum Configure conf;
-	union {float *matrix; char *text;};
 };
 struct Update
 {
@@ -197,21 +226,6 @@ struct Command
 	struct Command *redraw;
 	struct Command *pierce;
 	struct Response *response;
-};
-struct Invoke
-{
-	int tagbits;
-	union {
-	float *stock;
-	struct {
-	enum ClickMode click;
-	int file;
-	int plane;
-	float *pierce;};};
-};
-struct Question
-{
-	int file;
 };
 
 #endif

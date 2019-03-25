@@ -175,6 +175,7 @@ template <class T>
 class Message
 {
 private:
+	const char *str;
 	Thread *thread;
 	Next<T> *head;
 	Next<T> *tail;
@@ -183,18 +184,19 @@ private:
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 public:
-	Message() : thread(0), head(0), tail(0), pool(0), wait(0)
+	Message(Thread *ptr) : str(0), thread(ptr), head(0), tail(0), pool(0), wait(0)
 	{
 		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",errno,__FILE__,__LINE__);
 		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",errno,__FILE__,__LINE__);
 	}
-	Message(Thread *ptr) : thread(ptr), head(0), tail(0), pool(0), wait(0)
+	Message(Thread *ptr, const char *s) : str(s), thread(ptr), head(0), tail(0), pool(0), wait(0)
 	{
 		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",errno,__FILE__,__LINE__);
 		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",errno,__FILE__,__LINE__);
 	}
 	void put(T val)
 	{
+		if (str) std::cout << str << std::endl;
 		Next<T> *ptr;
 		if (pool) {ptr = pool; remove(pool,ptr);}
 		else ptr = new Next<T>();

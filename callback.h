@@ -44,6 +44,7 @@ struct State
 	enum TargetMode target;
 	enum MouseMode mouse;
 	enum RollerMode roller;
+	enum TopologyMode topology;
 	enum FixedMode fixed;
 };
 

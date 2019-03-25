@@ -25,9 +25,11 @@ The -- commands are as follows.
 --session change transform target to all observed facets  
 --polytope change transform target to all facets in file of clicked facet  
 --facet change transform target to clicked facet  
---numeric hold nothing invariant upon randomize or tweak  
---invariant hold polytope invariant upon randomize or tweak  
---symbolic hold space invariant upon randomize or tweak  
+--numeric hold no topology invariant upon tweak  
+--invariant hold polytope invariant upon tweak  
+--symbolic hold space invariant upon tweak  
+--relative hold pierce point fixed upon tweak  
+--absolute hold no point fixed upon tweak  
 --include share boundaries with given file  
 --exclude stop sharing boundaries with last included file  
 --plane "bname" versor and table leg lengths  
@@ -58,8 +60,9 @@ Read->Data->Polytope for decorating planes
 Read->Data->System for changing sound  
 Read->Data->Script for setting up scripts  
 Window->Data->Write for recording transformations  
-Window->Data->Polytope for manipulating or randomizing planes  
-Window->Data->Polytope for changing which regions are in the polytope  
+Window->Action->Polytope for manipulating planes  
+Wondow->Action->Polytope for tweaking planes  
+Window->Action->Polytope for sculpting polytope  
 Window->Invoke->Script for starting macro from click  
 Polytope->Data->Write for appending manipulated or randomized planes  
 Polytope->Data->Write for changing whether region is in polytope  

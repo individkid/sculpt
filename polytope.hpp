@@ -32,8 +32,8 @@ class Polytope : public Thread
 private:
 	// Read->Data->Polytope
 	Message<Data*> *rsp2data2read;
-	// Window->Data->Polytope
-	Message<Data*> *rsp2data2window;
+	// Window->Action->Polytope
+	Message<Action*> *rsp2action2window;
 	// Polytope->Data->Write
 	Message<Data*> *req2data2write;
 	// Polytope->Command->Window
@@ -42,7 +42,7 @@ private:
 	Message<Question*> *rsp2question2script;
 public:
 	Message<Data*> read2data2req;
-	Message<Data*> window2data2req;
+	Message<Action*> window2action2req;
 	Message<Data*> write2data2rsp;
 	Message<Command*> window2command2rsp;
 	Message<Question*> script2question2req;

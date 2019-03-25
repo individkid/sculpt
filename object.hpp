@@ -41,8 +41,8 @@ struct Object
 	Message<Data*> *rsp2data2read;
 	// Window->Data->Write
 	Message<Data*> *req2data2write;
-	// Window->Data->Polytope
-	Message<Data*> *req2data2polytope;
+	// Window->Action->Polytope
+	Message<Action*> *req2action2polytope;
 	// Polytope->Command->Window
 	Message<Command*> *rsp2command2polytope;
 	Handle handle[Buffers];

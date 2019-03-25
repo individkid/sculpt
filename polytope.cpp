@@ -23,7 +23,7 @@
 #include "script.hpp"
 
 Polytope::Polytope(int i) : Thread(),
-	read2data2req(this), window2data2req(this),
+	read2data2req(this,"Read->Data->Polytope"), window2action2req(this),
 	write2data2rsp(this), window2command2rsp(this),
 	script2question2req(this)
 {
@@ -36,7 +36,7 @@ void Polytope::connect(Read *ptr)
 
 void Polytope::connect(Window *ptr)
 {
-	rsp2data2window = &ptr->polytope2data2rsp;
+	rsp2action2window = &ptr->polytope2action2rsp;
 	req2command2window = &ptr->polytope2command2req;
 }
 

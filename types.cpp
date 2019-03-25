@@ -44,6 +44,7 @@ const char *data[] = {"data","scalar","query"};
 const char *name[] = {"getUniform","firstUniform","putUniform","checkQuery",0};
 void (*function[])(struct Update *) = {getUniform,firstUniform,putUniform,checkQuery};
 const char *program[] = {"Draw","Pierce","Sect0","Sect1","Side1","Side2"};
+const char *thread[] = {"ReadType","WriteType","WindowType","PolytopeType","SystemType","ScriptType"};
 
 Update *parseUpdate(const char *&ptr)
 {
@@ -134,7 +135,7 @@ int parse(const char *ptr, Command *&command, Data *&data, ThreadType &dest, Thr
 	data = 0; return 1;}}
 	len = literal(ptr,"--test");
 	if (len) {ptr += len;
-	data = datas.get(); data->thread = ReadType; data->conf = TestConf; data->file = file;
+	data = datas.get(); data->conf = TestConf; data->file = file;
 	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
 	data->text = prefix(chars,ptr,len+1); data->text[len] = 0;
 	dest = PolytopeType; command = 0; return 1;}

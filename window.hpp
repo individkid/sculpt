@@ -57,15 +57,16 @@ private:
 	void writeTexture2d(Update &update);
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
-	void processInvoke(Invoke &invoke);
+	void processResponse(Invoke &invoke);
+	void processResponse(Action &action);
 	void processResponse(Data &data);
 	void processData(Data &data);
 	void processCommand(Command &command);
 	void finishCommand(Command &command);
+	void startCommand(Queue &queue, Command &command);
 	void startQueue(Queue &queue);
 	void finishQueue(Queue &queue);
 	void swapQueue(Queue &queue, Command *&command);
-	void startCommand(Queue &queue, Command &command);
 public:
 	// Read->Command->Window
 	Message<Command*> read2command2req;
@@ -74,7 +75,7 @@ public:
 	// Window->Data->Write
 	Message<Data*> write2data2rsp;
 	// Window->Data->Polytope
-	Message<Data*> polytope2data2rsp;
+	Message<Action*> polytope2action2rsp;
 	// Window->Invoke->Script
 	Message<Invoke*> script2invoke2rsp;
 	// Polytope->Command->Window
@@ -84,7 +85,8 @@ public:
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(Script *ptr);
-	void sendData(ThreadType thread, Data *data);
+	void sendData(Data *data);
+	void sendAction(Action *action);
 	void sendInvoke(Invoke *invoke);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);

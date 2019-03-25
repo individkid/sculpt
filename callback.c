@@ -32,9 +32,14 @@ struct State state = {0};
 
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
-void sendPolytope(int file, int plane, float *point, enum Configure conf);
-void sendWrite(int file, int plane, float *matrix, enum Configure conf);
-void sendInvoke(int tagbits, enum ClickMode click, int file, int plane, float *pierce);
+void sendData(int file, int plane, enum Configure conf, float *matrix);
+void sendAdditive(int file, int plane);
+void sendSubtracive(int file, int plane);
+void sendRefine(int file, int plane, float *pierce);
+void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce);
+void sendAbsolute(int file, int plane, enum TopologyMode topology);
+void sendFacet(int file, int plane, float *matrix);
+void sendInvoke(int file, int plane, int tagbits, float *vector);
 void maybeKill(int seq);
 
 int isSuspend()
@@ -57,7 +62,8 @@ void globalInit(int nfile)
     state.target = SessionMode;
     state.mouse = RotateMode;
     state.roller = CylinderMode;
-    state.fixed = NumericMode;
+    state.topology = NumericMode;
+    state.fixed = RelativeMode;
 }
 
 float *rotateMatrix(float *matrix, float *from, float *to)
@@ -143,7 +149,8 @@ float *mouseMatrix(float *matrix)
 	translate[7] = pointer->cursor[1]-pointer->point[1];
 	translate[11] = 0.0;
 	return copymat(matrix,translate,4);}
-	default: displayError(state.mouse,"invalid state.mouse"); exit(-1);}
+	default: displayError(state.mouse,"invalid state.mouse");}
+	return matrix;
 }
 
 float *rollerMatrix(float *matrix)
@@ -180,7 +187,7 @@ float *rollerMatrix(float *matrix)
 	case (ScaleMode): {
 	scalevec(identmat(matrix,4),powf(BASE,pointer->roller),16);
 	return fixedMatrix(matrix);}
-	default: displayError(state.roller,"invalid state.roller"); exit(-1);}
+	default: displayError(state.roller,"invalid state.roller");}
 	return matrix;
 }
 
@@ -194,7 +201,7 @@ void affineMatrix(int file, float *affine)
 	timesmat(timesmat(rollerMatrix(affine),matrix.polytope[file],4),matrix.session,4);} else
 	timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
 	case (FacetMode): timesmat(timesmat(identmat(affine,4),matrix.session,4),matrix.polytope[file],4); break;
-	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	default: displayError(state.target,"invalid state.target");}
 }
 
 void sendMatrix()
@@ -202,14 +209,14 @@ void sendMatrix()
 	switch (state.target) {
 	case (SessionMode):
 	for (int i = 0; i < 16; i++) last.session[i] = matrix.session[i];
-	sendWrite(matrix.file,matrix.plane,matrix.session,SessionConf); break;
+	sendData(matrix.file,matrix.plane,SessionConf,matrix.session); break;
 	case (PolytopeMode):
 	for (int i = 0; i < 16; i++) last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
-	sendWrite(matrix.file,matrix.plane,matrix.session,PolytopeConf); break;
+	sendData(matrix.file,matrix.plane,PolytopeConf,matrix.polytope[matrix.file]); break;
 	case (FacetMode):
 	for (int i = 0; i < 16; i++) last.facet[i] = matrix.facet[i];
-	sendPolytope(matrix.file,matrix.plane,matrix.session,FacetConf); break;
-	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	sendFacet(matrix.file,matrix.plane,matrix.facet); break;
+	default: displayError(state.target,"invalid state.target");}
 }
 
 void syncMatrix(struct Data *data)
@@ -219,7 +226,6 @@ void syncMatrix(struct Data *data)
 	case (SubtractiveConf): changeClick(SubtractiveMode); break;
 	case (RefineConf): changeClick(RefineMode); break;
 	case (TweakConf): changeClick(TweakMode); break;
-	case (RandomizeConf): changeClick(RandomizeMode); break;
 	case (PerformConf): changeClick(PerformMode); break;
 	case (TransformConf): changeClick(PierceMode/*!*/); break;
 	case (SessionConf): {
@@ -231,7 +237,7 @@ void syncMatrix(struct Data *data)
 	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
 	timesmat(copymat(matrix.polytope[data->file],data->matrix,4),delta,4); break;}
 	case (FacetConf): break;
-	default: displayError(data->conf,"invalid data->conf"); exit(-1);}
+	default: displayError(data->conf,"invalid data->conf");}
 }
 
 void getUniform(struct Update *update)
@@ -296,7 +302,7 @@ void foldMatrix()
 	case (SessionMode): jumpmat(matrix.session,affine,4); break;
 	case (PolytopeMode): jumpmat(matrix.polytope[matrix.file],affine,4); break;
 	case (FacetMode): jumpmat(matrix.facet,affine,4); break;
-	default: displayError(state.target,"invalid state.target"); exit(-1);}
+	default: displayError(state.target,"invalid state.target");}
 	copyvec(pointer->point,pointer->cursor,2);
 	pointer->roller = 0;
 }
@@ -335,12 +341,6 @@ void changeRoller(enum RollerMode mode)
 	state.roller = mode;
 }
 
-void changeFixed(enum FixedMode mode)
-{
-	foldMatrix(); if (state.click == TransformMode) sendMatrix();
-	state.fixed = mode;
-}
-
 void changeToggle(int toggle)
 {
 	foldMatrix(); if (state.click == TransformMode) sendMatrix();
@@ -349,17 +349,19 @@ void changeToggle(int toggle)
 
 void triggerAction()
 {
-	if (current.tagbits) sendInvoke(current.tagbits,state.click,current.file,current.plane,current.pierce);
+	if (current.tagbits) sendInvoke(current.file,current.plane,current.tagbits,current.pierce);
 	switch (state.click) {
-	case (AdditiveMode): sendPolytope(current.file,current.plane,current.pierce,AdditiveConf); break;
-	case (SubtractiveMode): sendPolytope(current.file,current.plane,current.pierce,SubtractiveConf); break;
-	case (RefineMode): sendPolytope(current.file,current.plane,current.pierce,RefineConf); break;	
-	case (TweakMode): sendPolytope(current.file,current.plane,current.pierce,TweakConf); break;	
-	case (RandomizeMode): sendPolytope(current.file,current.plane,current.pierce,RandomizeConf); break;	
+	case (AdditiveMode): sendAdditive(current.file,current.plane); break;
+	case (SubtractiveMode): sendSubtracive(current.file,current.plane); break;
+	case (RefineMode): sendRefine(current.file,current.plane,current.pierce); break;	
+	case (TweakMode): switch (state.fixed) {
+	case (RelativeMode): sendRelative(current.file,current.plane,state.topology,current.pierce); break;	
+	case (AbsoluteMode): sendAbsolute(current.file,current.plane,state.topology); break;
+	default: displayError(state.fixed,"invalid state.fixed");}
 	case (PerformMode): break;
 	case (TransformMode): changeClick(PierceMode); break;
 	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
-	default: displayError(state.click,"invalid state.click"); exit(-1);}
+	default: displayError(state.click,"invalid state.click");}
 }
 
 void toggleSuspend()
@@ -372,6 +374,7 @@ void toggleSuspend()
 void displayError(int error, const char *description)
 {
     fprintf(stderr,"GLFW error %d %s\n",error,description);
+    exit(-1);
 }
 
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mods)
