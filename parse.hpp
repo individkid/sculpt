@@ -29,11 +29,13 @@ public:
 	Pool<Sync> syncs;
 	Pool<Mode> modes;
 	Pool<Data> datas;
+	Power<float> floats;
 	Power<char> chars;
-	void get(const char *&ptr, Update *&update);
-	void get(const char *&ptr, Render *&render);
-	void get(const char *&ptr, int file, Command *&command);
-	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode, Data *&polytope);
+	int get(const char *ptr, Update *&update);
+	int get(const char *ptr, Render *&render);
+	int get(const char *ptr, int file, Command *&command);
+	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode,
+		Data *&polytope, Data *&system, Data *&script);
 	void put(Command *command);
 	void put(Sync *sync);
 	void put(Mode *mode);

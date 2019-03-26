@@ -36,167 +36,173 @@ const char *name[] = {"getUniform","firstUniform","putUniform","checkQuery",0};
 void (*function[])(struct Update *) = {getUniform,firstUniform,putUniform,checkQuery};
 const char *program[] = {"Draw","Pierce","Sect0","Sect1","Side1","Side2"};
 
-void Parse::get(const char *&ptr, Update *&update)
+int Parse::get(const char *ptr, Update *&update)
 {
-	Update init = {0}; update = updates.get(); *update = init; int len, i; const char *pat;
-	len = number(ptr,update->file);
-	if (len) ptr += len; else {updates.put(update); update = 0; return;}
+	Update init = {0}; update = updates.get(); *update = init; int len = 0; int inc, i;
+	if ((inc = number(ptr+len,update->file))) len += inc;
+	else {updates.put(update); update = 0; return 0;}
 	for (i = 0; i < Buffers; i++) {
-		pat = cleanup(chars,concat(chars," ",buffer[i]));
-		len = literal(ptr,pat);
-		if (len) {ptr += len; update->buffer = (Buffer)i; break;}}
-	if (i == Buffers) {updates.put(update); update = 0; return;}
-	len = number(ptr,update->offset);
-	if (len) ptr += len; else {updates.put(update); update = 0; return;}
-	len = number(ptr,update->size);
-	if (len) ptr += len; else {updates.put(update); update = 0; return;}
+		const char *pat = cleanup(chars,concat(chars," ",buffer[i]));
+		if ((inc = literal(ptr+len,pat))) {len += inc; update->buffer = (Buffer)i; break;}}
+	if (i == Buffers) {updates.put(update); update = 0; return 0;}
+	if ((inc = number(ptr+len,update->offset))) len += inc;
+	else {updates.put(update); update = 0; return 0;}
+	if ((inc = number(ptr+len,update->size))) len += inc;
+	else {updates.put(update); update = 0; return 0;}
 	int siz = (update->buffer == Texture0 || update->buffer == Texture1 ?
 		update->width*update->height*3 + (4-(update->width*3)%4)*update->height :
 		update->size);
 	update->text = chars.get(siz);
 	for (i = 0; i < siz; i++) {
-		int val; len = number(ptr,val); update->text[i] = val;
-		if (len) ptr += len; else {updates.put(update); update = 0; return;}}
+		int val; if ((inc = number(ptr+len,val))) {len += inc; update->text[i] = val;}
+		else {updates.put(update); update = 0; return 0;}}
 	for (i = 0; name[i]; i++) {
-		pat = cleanup(chars,concat(chars," ",name[i]));
-		len = literal(ptr,pat);
-		if (len) {ptr += len; update->function = function[i]; break;}}
+		const char *pat = cleanup(chars,concat(chars," ",name[i]));
+		if ((inc = literal(ptr+len,pat))) {len += inc; update->function = function[i]; break;}}
+	return len;
 }
 
-void Parse::get(const char *&ptr, Render *&render)
+int Parse::get(const char *ptr, Render *&render)
 {
-	Render init = {0}; render = renders.get(); *render = init; int len, i; const char *pat;
-	len = number(ptr,render->file);
-	if (len) ptr += len; else {renders.put(render); render = 0; return;}
+	Render init = {0}; render = renders.get(); *render = init; int len = 0; int inc, i;
+	if ((inc = number(ptr+len,render->file))) len += inc;
+	else {renders.put(render); render = 0; return 0;}
 	for (i = 0; i < Programs; i++) {
-		pat = cleanup(chars,concat(chars," ",program[i]));
-		len = literal(ptr,pat);
-		if (len) {ptr += len; render->program = (Program)i; break;}}
-	if (i == Programs) {renders.put(render); render = 0; return;}
-	len = number(pat,render->base);
-	if (len) ptr += len; else {renders.put(render); render = 0; return;}
-	len = number(pat,render->count);
-	if (len) ptr += len; else {renders.put(render); render = 0; return;}
-	len = number(pat,render->size);
-	if (len) ptr += len; else {renders.put(render); render = 0; return;}
+		const char *pat = cleanup(chars,concat(chars," ",program[i]));
+		if ((inc = literal(ptr+len,pat))) {len += inc; render->program = (Program)i; break;}}
+	if (i == Programs) {renders.put(render); render = 0; return 0;}
+	if ((inc = number(ptr+len,render->base))) len += inc;
+	else {renders.put(render); render = 0; return 0;}
+	if ((inc = number(ptr+len,render->count))) len += inc;
+	else {renders.put(render); render = 0; return 0;}
+	if ((inc = number(ptr+len,render->size))) len += inc;
+	else {renders.put(render); render = 0; return 0;}
+	return len;
 }
 
-void Parse::get(const char *&ptr, int file, Command *&command)
+int Parse::get(const char *ptr, int file, Command *&command)
 {
-	Command init = {0}; command = commands.get(); *command = init; int len; const char *pat;
-	len = literal(ptr," feedback");
-	if (len) {ptr += len; command->feedback = 1;}
-	for (int i = 0; i < Fields; i++) {
-		pat = cleanup(chars,concat(chars," ",field[i]));
+	Command init = {0}; command = commands.get(); *command = init; int len = 0; int inc, i;
+	if ((inc = literal(ptr+len," feedback"))) {len += inc; command->feedback = 1;}
+	for (i = 0; i < Fields; i++) {
+		const char *pat = cleanup(chars,concat(chars," ",field[i]));
 		Update *update = 0; int inval = 0;
-		while ((len = literal(ptr,pat))) {ptr += len;
-			Update *temp; get(ptr,temp);
-			if (!temp) {inval = 1; break;}
-			insert(update,temp);}
+		while ((inc = literal(ptr+len,pat))) {len += inc; Update *temp;
+			inc = get(ptr+len,temp); if (inc) {len += inc;
+			insert(update,temp);} else {inval = 1; break;}}
 		while (update) {
             insert(command->update[(Field)i],update);
             remove(update,update);}
-        if (inval) {put(command); command = 0; return;}}
+        if (inval) {put(command); command = 0; return 0;}}
     Render *render = 0; int inval = 0;
-	while ((len = literal(ptr," render"))) {ptr += len;
-		Render *temp; get(ptr,temp);
-		if (!temp) {inval = 1; break;}
-		insert(render,temp);}
+	while ((inc = literal(ptr+len," render"))) {len += inc; Render *temp;
+		inc = get(ptr+len,temp); if (inc) {len += inc;
+		insert(render,temp);} else {inval = 1; break;}}
 	while (render) {
 		insert(command->render,render);
 		remove(render,render);}
-    if (inval) {put(command); command = 0; return;}
-	if ((len = literal(ptr," redraw"))) {ptr += len;
-		get(ptr,file,command->redraw);
-		if (!command->redraw) {put(command); command = 0; return;}}
-	if ((len = literal(ptr," pierce"))) {ptr += len;
-		get(ptr,file,command->pierce);
-		if (!command->pierce) {put(command); command = 0; return;}}
+    if (inval) {put(command); command = 0; return 0;}
+	if ((inc = literal(ptr+len," redraw"))) {len += inc;
+		inc = get(ptr+len,file,command->redraw); if (inc) len += inc;
+		else {put(command); command = 0; return 0;}}
+	if ((inc = literal(ptr+len," pierce"))) {len += inc;
+		inc = get(ptr+len,file,command->pierce); if (inc) len += inc;
+		else {put(command); command = 0; return 0;}}
 	Response *response = responses.get(); command->response = response;
 	response->next = 0; response->file = file;
+	return len;
 }
 
-void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode, Data *&polytope)
+void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode,
+	Data *&polytope, Data *&system, Data *&script)
 {
-	int len; command = 0; sync = 0; mode = 0; polytope = 0;
-	len = literal(ptr,"--additive");
-	if (len) {ptr += len; mode = modes.get();
+	int len, inc; command = 0; sync = 0; mode = 0; polytope = 0;
+
+	len = literal(ptr,"--additive"); if (len) {mode = modes.get();
 	mode->mode = ClickType; mode->click = AdditiveMode; mode->file = file; return;}
-	len = literal(ptr,"--subractive");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--subractive"); if (len) {mode = modes.get();
 	mode->mode = ClickType; mode->click = SubtractiveMode; mode->file = file; return;}
-	len = literal(ptr,"--refine");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--refine"); if (len) {mode = modes.get();
 	mode->mode = ClickType; mode->click = RefineMode; mode->file = file; return;}
-	len = literal(ptr,"--tweak");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--tweak"); if (len) {mode = modes.get();
 	mode->mode = ClickType; mode->click = TweakMode; mode->file = file; return;}
-	len = literal(ptr,"--perform");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--perform"); if (len) {mode = modes.get();
 	mode->mode = ClickType; mode->click = PerformMode; mode->file = file; return;}
-	len = literal(ptr,"--transform");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--transform"); if (len) {mode = modes.get();
 	mode->mode = ClickType; mode->click = TransformMode; mode->file = file; return;}
-	len = literal(ptr,"--cylinder");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--cylinder"); if (len) {mode = modes.get();
 	mode->mode = RollerType; mode->roller = CylinderMode; mode->file = file; return;}
-	len = literal(ptr,"--clock");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--clock"); if (len) {mode = modes.get();
 	mode->mode = RollerType; mode->roller = ClockMode; mode->file = file; return;}
-	len = literal(ptr,"--normal");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--normal"); if (len) {mode = modes.get();
 	mode->mode = RollerType; mode->roller = NormalMode; mode->file = file; return;}
-	len = literal(ptr,"--parallel");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--parallel"); if (len) {mode = modes.get();
 	mode->mode = RollerType; mode->roller = ParallelMode; mode->file = file; return;}
-	len = literal(ptr,"--scale");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--scale"); if (len) {mode = modes.get();
 	mode->mode = RollerType; mode->roller = ScaleMode; mode->file = file; return;}
-	len = literal(ptr,"--rotate");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--rotate"); if (len) {mode = modes.get();
 	mode->mode = MouseType; mode->mouse = RotateMode; mode->file = file; return;}
-	len = literal(ptr,"--tanget");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--tanget"); if (len) {mode = modes.get();
 	mode->mode = MouseType; mode->mouse = TangentMode; mode->file = file; return;}
-	len = literal(ptr,"--translate");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--translate"); if (len) {mode = modes.get();
 	mode->mode = MouseType; mode->mouse = TranslateMode; mode->file = file; return;}
-	len = literal(ptr,"--session");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--session"); if (len) {mode = modes.get();
 	mode->mode = TargetType; mode->target = SessionMode; mode->file = file; return;}
-	len = literal(ptr,"--polytope");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--polytope"); if (len) {mode = modes.get();
 	mode->mode = TargetType; mode->target = PolytopeMode; mode->file = file; return;}
-	len = literal(ptr,"--facet");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--facet"); if (len) {mode = modes.get();
 	mode->mode = TargetType; mode->target = FacetMode; mode->file = file; return;}
-	len = literal(ptr,"--numeric");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--numeric"); if (len) {mode = modes.get();
 	mode->mode = TopologyType; mode->topology = NumericMode; mode->file = file; return;}
-	len = literal(ptr,"--invariant");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--invariant"); if (len) {mode = modes.get();
 	mode->mode = TopologyType; mode->topology = InvariantMode; mode->file = file; return;}
-	len = literal(ptr,"--symbolic");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--symbolic"); if (len) {mode = modes.get();
 	mode->mode = TopologyType; mode->topology = SymbolicMode; mode->file = file; return;}
-	len = literal(ptr,"--relative");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--relative"); if (len) {mode = modes.get();
 	mode->mode = FixedType; mode->fixed = RelativeMode; mode->file = file; return;}
-	len = literal(ptr,"--absolute");
-	if (len) {ptr += len; mode = modes.get();
+
+	len = literal(ptr,"--absolute"); if (len) {mode = modes.get();
 	mode->mode = FixedType; mode->fixed = AbsoluteMode; mode->file = file; return;}
-	len = literal(ptr,"--command");
-	if (len) {ptr += len; get(ptr,file,command);
-	if (command) return;}
-	len = literal(ptr,"--test");
-	if (len) {ptr += len; polytope = datas.get();
-	polytope->conf = TestConf; polytope->file = file;
-	len = 0; while (ptr[len]) if (ptr[len] == '-' && ptr[len+1] == '-') break; else len++;
-	polytope->text = prefix(chars,ptr,len+1); polytope->text[len] = 0; return;}
+
+	len = literal(ptr,"--matrix"); if (len) {sync = syncs.get(); sync->matrix = floats.get(16);
+	for (int i = 0; i < 16; i++) {inc = scalar(ptr+len, sync->matrix[i]); len += inc;}
+	sync->target = PolytopeMode; sync->file = file; return;}
+
+	len = literal(ptr,"--global"); if (len) {sync = syncs.get(); sync->matrix = floats.get(16);
+	for (int i = 0; i < 16; i++) {inc = scalar(ptr+len, sync->matrix[i]); len += inc;}
+	sync->target = SessionMode; sync->file = file; return;}
+
+	len = literal(ptr,"--command"); if (len) {get(ptr+len,file,command); if (command) return;}
+
+	len = literal(ptr,"--test"); if (len) {polytope = datas.get();
+	inc = 0; while (ptr[len+inc]) if (ptr[len+inc] == '-' && ptr[len+inc+1] == '-') break; else inc++;
+	polytope->text = prefix(chars,ptr+len,inc+1); polytope->text[inc] = 0; len += inc;
+	polytope->conf = TestConf; polytope->file = file; return;}
 }
 
 void Parse::put(Sync *sync)
 {
+	if (sync->target == PolytopeMode || sync->target == SessionMode) floats.put(16,sync->matrix);
 	syncs.put(sync);
 }
 

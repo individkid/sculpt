@@ -47,7 +47,6 @@ private:
 	Message<Data*> *req2data2polytope;
 	Message<Data*> *req2data2system;
 	Message<Data*> *req2data2script;
-	Message<Data*> *thread2data2rsp[4];
 	Parse parse;
 public:
 	Message<Command*> window2command2rsp;
