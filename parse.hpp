@@ -41,37 +41,21 @@ public:
 	void put(Sync *sync);
 	void put(Mode *mode);
 	void put(Data *data);
-	char *concat(const char *left, const char *right) {
-		return ::concat(chars,left,right);}
-	char *concat(char *left, const char *right) {
-		return ::concat(chars,left,right);}
-	char *concat(const char *left, char *right) {
-		return ::concat(chars,left,right);}
-	char *concat(char *left, char *right) {
-		return ::concat(chars,left,right);}
-	char *concat(const char *left, char right) {
-		return ::concat(chars,left,right);}
-	char *concat(char *left, char right) {
-		return ::concat(chars,left,right);}
-	char *concat(char left, const char *right) {
-		return ::concat(chars,left,right);}
-	char *concat(char left, char *right) {
-		return ::concat(chars,left,right);}
-	char *prefix(const char *str, int len) {
-		return ::prefix(chars,str,len);}
-	char *prefix(char *str, int len) {
-		return ::prefix(chars,str,len);}
-	char *postfix(const char *str, int len) {
-		return ::postfix(chars,str,len);}
-	char *postfix(char *str, int len) {
-		return ::postfix(chars,str,len);}
-	char *setup(const char *str) {
-		return ::setup(chars,str);}
-	char *setup(char *str) {
-		return ::setup(chars,str);}
-	const char *cleanup(char *str) {
-		return ::cleanup(chars,str);
-	}
+	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
+	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}
+	char *concat(const char *left, char *right) {return ::concat(chars,left,right);}
+	char *concat(char *left, char *right) {return ::concat(chars,left,right);}
+	char *concat(const char *left, char right) {return ::concat(chars,left,right);}
+	char *concat(char *left, char right) {return ::concat(chars,left,right);}
+	char *concat(char left, const char *right) {return ::concat(chars,left,right);}
+	char *concat(char left, char *right) {return ::concat(chars,left,right);}
+	char *prefix(const char *str, int len) {return ::prefix(chars,str,len);}
+	char *prefix(char *str, int len) {return ::prefix(chars,str,len);}
+	char *postfix(const char *str, int len) {return ::postfix(chars,str,len);}
+	char *postfix(char *str, int len) {return ::postfix(chars,str,len);}
+	char *setup(const char *str) {return ::setup(chars,str);}
+	char *setup(char *str) {return ::setup(chars,str);}
+	const char *cleanup(char *str) {return ::cleanup(chars,str);}
 	int number(const char *str, int &val);
 	int scalar(const char *str, float &val);
 	int literal(const char *str, const char *pat);
