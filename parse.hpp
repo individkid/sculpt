@@ -21,7 +21,7 @@
 
 class Parse
 {
-public:
+private:
 	Pool<Command> commands;
 	Pool<Update> updates;
 	Pool<Render> renders;
@@ -34,10 +34,45 @@ public:
 	int get(const char *ptr, Update *&update);
 	int get(const char *ptr, Render *&render);
 	int get(const char *ptr, int file, Command *&command);
+public:
 	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode,
 		Data *&polytope, Data *&system, Data *&script);
 	void put(Command *command);
 	void put(Sync *sync);
 	void put(Mode *mode);
 	void put(Data *data);
+	char *concat(const char *left, const char *right) {
+		return ::concat(chars,left,right);}
+	char *concat(char *left, const char *right) {
+		return ::concat(chars,left,right);}
+	char *concat(const char *left, char *right) {
+		return ::concat(chars,left,right);}
+	char *concat(char *left, char *right) {
+		return ::concat(chars,left,right);}
+	char *concat(const char *left, char right) {
+		return ::concat(chars,left,right);}
+	char *concat(char *left, char right) {
+		return ::concat(chars,left,right);}
+	char *concat(char left, const char *right) {
+		return ::concat(chars,left,right);}
+	char *concat(char left, char *right) {
+		return ::concat(chars,left,right);}
+	char *prefix(const char *str, int len) {
+		return ::prefix(chars,str,len);}
+	char *prefix(char *str, int len) {
+		return ::prefix(chars,str,len);}
+	char *postfix(const char *str, int len) {
+		return ::postfix(chars,str,len);}
+	char *postfix(char *str, int len) {
+		return ::postfix(chars,str,len);}
+	char *setup(const char *str) {
+		return ::setup(chars,str);}
+	char *setup(char *str) {
+		return ::setup(chars,str);}
+	const char *cleanup(char *str) {
+		return ::cleanup(chars,str);
+	}
+	int number(const char *str, int &val);
+	int scalar(const char *str, float &val);
+	int literal(const char *str, const char *pat);
 };

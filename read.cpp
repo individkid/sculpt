@@ -74,18 +74,18 @@ void Read::call()
     while (req2data2system->get(data)) parse.put(data);
     while (req2data2script->get(data)) parse.put(data);
 	// read to eof
-	char *cmdstr = setup(parse.chars,""); int num; char chr;
+	char *cmdstr = parse.setup(""); int num; char chr;
 	while ((num = ::read(file, &chr, 1)) == 1) {
-	cmdstr = concat(parse.chars,cmdstr,chr); fpos++;}
+	cmdstr = parse.concat(cmdstr,chr); fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
 	while (*cmdstr) {
 	int len = 0; if (cmdstr[len] == '-' && cmdstr[len+1] == '-') len += 2;
 	while (cmdstr[len] && !(cmdstr[len] == '-' && cmdstr[len+1] == '-')) len++;
-	char *substr = prefix(parse.chars,cmdstr,len);
-	cmdstr = postfix(parse.chars,cmdstr,len);
+	char *substr = parse.prefix(cmdstr,len);
+	cmdstr = parse.postfix(cmdstr,len);
     command = 0; Sync *sync = 0; Mode *mode = 0;
     Data *polytope = 0; Data *system = 0; Data *script = 0;
-	parse.get(cleanup(parse.chars,substr),self,command,sync,mode,polytope,system,script);
+	parse.get(parse.cleanup(substr),self,command,sync,mode,polytope,system,script);
 	if (command) req2command2window->put(command);
 	if (sync) req2sync2window->put(sync);
 	if (mode) req2mode2window->put(mode);

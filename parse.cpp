@@ -16,6 +16,7 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string.h>
 #include "parse.hpp"
 
 extern "C" void getUniform(struct Update *update);
@@ -42,7 +43,7 @@ int Parse::get(const char *ptr, Update *&update)
 	if ((inc = number(ptr+len,update->file))) len += inc;
 	else {updates.put(update); update = 0; return 0;}
 	for (i = 0; i < Buffers; i++) {
-		const char *pat = cleanup(chars,concat(chars," ",buffer[i]));
+		const char *pat = cleanup(concat(" ",buffer[i]));
 		if ((inc = literal(ptr+len,pat))) {len += inc; update->buffer = (Buffer)i; break;}}
 	if (i == Buffers) {updates.put(update); update = 0; return 0;}
 	if ((inc = number(ptr+len,update->offset))) len += inc;
@@ -57,7 +58,7 @@ int Parse::get(const char *ptr, Update *&update)
 		int val; if ((inc = number(ptr+len,val))) {len += inc; update->text[i] = val;}
 		else {updates.put(update); update = 0; return 0;}}
 	for (i = 0; name[i]; i++) {
-		const char *pat = cleanup(chars,concat(chars," ",name[i]));
+		const char *pat = cleanup(concat(" ",name[i]));
 		if ((inc = literal(ptr+len,pat))) {len += inc; update->function = function[i]; break;}}
 	return len;
 }
@@ -68,7 +69,7 @@ int Parse::get(const char *ptr, Render *&render)
 	if ((inc = number(ptr+len,render->file))) len += inc;
 	else {renders.put(render); render = 0; return 0;}
 	for (i = 0; i < Programs; i++) {
-		const char *pat = cleanup(chars,concat(chars," ",program[i]));
+		const char *pat = cleanup(concat(" ",program[i]));
 		if ((inc = literal(ptr+len,pat))) {len += inc; render->program = (Program)i; break;}}
 	if (i == Programs) {renders.put(render); render = 0; return 0;}
 	if ((inc = number(ptr+len,render->base))) len += inc;
@@ -85,7 +86,7 @@ int Parse::get(const char *ptr, int file, Command *&command)
 	Command init = {0}; command = commands.get(); *command = init; int len = 0; int inc, i;
 	if ((inc = literal(ptr+len," feedback"))) {len += inc; command->feedback = 1;}
 	for (i = 0; i < Fields; i++) {
-		const char *pat = cleanup(chars,concat(chars," ",field[i]));
+		const char *pat = cleanup(concat(" ",field[i]));
 		Update *update = 0; int inval = 0;
 		while ((inc = literal(ptr+len,pat))) {len += inc; Update *temp;
 			inc = get(ptr+len,temp); if (inc) {len += inc;
@@ -196,7 +197,7 @@ void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode 
 
 	len = literal(ptr,"--test"); if (len) {polytope = datas.get();
 	inc = 0; while (ptr[len+inc]) if (ptr[len+inc] == '-' && ptr[len+inc+1] == '-') break; else inc++;
-	polytope->text = prefix(chars,ptr+len,inc+1); polytope->text[inc] = 0; len += inc;
+	polytope->text = prefix(ptr+len,inc+1); polytope->text[inc] = 0; len += inc;
 	polytope->conf = TestConf; polytope->file = file; return;}
 }
 
@@ -213,7 +214,7 @@ void Parse::put(Mode *mode)
 
 void Parse::put(Data *data)
 {
-	if (data->conf == TestConf) chars.put(strlen(data->text)+1,data->text);
+	if (data->conf == TestConf) cleanup(data->text);
 	datas.put(data);
 }
 
@@ -230,4 +231,28 @@ void Parse::put(Command *command)
 	Response *response = command->response;
 	while (response) {responses.put(response); response = response->next;}
 	command = command->next;}
+}
+
+int Parse::number(const char *str, int &val)
+{
+	char *ptr;
+	val = strtol(str,&ptr,0);
+	return ptr-str;
+}
+
+int Parse::scalar(const char *str, float &val)
+{
+	char *ptr;
+	val = strtof(str,&ptr);
+	return ptr-str;
+}
+
+int Parse::literal(const char *str, const char *pat)
+{
+	const char *ptr = str;
+	if (*pat && isspace(*pat)) {
+	while (*pat && isspace(*pat)) pat++;
+	while (*ptr && isspace(*ptr)) ptr++;}
+	while (*pat && *ptr == *pat) {ptr++; pat++;}
+	return (*pat ? 0 : ptr-str);
 }
