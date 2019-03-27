@@ -16,6 +16,9 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef PARSE_HPP
+#define PARSE_HPP
+
 #include "types.h"
 #include "message.hpp"
 
@@ -63,3 +66,5 @@ public:
 	int scalar(const char *str, float &val);
 	int literal(const char *str, const char *pat);
 };
+
+#endif

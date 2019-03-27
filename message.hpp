@@ -193,7 +193,7 @@ public:
 	}
 	void put(T val)
 	{
-		if (str) std::cout << str << std::endl;
+		if (str) std::cout << "put " << str << std::endl;
 		Next<T> *ptr;
 		if (pool) {ptr = pool; remove(pool,ptr);}
 		else ptr = new Next<T>();
@@ -216,6 +216,7 @@ public:
 		wait = 0;
 		if (pthread_cond_signal(&cond) != 0) error("cond invalid signal",errno,__FILE__,__LINE__);
 		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",errno,__FILE__,__LINE__);
+		if (str) std::cout << "get " << str << std::endl;
 		return 1;
 	}
 };

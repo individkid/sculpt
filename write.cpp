@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "write.hpp"
 #include "window.hpp"
@@ -55,10 +56,25 @@ void Write::init()
 
 void Write::call()
 {
-    // read from write and data; write to pipe
+	process(window2data2req,*rsp2data2window);
+	process(polytope2data2req,*rsp2data2polytope);
+	process(script2data2req,*rsp2data2script);
 }
 
 void Write::done()
 {
 	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
+}
+
+void Write::process(Message<Data*> &req, Message<Data*> &rsp)
+{
+	Data *data;
+    while (req.get(data)) {
+	const char *str = parse.cleanup(parse.get(data));
+	int len = strlen(str);
+	int val = ::write(pipe,str,len);
+	while (val >= 0 && val < len) {
+	len -= val; str += val;
+	val = ::write(pipe,str,len);}
+	rsp.put(data);}
 }

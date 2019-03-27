@@ -70,9 +70,9 @@ void Read::call()
     while (window2command2rsp.get(command)) parse.put(command);
     while (window2sync2rsp.get(sync)) parse.put(sync);
     while (window2mode2rsp.get(mode)) parse.put(mode);
-    while (req2data2polytope->get(data)) parse.put(data);
-    while (req2data2system->get(data)) parse.put(data);
-    while (req2data2script->get(data)) parse.put(data);
+    while (polytope2data2rsp.get(data)) parse.put(data);
+    while (system2data2rsp.get(data)) parse.put(data);
+    while (script2data2rsp.get(data)) parse.put(data);
 	// read to eof
 	char *cmdstr = parse.setup(""); int num; char chr;
 	while ((num = ::read(file, &chr, 1)) == 1) {

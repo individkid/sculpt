@@ -20,6 +20,7 @@
 #define WRITE_HPP
 
 #include "message.hpp"
+#include "parse.hpp"
 
 class Window;
 class Polytope;
@@ -36,6 +37,7 @@ private:
 	Message<Data*> *rsp2data2polytope;
 	// Script->Data->Write
 	Message<Data*> *rsp2data2script;
+	Parse parse;
 public:
 	Message<Data*> window2data2req;
 	Message<Data*> polytope2data2req;
@@ -47,6 +49,7 @@ public:
 	virtual void init();
 	virtual void call();
 	virtual void done();
+	void process(Message<Data*> &req, Message<Data*> &rsp);
 };
 
 #endif
