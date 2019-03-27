@@ -17,6 +17,7 @@
 */
 
 #include <string.h>
+#include <math.h>
 #include "parse.hpp"
 
 extern "C" void getUniform(struct Update *update);
@@ -231,6 +232,108 @@ void Parse::put(Command *command)
 	Response *response = command->response;
 	while (response) {responses.put(response); response = response->next;}
 	command = command->next;}
+}
+
+char *Parse::get(const Data *data)
+{
+	switch (data->conf) {
+	case (AdditiveConf): return setup("--additive");
+	case (SubtractiveConf): return setup("--subtractive");
+	case (RefineConf): return setup("--refine");
+	case (TweakConf): return setup("--tweak");
+	case (PerformConf): return setup("--perform");
+	case (TransformConf): return setup("--transform");
+	case (CylinderConf): return setup("--cylinder");
+	case (ClockConf): return setup("--clock");
+	case (NormalConf): return setup("--normal");
+	case (ParallelConf): return setup("--parallel");
+	case (ScaleConf): return setup("--scale");
+	case (RotateConf): return setup("--rotate");
+	case (TangentConf): return setup("--tangent");
+	case (TranslateConf): return setup("--translate");
+	case (SessionConf): return setup("--session");
+	case (PolytopeConf): return setup("--polytope");
+	case (FacetConf): return setup("--facet");
+	case (NumericConf): return setup("--numeric");
+	case (InvariantConf): return setup("--invariant");
+	case (SymbolicConf): return setup("--symbolic");
+	case (RelativeConf): return setup("--relative");
+	case (AbsoluteConf): return setup("--absolute");
+	case (IncludeConf): {const char *str = data->text;
+		return concat(setup("--include "),str);}
+	case (ExcludeConf): return setup("--exclude");
+	case (PlaneConf): {char *str = setup("--plane #");
+		str = concat(str,string(data->plane));
+		str = concat(str,string(data->versor));
+		for (int i = 0; i < 3; i++) {
+			str = concat(str," "); str = concat(str,string(data->vector[i]));}
+		return str;}
+	case (MatrixConf): {char *str = setup("--matrix");
+		for (int i = 0; i < 16; i++) {
+			str = concat(str," "); str = concat(str,string(data->vector[i]));}
+		return str;}
+	case (GlobalConf): {char *str = setup("--global");
+		for (int i = 0; i < 16; i++) {
+			str = concat(str," "); str = concat(str,string(data->vector[i]));}
+		return str;}
+	case (SpaceConf): {char *str = setup("--space");
+		for (int i = 0; i < data->boundaries; i++) {
+			str = concat(str," #"); str = concat(str,string(data->planes[i]));
+			for (int j = 0; j < data->regions; j++) {
+				str = concat(str," "); str = concat(str,string(data->sides[i][j]));}}
+		return str;}
+	case (RegionConf): {char *str = setup("--region ");
+		str = concat(str,string(data->side));
+		str = concat(str," "); str = concat(str,string(data->insides));
+		for (int i = 0; i < data->insides; i++) {
+			str = concat(str," #"); str = concat(str,string(data->inside[i]));}
+		str = concat(str," "); str = concat(str,string(data->outsides));
+		for (int i = 0; i < data->outsides; i++) {
+			str = concat(str, " #"); str = concat(str,string(data->outside[i]));}
+		return str;}
+	case (InflateConf): return setup("--inflate");
+	case (PictureConf): {const char *str = data->text;
+		return concat(setup("--picture "),str);}
+	case (SoundConf): /*TODO*/ break;
+	case (MetricConf): /*TODO*/ break;
+	case (ScriptConf): /*TODO*/ break;
+	case (CommandConf): /*TODO*/ break;
+	case (ConfigureConf): /*TODO*/ break;
+	case (TestConf): {const char *str = data->text;
+		return concat(setup("--test "),str);}
+	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
+	return 0;
+}
+
+char *Parse::string(int val)
+{
+	int len = 0; int tmp = val; int rem = 0; char *str;
+	if (val < 0) tmp = -tmp;
+	while (tmp) {rem = tmp % 10; tmp = tmp / 10; len++;}
+	if (val == 0) len++;
+	if (val < 0) {len++; tmp = -tmp;}
+	str = chars.get(len+1); len = 0; tmp = val;
+	if (val < 0) tmp = -tmp;
+	while (tmp) {rem = tmp % 10; tmp = tmp / 10; str[len++] = '0' + rem;}
+	if (val == 0) str[len++] = '0';
+	if (val < 0) {str[len++] = '-'; tmp = -tmp;}
+	for (int i = 0; i < len/2; i++) {char chr = str[i]; str[i] = str[len-1-i]; str[len-1-i] = chr;}
+	str[len] = 0; return str;
+}
+
+char *Parse::string(float val)
+{
+	float tmp, mag; int exp; int len = 2; int rem = 0; char *str;
+	tmp = frexp(val,&exp);
+	if (val > 0) mag = tmp; else {mag = -tmp; len++;}
+	if (mag <= 1.0/INVALID) len++;
+	while (mag > 1.0/INVALID) {mag = mag * 10.0; rem = (int)mag; mag = mag - (float)rem; len++;}
+	str = chars.get(len); len = 2;
+	if (val > 0) mag = tmp; else {mag = -tmp; str[len++] = '-';}
+	str[len++] = '0'; str[len++] = '.';
+	if (mag <= 1.0/INVALID) str[len++] = '0';
+	while (mag > 1.0/INVALID) {mag = mag * 10.0; rem = (int)mag; mag = mag - (float)rem; str[len++] = '0'+rem;}
+	return concat(string(exp),concat("E",str));
 }
 
 int Parse::number(const char *str, int &val)

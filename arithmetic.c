@@ -21,6 +21,8 @@
 
 #include "arithmetic.h"
 
+#define INVALID 1.0e37
+
 float dotvec(float *u, float *v, int n)
 {
     float w = 0;

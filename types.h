@@ -24,6 +24,7 @@
 #define DELAY 0.01
 #define ANGLE (1.0/30.0)
 #define LENGTH (1.0/30.0)
+#define INVALID 1.0e37
 
 struct GLFWwindow;
 typedef unsigned MYenum;
@@ -143,7 +144,7 @@ struct Data
 	enum Configure conf;
 	union {
 	struct {int boundaries; int regions; int *planes; int **sides;};
-	struct {int *inside; int *outside; int side;};
+	struct {int insides; int outsides; int *inside; int *outside; int side;};
 	struct {int versor; float *vector;};
 	struct {enum TargetMode target; float *matrix;};
 	char *text;};

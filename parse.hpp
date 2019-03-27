@@ -41,6 +41,7 @@ public:
 	void put(Sync *sync);
 	void put(Mode *mode);
 	void put(Data *data);
+	char *get(const Data *data);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(const char *left, char *right) {return ::concat(chars,left,right);}
@@ -56,6 +57,8 @@ public:
 	char *setup(const char *str) {return ::setup(chars,str);}
 	char *setup(char *str) {return ::setup(chars,str);}
 	const char *cleanup(char *str) {return ::cleanup(chars,str);}
+	char *string(int val);
+	char *string(float val);
 	int number(const char *str, int &val);
 	int scalar(const char *str, float &val);
 	int literal(const char *str, const char *pat);
