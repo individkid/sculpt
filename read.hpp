@@ -41,7 +41,7 @@ private:
 	int pipe;
 	int self;
 	off_t fpos, mpos, gpos;
-	int mlen, glen;
+	int mlen, glen, mnum, gnum;
 	Message<Command*> *req2command2window;
 	Message<Sync*> *req2sync2window;
 	Message<Mode*> *req2mode2window;
@@ -67,8 +67,9 @@ public:
 	virtual void done();
 	template<class T> void get(Message<T*> &msg) {T *t; while (msg.get(t)) parse.put(t);}
 	template<class T> void put(Message<T*> &msg, T *t) {if (t) msg.put(t);}
-	Sync *read(off_t pos, int len, enum TargetMode target);
-	int write(const char *str, off_t pos, int len);
+	Sync *read(off_t pos, int len, int &num, enum TargetMode target);
+	int write(const char *str, off_t pos, int len, int &num);
+	void number(char *str, int &num);
 };
 
 #endif

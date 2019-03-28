@@ -147,13 +147,14 @@ struct Data
 	struct {int boundaries; int regions; int *planes; int **sides;};
 	struct {int insides; int outsides; int *inside; int *outside; int side;};
 	struct {int versor; float *vector;};
-	struct {enum TargetMode target; float *matrix;};
+	struct {int number; enum TargetMode target; float *matrix;};
 	char *text;};
 };
 struct Sync
 {
 	int file;
 	int plane;
+	int number;
 	enum TargetMode target;
 	float *matrix;
 };

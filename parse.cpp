@@ -262,8 +262,7 @@ char *Parse::get(const Data *data)
 	case (SymbolicConf): return setup("--symbolic");
 	case (RelativeConf): return setup("--relative");
 	case (AbsoluteConf): return setup("--absolute");
-	case (IncludeConf): {const char *str = data->text;
-		return concat(setup("--include "),str);}
+	case (IncludeConf): {const char *str = data->text; return concat(setup("--include "),str);}
 	case (ExcludeConf): return setup("--exclude");
 	case (PlaneConf): {char *str = setup("--plane #");
 		str = concat(str,string(data->plane));
@@ -271,13 +270,15 @@ char *Parse::get(const Data *data)
 		for (int i = 0; i < 3; i++) {
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
 		return str;}
-	case (MatrixConf): {char *str = setup("--matrix");
+	case (MatrixConf): {char *str = setup("--matrix ");
+		str = concat(str,string(data->number));
 		for (int i = 0; i < 16; i++) {
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
 		int len = strlen(str);
 		while (len < MMAP) {str = concat(str," "); len++;}
 		return str;}
-	case (GlobalConf): {char *str = setup("--global");
+	case (GlobalConf): {char *str = setup("--global ");
+		str = concat(str,string(data->number));
 		for (int i = 0; i < 16; i++) {
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
 		int len = strlen(str);
@@ -299,15 +300,13 @@ char *Parse::get(const Data *data)
 			str = concat(str, " #"); str = concat(str,string(data->outside[i]));}
 		return str;}
 	case (InflateConf): return setup("--inflate");
-	case (PictureConf): {const char *str = data->text;
-		return concat(setup("--picture "),str);}
+	case (PictureConf): {const char *str = data->text; return concat(setup("--picture "),str);}
 	case (SoundConf): /*TODO*/ break;
 	case (MetricConf): /*TODO*/ break;
 	case (ScriptConf): /*TODO*/ break;
 	case (CommandConf): /*TODO*/ break;
 	case (ConfigureConf): /*TODO*/ break;
-	case (TestConf): {const char *str = data->text;
-		return concat(setup("--test "),str);}
+	case (TestConf): {const char *str = data->text; return concat(setup("--test "),str);}
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
 	return 0;
 }

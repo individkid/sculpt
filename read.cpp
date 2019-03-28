@@ -30,7 +30,8 @@
 #include "system.hpp"
 #include "script.hpp"
 
-Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s), fpos(0), mlen(0), glen(0),
+Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
+	fpos(0), mlen(0), glen(0), mnum(0), gnum(0),
 	window2command2rsp(this), window2sync2rsp(this), window2mode2rsp(this),
 	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
 {
@@ -86,15 +87,17 @@ void Read::call()
 	const char *temp = cmdstr;
 	char *substr = parse.prefix(temp,len);
 	cmdstr = parse.postfix(cmdstr,len);
-	if (len) {
 	// remember memory mapped commands
+	if (len) {
 	num = parse.literal(substr,"--matrix");
 	if (num) {mpos = pos+num; mlen = strlen(substr)-num;}
 	num = parse.literal(substr,"--global");
-	if (num) {gpos = pos+num; glen = strlen(substr)-num;}} else {
+	if (num) {gpos = pos+num; glen = strlen(substr)-num;}}
 	// update display from memory mapped commands
-	if (mlen) put(*req2sync2window,read(mpos,mlen,PolytopeMode));
-	if (glen) put(*req2sync2window,read(gpos,glen,SessionMode));}
+	Sync *mmap = read(mpos,mlen,mnum,PolytopeMode);
+	if (mmap) put(*req2sync2window,mmap);
+	Sync *gmap = read(gpos,glen,gnum,SessionMode);
+	if (gmap) put(*req2sync2window,gmap);
     // send parsed messages
     Command *command = 0; Sync *sync = 0; Mode *mode = 0;
     Data *polytope = 0; Data *system = 0; Data *script = 0;
@@ -147,9 +150,9 @@ void Read::wait()
 	// append to file
 	len = strlen(str);
 	num = parse.literal(str,"--matrix");
-	if (len && num && mlen && write(str+num,mpos,mlen)) len = 0;
+	if (num && write(str+num,mpos,mlen,mnum)) len = 0;
 	num = parse.literal(str,"--global");
-	if (len && num && glen && write(str+num,gpos,glen)) len = 0;
+	if (num && write(str+num,gpos,glen,gnum)) len = 0;
 	if (len) {num = ::write(file,str,len);
 	if (num != len) error("write failed",errno,__FILE__,__LINE__);}
 	parse.cleanup(str);
@@ -167,24 +170,44 @@ void Read::done()
 	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
 }
 
-Sync *Read::read(off_t pos, int len, enum TargetMode target)
+Sync *Read::read(off_t pos, int len, int &num, enum TargetMode target)
 {
+	if (len == 0) return 0;
 	char *str = parse.setup(len+1);
+	struct flock lock; lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
+	int res = -1; while (res) {res = fcntl(file,F_SETLKW,&lock);
+	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);} lock.l_type = F_UNLCK;
 	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	if (::read(file,str,len) != len) error("read fail",errno,__FILE__,__LINE__);
 	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	Sync *sync; parse.get(str,self,target,sync);
-	return sync;
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
+	Sync *sync; str[len] = 0; parse.get(str,self,target,sync);
+	if (sync->number == num) {parse.put(sync); parse.cleanup(str); return sync;}
+	num = sync->number; parse.cleanup(str); return sync;
 }
 
-int Read::write(const char *str, off_t pos, int len)
+int Read::write(const char *str, off_t pos, int len, int &num)
 {
+	if (len == 0) return 0;
 	char *chs = parse.setup(str);
-	int nch = strlen(chs);
-	if (nch > len) return 0;
-	while (nch < len) {chs = parse.concat(chs," "); nch++;}
+	int chl = strlen(chs);
+	if (chl > len) {parse.cleanup(chs); return 0;}
+	while (chl < len) {chs = parse.concat(chs," "); chl++;}
+	number(chs,num);
+	struct flock lock; lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
+	int res = -1; while (res) {res = fcntl(file,F_SETLKW,&lock);
+	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);} lock.l_type = F_UNLCK;
 	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	if (::write(file,chs,nch) != nch) error("write fail",errno,__FILE__,__LINE__);
+	if (::write(file,chs,chl) != chl) error("write fail",errno,__FILE__,__LINE__);
 	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	return 1;
+	parse.cleanup(chs); return 1;
+}
+
+void Read::number(char *str, int &num)
+{
+	int val; int len = parse.number(str,val); num = val+1;
+	char *chs = parse.string(num);
+	int chl = strlen(chs);
+	while (chl < len) {chs = parse.concat(" ",chs); chl++;}
+	for (int i = 0; i < len; i++) str[i] = chs[i]; parse.cleanup(chs);
 }
