@@ -38,6 +38,7 @@ private:
 	int get(const char *ptr, Render *&render);
 	int get(const char *ptr, int file, Command *&command);
 public:
+	void get(const char *ptr, int file, enum TargetMode target, Sync *&sync);
 	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode,
 		Data *&polytope, Data *&system, Data *&script);
 	void put(Command *command);
@@ -59,6 +60,8 @@ public:
 	char *postfix(char *str, int len) {return ::postfix(chars,str,len);}
 	char *setup(const char *str) {return ::setup(chars,str);}
 	char *setup(char *str) {return ::setup(chars,str);}
+	char *setup(char chr) {return ::setup(chars,chr);}
+	char *setup(int len) {return chars.get(len);}
 	const char *cleanup(char *str) {return ::cleanup(chars,str);}
 	char *string(int val);
 	char *string(float val);

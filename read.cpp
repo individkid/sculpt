@@ -21,6 +21,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/select.h>
+#include <signal.h>
 
 #include "read.hpp"
 #include "window.hpp"
@@ -28,7 +30,7 @@
 #include "system.hpp"
 #include "script.hpp"
 
-Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s), fpos(0),
+Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s), fpos(0), mlen(0), glen(0),
 	window2command2rsp(this), window2sync2rsp(this), window2mode2rsp(this),
 	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
 {
@@ -66,51 +68,93 @@ void Read::init()
 
 void Read::call()
 {
-	Command *command; Sync *sync; Mode *mode; Data *data;
-    while (window2command2rsp.get(command)) parse.put(command);
-    while (window2sync2rsp.get(sync)) parse.put(sync);
-    while (window2mode2rsp.get(mode)) parse.put(mode);
-    while (polytope2data2rsp.get(data)) parse.put(data);
-    while (system2data2rsp.get(data)) parse.put(data);
-    while (script2data2rsp.get(data)) parse.put(data);
+	// deallocate message responses
+	get(window2sync2rsp);
+    get(window2sync2rsp);
+    get(window2mode2rsp);
+    get(polytope2data2rsp);
+    get(system2data2rsp);
+    get(script2data2rsp);
 	// read to eof
-	char *cmdstr = parse.setup(""); int num; char chr;
+	char *cmdstr = parse.setup(""); int num; char chr; off_t pos = fpos;
 	while ((num = ::read(file, &chr, 1)) == 1) {
 	cmdstr = parse.concat(cmdstr,chr); fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
 	while (*cmdstr) {
 	int len = 0; if (cmdstr[len] == '-' && cmdstr[len+1] == '-') len += 2;
 	while (cmdstr[len] && !(cmdstr[len] == '-' && cmdstr[len+1] == '-')) len++;
-	char *substr = parse.prefix(cmdstr,len);
+	const char *temp = cmdstr;
+	char *substr = parse.prefix(temp,len);
 	cmdstr = parse.postfix(cmdstr,len);
-    command = 0; Sync *sync = 0; Mode *mode = 0;
+	if (len) {
+	// remember memory mapped commands
+	num = parse.literal(substr,"--matrix");
+	if (num) {mpos = pos+num; mlen = strlen(substr)-num;}
+	num = parse.literal(substr,"--global");
+	if (num) {gpos = pos+num; glen = strlen(substr)-num;}} else {
+	// update display from memory mapped commands
+	if (mlen) put(*req2sync2window,read(mpos,mlen,PolytopeMode));
+	if (glen) put(*req2sync2window,read(gpos,glen,SessionMode));}
+    // send parsed messages
+    Command *command = 0; Sync *sync = 0; Mode *mode = 0;
     Data *polytope = 0; Data *system = 0; Data *script = 0;
 	parse.get(parse.cleanup(substr),self,command,sync,mode,polytope,system,script);
-	if (command) req2command2window->put(command);
-	if (sync) req2sync2window->put(sync);
-	if (mode) req2mode2window->put(mode);
-	if (polytope) req2data2polytope->put(polytope);
-	if (system) req2data2system->put(system);
-	if (script) req2data2script->put(script);}
+	put(*req2command2window,command);
+	put(*req2sync2window,sync);
+	put(*req2mode2window,mode);
+	put(*req2data2polytope,polytope);
+	put(*req2data2system,system);
+	put(*req2data2script,script);}
+	parse.cleanup(cmdstr);
 }
 
 void Read::wait()
 {
-	int num; char chr; struct flock lock; struct stat size;
-	// try to get writelock at eof to infinity, and block on read from pipe if successful and still at end, releasing after appending to file from pipe
+	int num, len; char chr; struct flock lock; struct stat size; char *str;
+	fd_set fds; struct timespec tv; sigset_t sm;
+	FD_ZERO(&fds); FD_SET(pipe,&fds); tv.tv_sec = 0; tv.tv_nsec = 0;
+	if (pthread_sigmask(SIG_SETMASK,0,&sm)) error ("cannot get mask",errno,__FILE__,__LINE__);
+	sigdelset(&sm, SIGUSR1);
+	// try to get writelock at eof to infinity
 	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
 	num = fcntl(file,F_SETLK,&lock); lock.l_type = F_UNLCK;
 	if (num < 0 && errno != EAGAIN) error("fcntl failed",errno,__FILE__,__LINE__);
-	if (num < 0) {
+	if (num == 0) {
 	if (fstat(file, &size) < 0) error("fstat failed",errno,__FILE__,__LINE__);
+	// if successful and still at end
 	if (size.st_size > fpos) {
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}
-	while ((num = ::read(pipe, &chr, 1)) == 1) {fpos++;
-	if (write(file, &chr, 1) < 0) error("write failed",errno,__FILE__,__LINE__);}
-	if (num < 0 && errno != EINTR) error("read failed",errno,__FILE__,__LINE__);
-	if (num == 0) {Thread::wait(); return;}
+	// block to read first character from pipe
+	num = pselect(pipe+1,&fds,0,&fds,0,&sm);
+	if (num < 0 && errno == EINTR) {
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}
-	// otherwise wait for readlock and release when acquired
+	if (num <= 0) error("pselect failed",errno,__FILE__,__LINE__);
+	num = ::read(pipe, &chr, 1);
+	if (num < 0) error("read failed",errno,__FILE__,__LINE__);
+	if (num == 0) {
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
+	Thread::wait(); return;}
+	str = parse.setup("");
+	str = parse.concat(str,chr);
+	// read from pipe while it would not block
+	while (1) {
+	num = pselect(pipe+1,&fds,0,&fds,&tv,0);
+	if (num < 0) error("pselect failed",errno,__FILE__,__LINE__);
+	if (num == 0) break;
+	num = ::read(pipe, &chr, 1);
+	if (num != 1) error("read failed",errno,__FILE__,__LINE__);
+	str = parse.concat(str,chr);}
+	// append to file
+	len = strlen(str);
+	num = parse.literal(str,"--matrix");
+	if (len && num && mlen && write(str+num,mpos,mlen)) len = 0;
+	num = parse.literal(str,"--global");
+	if (len && num && glen && write(str+num,gpos,glen)) len = 0;
+	if (len) {num = ::write(file,str,len);
+	if (num != len) error("write failed",errno,__FILE__,__LINE__);}
+	parse.cleanup(str);
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}
+	// wait for readlock and release when acquired
 	lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
 	num = fcntl(file,F_SETLKW,&lock); lock.l_type = F_UNLCK;
 	if (num < 0 && errno != EINTR) error("fcntl failed",errno,__FILE__,__LINE__);
@@ -121,4 +165,26 @@ void Read::done()
 {
 	if (close(file) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
+}
+
+Sync *Read::read(off_t pos, int len, enum TargetMode target)
+{
+	char *str = parse.setup(len+1);
+	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	if (::read(file,str,len) != len) error("read fail",errno,__FILE__,__LINE__);
+	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	Sync *sync; parse.get(str,self,target,sync);
+	return sync;
+}
+
+int Read::write(const char *str, off_t pos, int len)
+{
+	char *chs = parse.setup(str);
+	int nch = strlen(chs);
+	if (nch > len) return 0;
+	while (nch < len) {chs = parse.concat(chs," "); nch++;}
+	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	if (::write(file,chs,nch) != nch) error("write fail",errno,__FILE__,__LINE__);
+	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	return 1;
 }

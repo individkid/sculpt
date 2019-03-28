@@ -141,6 +141,12 @@ char *setup(Power<char> &pool, char *str)
 	return res;
 }
 
+char *setup(Power<char> &pool, char chr)
+{
+	char *res = pool.get(1+1); res[0] = chr; res[1] = 0;
+	return res;
+}
+
 const char *cleanup(Power<char> &pool, char *str)
 {
 	pool.put(strlen(str)+1,str);
@@ -174,7 +180,9 @@ void Thread::run()
 
 void Thread::wait()
 {
-	sigset_t unblock; if (pthread_sigmask(SIG_SETMASK,0,&unblock)) error ("cannot get mask",errno,__FILE__,__LINE__); sigdelset(&unblock, SIGUSR1);
+	sigset_t unblock;
+	if (pthread_sigmask(SIG_SETMASK,0,&unblock)) error ("cannot get mask",errno,__FILE__,__LINE__);
+	sigdelset(&unblock, SIGUSR1);
    	if (pselect(0, 0, 0, 0, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
 }
 

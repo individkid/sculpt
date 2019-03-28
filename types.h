@@ -25,6 +25,7 @@
 #define ANGLE (1.0/30.0)
 #define LENGTH (1.0/30.0)
 #define INVALID 1.0e37
+#define MMAP 256
 
 struct GLFWwindow;
 typedef unsigned MYenum;

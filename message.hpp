@@ -42,6 +42,7 @@ char *postfix(Power<char> &pool, const char *str, int len);
 char *postfix(Power<char> &pool, char *str, int len);
 char *setup(Power<char> &pool, const char *str);
 char *setup(Power<char> &pool, char *str);
+char *setup(Power<char> &pool, char chr);
 const char *cleanup(Power<char> &pool, char *str);
 extern "C" void *threadFunc(void *thread);
 extern "C" void signalFunc(int sig);

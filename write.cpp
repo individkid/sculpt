@@ -73,8 +73,9 @@ void Write::process(Message<Data*> &req, Message<Data*> &rsp)
 	const char *str = parse.cleanup(parse.get(data));
 	int len = strlen(str);
 	int val = ::write(pipe,str,len);
-	while (val >= 0 && val < len) {
-	len -= val; str += val;
+	while (val != len) {
+	if (val < 0 && errno != EINTR) error("write failed",errno,__FILE__,__LINE__);
+	if (val > 0) {len -= val; str += val;}
 	val = ::write(pipe,str,len);}
 	rsp.put(data);}
 }

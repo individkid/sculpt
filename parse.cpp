@@ -115,6 +115,13 @@ int Parse::get(const char *ptr, int file, Command *&command)
 	return len;
 }
 
+void Parse::get(const char *ptr, int file, enum TargetMode target, Sync *&sync)
+{
+	sync = syncs.get(); sync->matrix = floats.get(16);
+	for (int i = 0; i < 16; i++) ptr += scalar(ptr, sync->matrix[i]);
+	sync->target = target; sync->file = file;
+}
+
 void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode,
 	Data *&polytope, Data *&system, Data *&script)
 {
@@ -186,13 +193,9 @@ void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode 
 	len = literal(ptr,"--absolute"); if (len) {mode = modes.get();
 	mode->mode = FixedType; mode->fixed = AbsoluteMode; mode->file = file; return;}
 
-	len = literal(ptr,"--matrix"); if (len) {sync = syncs.get(); sync->matrix = floats.get(16);
-	for (int i = 0; i < 16; i++) {inc = scalar(ptr+len, sync->matrix[i]); len += inc;}
-	sync->target = PolytopeMode; sync->file = file; return;}
+	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,PolytopeMode,sync); return;}
 
-	len = literal(ptr,"--global"); if (len) {sync = syncs.get(); sync->matrix = floats.get(16);
-	for (int i = 0; i < 16; i++) {inc = scalar(ptr+len, sync->matrix[i]); len += inc;}
-	sync->target = SessionMode; sync->file = file; return;}
+	len = literal(ptr,"--global"); if (len) {get(ptr+len,file,SessionMode,sync); return;}
 
 	len = literal(ptr,"--command"); if (len) {get(ptr+len,file,command); if (command) return;}
 
@@ -271,10 +274,14 @@ char *Parse::get(const Data *data)
 	case (MatrixConf): {char *str = setup("--matrix");
 		for (int i = 0; i < 16; i++) {
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
+		int len = strlen(str);
+		while (len < MMAP) {str = concat(str," "); len++;}
 		return str;}
 	case (GlobalConf): {char *str = setup("--global");
 		for (int i = 0; i < 16; i++) {
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
+		int len = strlen(str);
+		while (len < MMAP) {str = concat(str," "); len++;}
 		return str;}
 	case (SpaceConf): {char *str = setup("--space");
 		for (int i = 0; i < data->boundaries; i++) {
