@@ -71,9 +71,9 @@ public:
 	char *split(char *&str);
 	void sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum TargetMode target);
 	int trywrlck();
-	int ateof();
+	int race();
 	void unwrlck();
-	int block();
+	int intr();
 	int check();
 	int read(char *&str);
 	int sync(const char *str, const char *pat, off_t pos, int len, int &num);

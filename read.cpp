@@ -96,9 +96,9 @@ void Read::call()
 void Read::wait()
 {
 	if (trywrlck()) {
-	if (!ateof()) {unwrlck(); return;}
+	if (race()) {unwrlck(); return;}
 	char *str = parse.setup("");
-	if (!block()) {unwrlck(); return;}
+	if (intr()) {unwrlck(); return;}
 	while (check()) if (!read(str)) {unwrlck(); Thread::wait(); return;}
 	if (sync(str,"--matrix",mpos,mlen,mnum)) {parse.cleanup(str); unwrlck(); return;}
 	if (sync(str,"--global",gpos,glen,gnum)) {parse.cleanup(str); unwrlck(); return;}
@@ -165,11 +165,11 @@ int Read::trywrlck()
 }
 
 // check if already read to end of file
-int Read::ateof()
+int Read::race()
 {
 	struct stat size;
 	if (fstat(file, &size) < 0) error("fstat failed",errno,__FILE__,__LINE__);
-	return (size.st_size == fpos);
+	return (size.st_size > fpos);
 }
 
 // release infinite lock at end of file
@@ -181,14 +181,14 @@ void Read::unwrlck()
 }
 
 // block until read from pipe would not block
-int Read::block()
+int Read::intr()
 {
 	fd_set fds; sigset_t sm; FD_ZERO(&fds); FD_SET(pipe,&fds);
 	if (pthread_sigmask(SIG_SETMASK,0,&sm)) error ("cannot get mask",errno,__FILE__,__LINE__);
 	sigdelset(&sm, SIGUSR1);
 	int num = pselect(pipe+1,&fds,0,&fds,0,&sm);
-	if (num < 0 && errno == EINTR) return 0;
-	return 1;
+	if (num < 0 && errno == EINTR) return 1;
+	return 0;
 }
 
 // check if read from pipe would block
