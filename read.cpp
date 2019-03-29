@@ -79,10 +79,8 @@ void Read::call()
 	char *str = read();
 	while (*str) {
 	char *dds = split(str);
-	sync(dds,"--matrix",pos,mpos,mlen);
-	sync(dds,"--global",pos,gpos,glen);
-	read(mpos,mlen,mnum,PolytopeMode);
-	read(gpos,glen,gnum,SessionMode);
+	sync(dds,"--matrix",pos,mpos,mlen,mnum,PolytopeMode);
+	sync(dds,"--global",pos,gpos,glen,gnum,SessionMode);
     Command *command = 0; Sync *sync = 0; Mode *mode = 0;
     Data *polytope = 0; Data *system = 0; Data *script = 0;
 	parse.get(parse.cleanup(dds),self,command,sync,mode,polytope,system,script);
@@ -102,12 +100,8 @@ void Read::wait()
 	char *str = parse.setup("");
 	if (!block()) {unwrlck(); return;}
 	while (check()) if (!read(str)) {unwrlck(); Thread::wait(); return;}
-	char *mstr = sync(str,"--matrix",mlen);
-	if (mstr) {number(mstr,mnum); write(mstr,mpos,mlen);
-	parse.cleanup(str); unwrlck(); return;}
-	char *gstr = sync(str,"--global",glen);
-	if (gstr) {number(gstr,gnum); write(gstr,gpos,glen);
-	parse.cleanup(str); unwrlck(); return;}
+	if (sync(str,"--matrix",mpos,mlen,mnum)) {parse.cleanup(str); unwrlck(); return;}
+	if (sync(str,"--global",gpos,glen,gnum)) {parse.cleanup(str); unwrlck(); return;}
 	write(str); parse.cleanup(str); unwrlck(); return;}
 	if (getrdlck()) unrdlck();
 }
@@ -139,29 +133,25 @@ char *Read::split(char *&str)
 	return sub;
 }
 
-// update sync struct location if read from pipe
-void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len)
+void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum TargetMode target)
 {
-	int num = parse.literal(str,pat);
-	if (num) {sav = pos+num; len = strlen(str)-num;}
-}
-
-// send sync struct from middle of file if it has the wrong sequence number
-void Read::read(off_t pos, int len, int &num, enum TargetMode target)
-{
+	// update sync struct location if read from pipe
+	int ddl = parse.literal(str,pat);
+	if (ddl) {sav = pos+ddl; len = strlen(str)-ddl;}
+	// send sync struct from middle of file if it has the wrong sequence number
 	if (len == 0) return;
-	char *str = parse.setup(len+1); struct flock lock; int res = -1;
-	lock.l_start = pos; lock.l_len = len; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
+	char *sstr = parse.setup(len+1); struct flock lock; int res = -1;
+	lock.l_start = sav; lock.l_len = len; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
 	while (res) {res = fcntl(file,F_SETLKW,&lock);
 	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);}
-	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	if (::read(file,str,len) != len) error("read fail",errno,__FILE__,__LINE__);
+	if (lseek(file,sav,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	if (::read(file,sstr,len) != len) error("read fail",errno,__FILE__,__LINE__);
 	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	lock.l_type = F_UNLCK;
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
-	Sync *sync; str[len] = 0; parse.get(str,self,target,sync);
-	if (sync->number == num) {parse.put(sync); parse.cleanup(str); return;}
-	num = sync->number; parse.cleanup(str); put(*req2sync2window,sync);
+	Sync *sync; sstr[len] = 0; parse.get(sstr,self,target,sync);
+	if (sync->number == num) {parse.put(sync); parse.cleanup(sstr); return;}
+	num = sync->number; parse.cleanup(sstr); put(*req2sync2window,sync);
 }
 
 // nonblocking try to get write lock at end of file to infinity
@@ -221,40 +211,32 @@ int Read::read(char *&str)
 	return 1;
 }
 
-// extend sync string to expected length
-char *Read::sync(const char *str, const char *pat, int len)
+int Read::sync(const char *str, const char *pat, off_t pos, int len, int &num)
 {
+	// extend sync string to expected length
 	int pre = parse.literal(str,pat);
 	if (pre == 0 && len == 0) return 0;
-	char *chs = parse.setup(str+pre);
-	int chl = strlen(chs);
-	if (chl > len) {parse.cleanup(chs); return 0;}
-	while (chl < len) {chs = parse.concat(chs," "); chl++;}
-	return chs;
-}
-
-// change sequence number in sync string
-void Read::number(char *str, int &num)
-{
-	int val; int len = parse.number(str,val); num = val+1;
-	char *chs = parse.string(num);
-	int chl = strlen(chs);
-	while (chl < len) {chs = parse.concat(" ",chs); chl++;}
-	for (int i = 0; i < len; i++) str[i] = chs[i]; parse.cleanup(chs);
-}
-
-// write sync string to middle of file
-void Read::write(char *str, off_t pos, int len)
-{
+	char *dstr = parse.setup(str+pre);
+	int dlen = strlen(dstr);
+	if (dlen > len) {parse.cleanup(dstr); return 0;}
+	while (dlen < len) {dstr = parse.concat(dstr," "); dlen++;}
+	// change sequence number in sync string
+	int val; int flen = parse.number(dstr,val); num = val+1;
+	char *nstr = parse.string(num);
+	int nlen = strlen(nstr);
+	while (nlen < flen) {nstr = parse.concat(" ",nstr); nlen++;}
+	for (int i = 0; i < nlen; i++) dstr[i] = nstr[i]; parse.cleanup(nstr);
+	// write sync string to middle of file
 	struct flock lock; lock.l_start = pos; lock.l_len = len; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
 	int res = -1;
 	while (res) {res = fcntl(file,F_SETLKW,&lock);
 	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);}
 	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	if (::write(file,str,len) != len) error("write fail",errno,__FILE__,__LINE__);
+	if (::write(file,nstr,nlen) != len) error("write fail",errno,__FILE__,__LINE__);
 	lock.l_type = F_UNLCK;
 	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	parse.cleanup(str);
+	parse.cleanup(nstr);
+	return 1;
 }
 
 // write string to end of file
