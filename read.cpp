@@ -69,99 +69,47 @@ void Read::init()
 
 void Read::call()
 {
-	// deallocate message responses
 	get(window2sync2rsp);
     get(window2sync2rsp);
     get(window2mode2rsp);
     get(polytope2data2rsp);
     get(system2data2rsp);
     get(script2data2rsp);
-	// read to eof
-	char *cmdstr = parse.setup(""); int num; char chr; off_t pos = fpos;
-	while ((num = ::read(file, &chr, 1)) == 1) {
-	cmdstr = parse.concat(cmdstr,chr); fpos++;}
-	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
-	while (*cmdstr) {
-	int len = 0; if (cmdstr[len] == '-' && cmdstr[len+1] == '-') len += 2;
-	while (cmdstr[len] && !(cmdstr[len] == '-' && cmdstr[len+1] == '-')) len++;
-	const char *temp = cmdstr;
-	char *substr = parse.prefix(temp,len);
-	cmdstr = parse.postfix(cmdstr,len);
-	// remember memory mapped commands
-	if (len) {
-	num = parse.literal(substr,"--matrix");
-	if (num) {mpos = pos+num; mlen = strlen(substr)-num;}
-	num = parse.literal(substr,"--global");
-	if (num) {gpos = pos+num; glen = strlen(substr)-num;}}
-	// update display from memory mapped commands
-	Sync *mmap = read(mpos,mlen,mnum,PolytopeMode);
-	if (mmap) put(*req2sync2window,mmap);
-	Sync *gmap = read(gpos,glen,gnum,SessionMode);
-	if (gmap) put(*req2sync2window,gmap);
-    // send parsed messages
+	off_t pos = fpos;
+	char *str = read();
+	while (*str) {
+	char *dds = split(str);
+	sync(dds,"--matrix",pos,mpos,mlen);
+	sync(dds,"--global",pos,gpos,glen);
+	read(mpos,mlen,mnum,PolytopeMode);
+	read(gpos,glen,gnum,SessionMode);
     Command *command = 0; Sync *sync = 0; Mode *mode = 0;
     Data *polytope = 0; Data *system = 0; Data *script = 0;
-	parse.get(parse.cleanup(substr),self,command,sync,mode,polytope,system,script);
+	parse.get(parse.cleanup(dds),self,command,sync,mode,polytope,system,script);
 	put(*req2command2window,command);
 	put(*req2sync2window,sync);
 	put(*req2mode2window,mode);
 	put(*req2data2polytope,polytope);
 	put(*req2data2system,system);
 	put(*req2data2script,script);}
-	parse.cleanup(cmdstr);
+	parse.cleanup(str);
 }
 
 void Read::wait()
 {
-	int num, len; char chr; struct flock lock; struct stat size; char *str;
-	fd_set fds; struct timespec tv; sigset_t sm;
-	FD_ZERO(&fds); FD_SET(pipe,&fds); tv.tv_sec = 0; tv.tv_nsec = 0;
-	if (pthread_sigmask(SIG_SETMASK,0,&sm)) error ("cannot get mask",errno,__FILE__,__LINE__);
-	sigdelset(&sm, SIGUSR1);
-	// try to get writelock at eof to infinity
-	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
-	num = fcntl(file,F_SETLK,&lock); lock.l_type = F_UNLCK;
-	if (num < 0 && errno != EAGAIN) error("fcntl failed",errno,__FILE__,__LINE__);
-	if (num == 0) {
-	if (fstat(file, &size) < 0) error("fstat failed",errno,__FILE__,__LINE__);
-	// if successful and still at end
-	if (size.st_size > fpos) {
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}
-	// block to read first character from pipe
-	num = pselect(pipe+1,&fds,0,&fds,0,&sm);
-	if (num < 0 && errno == EINTR) {
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}
-	if (num <= 0) error("pselect failed",errno,__FILE__,__LINE__);
-	num = ::read(pipe, &chr, 1);
-	if (num < 0) error("read failed",errno,__FILE__,__LINE__);
-	if (num == 0) {
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
-	Thread::wait(); return;}
-	str = parse.setup("");
-	str = parse.concat(str,chr);
-	// read from pipe while it would not block
-	while (1) {
-	num = pselect(pipe+1,&fds,0,&fds,&tv,0);
-	if (num < 0) error("pselect failed",errno,__FILE__,__LINE__);
-	if (num == 0) break;
-	num = ::read(pipe, &chr, 1);
-	if (num != 1) error("read failed",errno,__FILE__,__LINE__);
-	str = parse.concat(str,chr);}
-	// append to file
-	len = strlen(str);
-	num = parse.literal(str,"--matrix");
-	if (num && write(str+num,mpos,mlen,mnum)) len = 0;
-	num = parse.literal(str,"--global");
-	if (num && write(str+num,gpos,glen,gnum)) len = 0;
-	if (len) {num = ::write(file,str,len);
-	if (num != len) error("write failed",errno,__FILE__,__LINE__);}
-	parse.cleanup(str);
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;}
-	// wait for readlock and release when acquired
-	lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
-	num = fcntl(file,F_SETLKW,&lock); lock.l_type = F_UNLCK;
-	if (num < 0 && errno != EINTR) error("fcntl failed",errno,__FILE__,__LINE__);
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__); else return;
+	if (trywrlck()) {
+	if (!ateof()) {unwrlck(); return;}
+	char *str = parse.setup("");
+	if (!block()) {unwrlck(); return;}
+	while (check()) if (!read(str)) {unwrlck(); Thread::wait(); return;}
+	char *mstr = sync(str,"--matrix",mlen);
+	if (mstr) {number(mstr,mnum); write(mstr,mpos,mlen);
+	parse.cleanup(str); unwrlck(); return;}
+	char *gstr = sync(str,"--global",glen);
+	if (gstr) {number(gstr,gnum); write(gstr,gpos,glen);
+	parse.cleanup(str); unwrlck(); return;}
+	write(str); parse.cleanup(str); unwrlck(); return;}
+	if (getrdlck()) unrdlck();
 }
 
 void Read::done()
@@ -170,39 +118,122 @@ void Read::done()
 	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
 }
 
-Sync *Read::read(off_t pos, int len, int &num, enum TargetMode target)
+// read to end of file
+char *Read::read()
 {
-	if (len == 0) return 0;
-	char *str = parse.setup(len+1);
-	struct flock lock; lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
-	int res = -1; while (res) {res = fcntl(file,F_SETLKW,&lock);
-	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);} lock.l_type = F_UNLCK;
+	char *cmdstr = parse.setup(""); int num; char chr;
+	while ((num = ::read(file, &chr, 1)) == 1) {
+	cmdstr = parse.concat(cmdstr,chr); fpos++;}
+	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
+	return cmdstr;
+}
+
+// split string on double dash
+char *Read::split(char *&str)
+{
+	int len = 0; if (str[len] == '-' && str[len+1] == '-') len += 2;
+	while (str[len] && !(str[len] == '-' && str[len+1] == '-')) len++;
+	const char *tmp = str;
+	char *sub = parse.prefix(tmp,len);
+	str = parse.postfix(str,len);
+	return sub;
+}
+
+// update sync struct location if read from pipe
+void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len)
+{
+	int num = parse.literal(str,pat);
+	if (num) {sav = pos+num; len = strlen(str)-num;}
+}
+
+// send sync struct from middle of file if it has the wrong sequence number
+void Read::read(off_t pos, int len, int &num, enum TargetMode target)
+{
+	if (len == 0) return;
+	char *str = parse.setup(len+1); struct flock lock; int res = -1;
+	lock.l_start = pos; lock.l_len = len; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
+	while (res) {res = fcntl(file,F_SETLKW,&lock);
+	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);}
 	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	if (::read(file,str,len) != len) error("read fail",errno,__FILE__,__LINE__);
 	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	lock.l_type = F_UNLCK;
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
 	Sync *sync; str[len] = 0; parse.get(str,self,target,sync);
-	if (sync->number == num) {parse.put(sync); parse.cleanup(str); return sync;}
-	num = sync->number; parse.cleanup(str); return sync;
+	if (sync->number == num) {parse.put(sync); parse.cleanup(str); return;}
+	num = sync->number; parse.cleanup(str); put(*req2sync2window,sync);
 }
 
-int Read::write(const char *str, off_t pos, int len, int &num)
+// nonblocking try to get write lock at end of file to infinity
+int Read::trywrlck()
 {
-	if (len == 0) return 0;
-	char *chs = parse.setup(str);
+	int num; struct flock lock;
+	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
+	num = fcntl(file,F_SETLK,&lock); lock.l_type = F_UNLCK;
+	if (num < 0 && errno != EAGAIN) error("fcntl failed",errno,__FILE__,__LINE__);
+	return (num == 0);
+}
+
+// check if already read to end of file
+int Read::ateof()
+{
+	struct stat size;
+	if (fstat(file, &size) < 0) error("fstat failed",errno,__FILE__,__LINE__);
+	return (size.st_size == fpos);
+}
+
+// release infinite lock at end of file
+void Read::unwrlck()
+{
+	struct flock lock;
+	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
+}
+
+// block until read from pipe would not block
+int Read::block()
+{
+	fd_set fds; sigset_t sm; FD_ZERO(&fds); FD_SET(pipe,&fds);
+	if (pthread_sigmask(SIG_SETMASK,0,&sm)) error ("cannot get mask",errno,__FILE__,__LINE__);
+	sigdelset(&sm, SIGUSR1);
+	int num = pselect(pipe+1,&fds,0,&fds,0,&sm);
+	if (num < 0 && errno == EINTR) return 0;
+	return 1;
+}
+
+// check if read from pipe would block
+int Read::check()
+{
+	fd_set fds; struct timespec tv;
+	FD_ZERO(&fds); FD_SET(pipe,&fds); tv.tv_sec = 0; tv.tv_nsec = 0;
+	int num = pselect(pipe+1,&fds,0,&fds,&tv,0);
+	if (num < 0) error("pselect failed",errno,__FILE__,__LINE__);
+	return (num != 0);
+}
+
+// read from pipe and append to string
+int Read::read(char *&str)
+{
+	char chr; int num = ::read(pipe, &chr, 1);
+	if (num < 0) error("read failed",errno,__FILE__,__LINE__);
+	if (num == 0) return 0;
+	str = parse.concat(str,chr);
+	return 1;
+}
+
+// extend sync string to expected length
+char *Read::sync(const char *str, const char *pat, int len)
+{
+	int pre = parse.literal(str,pat);
+	if (pre == 0 && len == 0) return 0;
+	char *chs = parse.setup(str+pre);
 	int chl = strlen(chs);
 	if (chl > len) {parse.cleanup(chs); return 0;}
 	while (chl < len) {chs = parse.concat(chs," "); chl++;}
-	number(chs,num);
-	struct flock lock; lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
-	int res = -1; while (res) {res = fcntl(file,F_SETLKW,&lock);
-	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);} lock.l_type = F_UNLCK;
-	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	if (::write(file,chs,chl) != chl) error("write fail",errno,__FILE__,__LINE__);
-	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	parse.cleanup(chs); return 1;
+	return chs;
 }
 
+// change sequence number in sync string
 void Read::number(char *str, int &num)
 {
 	int val; int len = parse.number(str,val); num = val+1;
@@ -210,4 +241,44 @@ void Read::number(char *str, int &num)
 	int chl = strlen(chs);
 	while (chl < len) {chs = parse.concat(" ",chs); chl++;}
 	for (int i = 0; i < len; i++) str[i] = chs[i]; parse.cleanup(chs);
+}
+
+// write sync string to middle of file
+void Read::write(char *str, off_t pos, int len)
+{
+	struct flock lock; lock.l_start = pos; lock.l_len = len; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
+	int res = -1;
+	while (res) {res = fcntl(file,F_SETLKW,&lock);
+	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);}
+	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	if (::write(file,str,len) != len) error("write fail",errno,__FILE__,__LINE__);
+	lock.l_type = F_UNLCK;
+	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	parse.cleanup(str);
+}
+
+// write string to end of file
+void Read::write(const char *str)
+{
+	int len = strlen(str);
+	int num = ::write(file,str,len);
+	if (num != len) error("write failed",errno,__FILE__,__LINE__);
+}
+
+// wait for readlock or return nonzero if interrupted by signal
+int Read::getrdlck()
+{
+	struct flock lock;
+	lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
+	int num = fcntl(file,F_SETLKW,&lock);
+	if (num < 0 && errno != EINTR) error("fcntl failed",errno,__FILE__,__LINE__);
+	return (num == 0);
+}
+
+// release readlock
+void Read::unrdlck()
+{
+	struct flock lock;
+	lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
 }

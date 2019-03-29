@@ -67,9 +67,22 @@ public:
 	virtual void done();
 	template<class T> void get(Message<T*> &msg) {T *t; while (msg.get(t)) parse.put(t);}
 	template<class T> void put(Message<T*> &msg, T *t) {if (t) msg.put(t);}
-	Sync *read(off_t pos, int len, int &num, enum TargetMode target);
-	int write(const char *str, off_t pos, int len, int &num);
+	char *read();
+	char *split(char *&str);
+	void sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len);
+	void read(off_t pos, int len, int &num, enum TargetMode target);
+	int trywrlck();
+	int ateof();
+	void unwrlck();
+	int block();
+	int check();
+	int read(char *&str);
+	char *sync(const char *str, const char *pat, int len);
 	void number(char *str, int &num);
+	void write(char *str, off_t pos, int len);
+	void write(const char *str);
+	int getrdlck();
+	void unrdlck();
 };
 
 #endif
