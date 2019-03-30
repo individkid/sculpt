@@ -23,12 +23,12 @@
 #include "callback.h"
 #include "arithmetic.h"
 
-struct Current current = {0};
-struct Current warp = {0};
-struct Current *pointer = 0;
-struct Matrix matrix = {0};
-struct Matrix last = {0};
-struct State state = {0};
+static struct Current current = {0};
+static struct Current warp = {0};
+static struct Current *pointer = 0;
+static struct Matrix matrix = {0};
+static struct Matrix last = {0};
+static struct State state = {0};
 
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);

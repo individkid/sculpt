@@ -61,7 +61,7 @@ public:
 	char *setup(const char *str) {return ::setup(chars,str);}
 	char *setup(char *str) {return ::setup(chars,str);}
 	char *setup(char chr) {return ::setup(chars,chr);}
-	char *setup(int len) {return chars.get(len);}
+	char *setup(int len) {char *str = chars.get(len+1); for (int i = 0; i < len+1; i++) str[i] = 0; return str;}
 	const char *cleanup(char *str) {return ::cleanup(chars,str);}
 	char *string(int val);
 	char *string(float val);

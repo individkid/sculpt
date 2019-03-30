@@ -28,7 +28,7 @@ void Microcode::initProgram(Program program)
     case (Draw): initDraw(); break;
     case (Pierce): initPierce(); break;
     case (Sect0): initSect0(); break;
-    case (Sect1): initSect0(); break;
+    case (Sect1): initSect1(); break;
     case (Side1): case (Side2): initSide(); break;
     default: error("invalid program",program,__FILE__,__LINE__);}
 }
@@ -306,21 +306,24 @@ void Microcode::initSect1()
     out vec3 vertex;\n\
     void main()\n\
     {\n\
+        mat3 point[3];\n\
         uint corner[3];\n\
         vec3 pierce[2];\n\
         vec3 solve;\n\
-        maximum(id[0].plane,0u,corner);\n\
-        project(id[1].plane,0u,solve);\n\
-        intersect(solve,0u,id[0].plane[corner[0]],id[0].plane[corner[1]],pierce[0]);\n\
-        intersect(solve,0u,id[0].plane[corner[0]],id[0].plane[corner[2]],pierce[1]);\n\
-        project(id[2].plane,0u,solve);\n\
+        for (uint i = 0u; i < 3u; i++)\n\
+            convert(id[i].plane,0u,point[i]);\n\
+        maximum(point[0],0u,corner);\n\
+        project(point[1],0u,solve);\n\
+        intersect(solve,0u,point[0][corner[0]],point[0][corner[1]],pierce[0]);\n\
+        intersect(solve,0u,point[0][corner[0]],point[0][corner[2]],pierce[1]);\n\
+        project(point[2],0u,solve);\n\
         intersect(solve,0u,pierce[0],pierce[1],vertex);\n\
         EmitVertex();\n\
         EndPrimitive();\n\
     }\n";
-    const char *feedback[1] = {"vertex"};
-    char str[strlen(intersect)+strlen(geometry)+1];
-    *str = 0; strcat(strcat(str,intersect),geometry);
+   const char *feedback[1] = {"vertex"};
+    char str[strlen(convert)+strlen(intersect)+strlen(geometry)+1];
+    *str = 0; strcat(strcat(strcat(str,convert),intersect),geometry);
     initConfigure(vertex,str,0,1,feedback);
 }
 

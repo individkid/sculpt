@@ -94,7 +94,7 @@ char *prefix(Power<char> &pool, const char *str, int len)
 {
 	char *res; const char *src; int num;
 	if (len > 0) {num = len; src = str;}
-	else {int num = -len; src = str+strlen(str)+len;}
+	else {num = -len; src = str+strlen(str)+len;}
 	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	return res;
 }
@@ -103,7 +103,7 @@ char *prefix(Power<char> &pool, char *str, int len)
 {
 	char *res; const char *src; int num;
 	if (len > 0) {num = len; src = str;}
-	else {int num = -len; src = str+strlen(str)+len;}
+	else {num = -len; src = str+strlen(str)+len;}
 	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	pool.put(strlen(str)+1,str);
 	return res;
@@ -113,7 +113,7 @@ char *postfix(Power<char> &pool, const char *str, int len)
 {
 	char *res; const char *src; int num;
 	if (len > 0) {num = strlen(str)-len; src = str+len;}
-	else {int num = strlen(str)+len; src = str;}
+	else {num = strlen(str)+len; src = str;}
 	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	return res;
 }
@@ -122,7 +122,7 @@ char *postfix(Power<char> &pool, char *str, int len)
 {
 	char *res; const char *src; int num;
 	if (len > 0) {num = strlen(str)-len; src = str+len;}
-	else {int num = strlen(str)+len; src = str;}
+	else {num = strlen(str)+len; src = str;}
 	res = strncpy(pool.get(num+1),str,num); res[num] = 0;
 	pool.put(strlen(str)+1,str);
 	return res;

@@ -77,10 +77,11 @@ void Read::call()
     get(script2data2rsp);
 	off_t pos = fpos;
 	char *str = read();
-	while (*str) {
+	while (1) {
 	char *dds = split(str);
 	sync(dds,"--matrix",pos,mpos,mlen,mnum,PolytopeMode);
 	sync(dds,"--global",pos,gpos,glen,gnum,SessionMode);
+	if (*dds == 0) break;
     Command *command = 0; Sync *sync = 0; Mode *mode = 0;
     Data *polytope = 0; Data *system = 0; Data *script = 0;
 	parse.get(parse.cleanup(dds),self,command,sync,mode,polytope,system,script);
@@ -115,11 +116,12 @@ void Read::done()
 // read to end of file
 char *Read::read()
 {
-	char *cmdstr = parse.setup(""); int num; char chr;
+	char *str = parse.setup(""); int num; char chr;
+	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	while ((num = ::read(file, &chr, 1)) == 1) {
-	cmdstr = parse.concat(cmdstr,chr); fpos++;}
+	str = parse.concat(str,chr); fpos++;}
 	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
-	return cmdstr;
+	return str;
 }
 
 // split string on double dash
@@ -140,13 +142,12 @@ void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &le
 	if (ddl) {sav = pos+ddl; len = strlen(str)-ddl;}
 	// send sync struct from middle of file if it has the wrong sequence number
 	if (len == 0) return;
-	char *sstr = parse.setup(len+1); struct flock lock; int res = -1;
+	char *sstr = parse.setup(len); struct flock lock; int res = -1;
 	lock.l_start = sav; lock.l_len = len; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
 	while (res) {res = fcntl(file,F_SETLKW,&lock);
 	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);}
 	if (lseek(file,sav,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	if (::read(file,sstr,len) != len) error("read fail",errno,__FILE__,__LINE__);
-	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	lock.l_type = F_UNLCK;
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
 	Sync *sync; sstr[len] = 0; parse.get(sstr,self,target,sync);
@@ -234,7 +235,7 @@ int Read::sync(const char *str, const char *pat, off_t pos, int len, int &num)
 	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	if (::write(file,nstr,nlen) != len) error("write fail",errno,__FILE__,__LINE__);
 	lock.l_type = F_UNLCK;
-	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
+	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
 	parse.cleanup(nstr);
 	return 1;
 }
@@ -243,6 +244,7 @@ int Read::sync(const char *str, const char *pat, off_t pos, int len, int &num)
 void Read::write(const char *str)
 {
 	int len = strlen(str);
+	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	int num = ::write(file,str,len);
 	if (num != len) error("write failed",errno,__FILE__,__LINE__);
 }
