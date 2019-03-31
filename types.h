@@ -150,27 +150,6 @@ struct Data
 	struct {int number; enum TargetMode target; float *matrix;};
 	char *text;};
 };
-struct Sync
-{
-	int file;
-	int plane;
-	int number;
-	enum TargetMode target;
-	float *matrix;
-};
-struct Mode
-{
-	int file;
-	int plane;
-	enum ModeType mode;
-	union {
-	enum ClickMode click;
-	enum MouseMode mouse;
-	enum RollerMode roller;
-	enum TargetMode target;
-	enum TopologyMode topology;
-	enum FixedMode fixed;};
-};
 struct Action
 {
 	int file;

@@ -232,17 +232,10 @@ void Window::processResponse(Data &data)
 {
 }
 
-void Window::processSync(Sync &sync)
+void Window::processData(Data &data)
 {
-    syncMatrix(&sync);
-    object[sync.file].rsp2sync2read->put(&sync);
-    glfwPollEvents();
-}
-
-void Window::processMode(Mode &mode)
-{
-    changeMode(&mode);
-    object[mode.file].rsp2mode2read->put(&mode);
+    changeState(&data);
+    object[data.file].rsp2data2read->put(&data);
     glfwPollEvents();
 }
 
@@ -327,7 +320,7 @@ void Window::swapQueue(Queue &queue, Command *&command)
 }
 
 Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
-    read2command2req(this), read2sync2req(this), read2mode2req(this), write2data2rsp(this),
+    read2command2req(this), read2data2req(this), write2data2rsp(this),
     polytope2action2rsp(this), script2invoke2rsp(this), polytope2command2req(this)
 {
     Queue init = {0}; redraw = pierce = query = init;
@@ -337,8 +330,7 @@ void Window::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
     object[i].rsp2command2read = &ptr->window2command2rsp;
-    object[i].rsp2sync2read = &ptr->window2sync2rsp;
-    object[i].rsp2mode2read = &ptr->window2mode2rsp;
+    object[i].rsp2data2read = &ptr->window2data2rsp;
 }
 
 void Window::connect(int i, Write *ptr)
@@ -438,8 +430,7 @@ void Window::call()
     Invoke *response = 0; while (script2invoke2rsp.get(response)) processResponse(*response);
     Action *action = 0; while (polytope2action2rsp.get(action)) processResponse(*action);
     Data *data = 0; while (write2data2rsp.get(data)) processResponse(*data);
-    Sync *sync = 0; while (read2sync2req.get(sync)) processSync(*sync);
-    Mode *mode = 0; while (read2mode2req.get(mode)) processMode(*mode);
+    Data *sync = 0; while (read2data2req.get(sync)) processData(*sync);
     Command *command = 0; while (read2command2req.get(command)) startCommand(query,*command,&Object::rsp2command2read);
     command = 0; while (polytope2command2req.get(command)) startCommand(query,*command,&Object::rsp2command2polytope);
 }

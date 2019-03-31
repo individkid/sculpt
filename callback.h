@@ -52,11 +52,10 @@ extern int testGoon;
 
 int isSuspend();
 void globalInit(int nfile);
-void syncMatrix(struct Sync *sync);
 void getUniform(struct Update *update);
 void putUniform(struct Update *update);
 void checkQuery(struct Update *update);
-void changeMode(struct Mode *mode);
+void changeState(struct Data *data);
 void displayError(int error, const char *description);
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mode);
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos);

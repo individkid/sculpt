@@ -37,10 +37,8 @@ struct Object
 {
 	// Read->Command->Window
 	Message<Command*> *rsp2command2read;
-	// Read->Sync->Window
-	Message<Sync*> *rsp2sync2read;
-	// Read->Mode->Window
-	Message<Mode*> *rsp2mode2read;
+	// Read->Data->Window
+	Message<Data*> *rsp2data2read;
 	// Window->Data->Write
 	Message<Data*> *req2data2write;
 	// Window->Action->Polytope

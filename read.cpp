@@ -32,7 +32,7 @@
 
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
 	fpos(0), mlen(0), glen(0), mnum(0), gnum(0),
-	window2command2rsp(this), window2sync2rsp(this), window2mode2rsp(this),
+	window2command2rsp(this), window2data2rsp(this),
 	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
 {
 }
@@ -40,8 +40,7 @@ Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s
 void Read::connect(Window *ptr)
 {
 	req2command2window = &ptr->read2command2req;
-	req2sync2window = &ptr->read2sync2req;
-	req2mode2window = &ptr->read2mode2req;
+	req2data2window = &ptr->read2data2req;
 }
 
 void Read::connect(Polytope *ptr)
@@ -69,9 +68,7 @@ void Read::init()
 
 void Read::call()
 {
-	get(window2sync2rsp);
-    get(window2sync2rsp);
-    get(window2mode2rsp);
+	get(window2data2rsp);
     get(polytope2data2rsp);
     get(system2data2rsp);
     get(script2data2rsp);
@@ -79,15 +76,13 @@ void Read::call()
 	char *str = read();
 	while (1) {
 	char *dds = split(str);
-	sync(dds,"--matrix",pos,mpos,mlen,mnum,PolytopeMode);
-	sync(dds,"--global",pos,gpos,glen,gnum,SessionMode);
+	sync(dds,"--matrix",pos,mpos,mlen,mnum,MatrixConf);
+	sync(dds,"--global",pos,gpos,glen,gnum,GlobalConf);
 	if (*dds == 0) break;
-    Command *command = 0; Sync *sync = 0; Mode *mode = 0;
-    Data *polytope = 0; Data *system = 0; Data *script = 0;
-	parse.get(parse.cleanup(dds),self,command,sync,mode,polytope,system,script);
+    Command *command = 0; Data *data = 0; Data *polytope = 0; Data *system = 0; Data *script = 0;
+	parse.get(parse.cleanup(dds),self,command,data,polytope,system,script);
 	put(*req2command2window,command);
-	put(*req2sync2window,sync);
-	put(*req2mode2window,mode);
+	put(*req2data2window,data);
 	put(*req2data2polytope,polytope);
 	put(*req2data2system,system);
 	put(*req2data2script,script);}
@@ -135,7 +130,7 @@ char *Read::split(char *&str)
 	return sub;
 }
 
-void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum TargetMode target)
+void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum Configure conf)
 {
 	// update sync struct location if read from pipe
 	int ddl = parse.literal(str,pat);
@@ -150,9 +145,9 @@ void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &le
 	if (::read(file,sstr,len) != len) error("read fail",errno,__FILE__,__LINE__);
 	lock.l_type = F_UNLCK;
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
-	Sync *sync; sstr[len] = 0; parse.get(sstr,self,target,sync);
-	if (sync->number == num) {parse.put(sync); parse.cleanup(sstr); return;}
-	num = sync->number; parse.cleanup(sstr); put(*req2sync2window,sync);
+	Data *data; sstr[len] = 0; parse.get(sstr,self,conf,data);
+	if (data->number == num) {parse.put(data); parse.cleanup(sstr); return;}
+	num = data->number; parse.cleanup(sstr); put(*req2data2window,data);
 }
 
 // nonblocking try to get write lock at end of file to infinity

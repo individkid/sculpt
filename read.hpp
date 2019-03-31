@@ -28,8 +28,7 @@ class System;
 class Script;
 
 	// Read->Command->Window
-	// Read->Sync->Window
-	// Read->Mode->Window
+	// Read->Data->Window
 	// Read->Data->Polytope
 	// Read->Data->System
 	// Read->Data->Script
@@ -43,16 +42,14 @@ private:
 	off_t fpos, mpos, gpos;
 	int mlen, glen, mnum, gnum;
 	Message<Command*> *req2command2window;
-	Message<Sync*> *req2sync2window;
-	Message<Mode*> *req2mode2window;
+	Message<Data*> *req2data2window;
 	Message<Data*> *req2data2polytope;
 	Message<Data*> *req2data2system;
 	Message<Data*> *req2data2script;
 	Parse parse;
 public:
 	Message<Command*> window2command2rsp;
-	Message<Sync*> window2sync2rsp;
-	Message<Mode*> window2mode2rsp;
+	Message<Data*> window2data2rsp;
 	Message<Data*> polytope2data2rsp;
 	Message<Data*> system2data2rsp;
 	Message<Data*> script2data2rsp;
@@ -69,7 +66,7 @@ public:
 	template<class T> void put(Message<T*> &msg, T *t) {if (t) msg.put(t);}
 	char *read();
 	char *split(char *&str);
-	void sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum TargetMode target);
+	void sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum Configure conf);
 	int trywrlck();
 	int race();
 	void unwrlck();

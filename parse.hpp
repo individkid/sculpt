@@ -29,8 +29,6 @@ private:
 	Pool<Update> updates;
 	Pool<Render> renders;
 	Pool<Response> responses;
-	Pool<Sync> syncs;
-	Pool<Mode> modes;
 	Pool<Data> datas;
 	Power<float> floats;
 	Power<char> chars;
@@ -38,12 +36,10 @@ private:
 	int get(const char *ptr, Render *&render);
 	int get(const char *ptr, int file, Command *&command);
 public:
-	void get(const char *ptr, int file, enum TargetMode target, Sync *&sync);
-	void get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode,
+	void get(const char *ptr, int file, enum Configure conf, Data *&data);
+	void get(const char *ptr, int file, Command *&command, Data *&data,
 		Data *&polytope, Data *&system, Data *&script);
 	void put(Command *command);
-	void put(Sync *sync);
-	void put(Mode *mode);
 	void put(Data *data);
 	char *get(const Data *data);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}

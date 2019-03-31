@@ -219,21 +219,6 @@ void sendMatrix()
 	default: displayError(state.target,"invalid state.target");}
 }
 
-void syncMatrix(struct Sync *sync)
-{
-	switch (sync->target) {
-	case (SessionMode): {
-	float invert[16]; invmat(copymat(invert,last.session,4),4);
-	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
-	timesmat(copymat(matrix.session,sync->matrix,4),delta,4); break;}
-	case (PolytopeMode): {
-	float invert[16]; invmat(copymat(invert,last.polytope[sync->file],4),4);
-	float delta[16]; timesmat(copymat(delta,matrix.polytope[sync->file],4),invert,4);
-	timesmat(copymat(matrix.polytope[sync->file],sync->matrix,4),delta,4); break;}
-	case (FacetMode): break;
-	default: displayError(sync->target,"invalid data->target");}
-}
-
 void getUniform(struct Update *update)
 {
 	float *cursor = update->format->cursor;
@@ -345,44 +330,40 @@ void changeFixed(enum FixedMode mode)
 	state.fixed = mode;
 }
 
-void changeMode(struct Mode *mode)
+void changeState(struct Data *data)
 {
-	switch (mode->mode) {
-	case (ClickType): {switch (mode->click) {
-	case (AdditiveMode): changeClick(AdditiveMode); break;
-	case (SubtractiveMode): changeClick(SubtractiveMode); break;
-	case (RefineMode): changeClick(RefineMode); break;
-	case (TweakMode): changeClick(TweakMode); break;
-	case (PerformMode): changeClick(PerformMode); break;
-	case (TransformMode): changeClick(PierceMode/*!*/); break;
-	default: displayError(mode->click,"invalid mode->click");} break;}
-	case (RollerType): {switch (mode->roller) {
-	case (CylinderMode): changeRoller(CylinderMode); break;
-	case (ClockMode): changeRoller(ClockMode); break;
-	case (NormalMode): changeRoller(NormalMode); break;
-	case (ParallelMode): changeRoller(ParallelMode); break;
-	case (ScaleMode): changeRoller(ScaleMode); break;
-	default: displayError(mode->roller,"invalid mode->roller");} break;}
-	case (MouseType): {switch (mode->mouse) {
-	case (RotateMode): changeMouse(RotateMode); break;
-	case (TangentMode): changeMouse(TangentMode); break;
-	case (TranslateMode): changeMouse(TranslateMode); break;
-	default: displayError(mode->mouse,"invalid mode->mouse");} break;}
-	case (TargetType): {switch (mode->target) {
-	case (SessionMode): changeTarget(SessionMode); break;
-	case (PolytopeMode): changeTarget(PolytopeMode); break;
-	case (FacetMode): changeTarget(FacetMode); break;
-	default: displayError(mode->target,"invalid mode->target");} break;}
-	case (TopologyType): {switch (mode->topology) {
-	case (NumericMode): changeTopology(NumericMode); break;
-	case (InvariantMode): changeTopology(InvariantMode); break;
-	case (SymbolicMode): changeTopology(SymbolicMode); break;
-	default: displayError(mode->topology,"invalid mode->topology");} break;}
-	case (FixedType): {switch (mode->fixed) {
-	case (RelativeMode): changeFixed(RelativeMode); break;
-	case (AbsoluteMode): changeFixed(AbsoluteMode); break;
-	default: displayError(mode->fixed,"invalid mode->fixed");} break;}
-	default: displayError(mode->mode,"invalid mode->mode");}
+	switch (data->conf) {
+	case (AdditiveConf): changeClick(AdditiveMode); break;
+	case (SubtractiveConf): changeClick(SubtractiveMode); break;
+	case (RefineConf): changeClick(RefineMode); break;
+	case (TweakConf): changeClick(TweakMode); break;
+	case (PerformConf): changeClick(PerformMode); break;
+	case (TransformConf): changeClick(PierceMode/*!*/); break;
+	case (CylinderConf): changeRoller(CylinderMode); break;
+	case (ClockConf): changeRoller(ClockMode); break;
+	case (NormalConf): changeRoller(NormalMode); break;
+	case (ParallelConf): changeRoller(ParallelMode); break;
+	case (ScaleConf): changeRoller(ScaleMode); break;
+	case (RotateConf): changeMouse(RotateMode); break;
+	case (TangentConf): changeMouse(TangentMode); break;
+	case (TranslateConf): changeMouse(TranslateMode); break;
+	case (SessionConf): changeTarget(SessionMode); break;
+	case (PolytopeConf): changeTarget(PolytopeMode); break;
+	case (FacetConf): changeTarget(FacetMode); break;
+	case (NumericConf): changeTopology(NumericMode); break;
+	case (InvariantConf): changeTopology(InvariantMode); break;
+	case (SymbolicConf): changeTopology(SymbolicMode); break;
+	case (RelativeConf): changeFixed(RelativeMode); break;
+	case (AbsoluteConf): changeFixed(AbsoluteMode); break;
+	case (MatrixConf): {
+	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);
+	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
+	timesmat(copymat(matrix.polytope[data->file],data->matrix,4),delta,4); break;}
+	case (GlobalConf): {
+	float invert[16]; invmat(copymat(invert,last.session,4),4);
+	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
+	timesmat(copymat(matrix.session,data->matrix,4),delta,4); break;}
+	default: displayError(data->conf,"invalid data->conf");}
 }
 
 void changeToggle(int toggle)

@@ -42,6 +42,7 @@ The -- commands are as follows.
 --metric "mname" cname, rate, list of sname, returns value  
 --script "cname" script, has side effects, mapped to tagbits  
 --macro "bname" cname, triggered by mouse click  
+--invoke script to run if this command is at end of file  
 --command send command to window thread  
 --configure change aspect ratio granularity base delay etc  
 --test run tests of functions in the polytope thread  
@@ -49,9 +50,9 @@ The -- commands are as follows.
 Threads send structs to each other. Each sent struct is sent back to the sender for deallocation.  
 Source->Struct->Destination  
 Read->Command->Window for bringup  
-Read->Sync->Window for applying transformations from other processes  
-Read->Mode->Window for changing modes  
-Read->Mode->Window for changing configurations  
+Read->Data->Window for applying transformations from other processes  
+Read->Data->Window for changing modes  
+Read->Data->Window for changing configurations  
 Read->Data->Polytope for adding or changing planes  
 Read->Data->Polytope for changing which regions are in the polytope  
 Read->Data->Polytope for creating sample of space  
@@ -60,15 +61,16 @@ Read->Data->System for changing sound
 Read->Data->Script for setting up scripts  
 Window->Data->Write for recording transformations  
 Window->Action->Polytope for manipulating planes  
-Wondow->Action->Polytope for tweaking planes  
+Window->Action->Polytope for tweaking planes  
 Window->Action->Polytope for sculpting polytope  
 Window->Invoke->Script for starting macro from click  
+Script->Data->Write for side effects  
+Script->Question->Polytope for feedback from topology  
+Script->Question->System for getting stock values  
+Script->Command->Window for queries to microcode  
 Polytope->Data->Write for appending manipulated or randomized planes  
 Polytope->Data->Write for changing whether region is in polytope  
 Polytope->Command->Window for changing what is displayed  
-Script->Question->Polytope for feedback from topology  
-Script->Data->Write for side effects  
-Script->Question->System for getting stock values  
 System->Invoke->Script for getting value from metric  
 
 For example, --plane sends a stuct to the Polytope thread that sends a Command to the Window thread to append the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.

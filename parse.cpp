@@ -115,87 +115,87 @@ int Parse::get(const char *ptr, int file, Command *&command)
 	return len;
 }
 
-void Parse::get(const char *ptr, int file, enum TargetMode target, Sync *&sync)
+void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 {
-	sync = syncs.get(); sync->matrix = floats.get(16);
-	for (int i = 0; i < 16; i++) ptr += scalar(ptr, sync->matrix[i]);
-	sync->target = target; sync->file = file;
+	data = datas.get(); data->matrix = floats.get(16);
+	for (int i = 0; i < 16; i++) ptr += scalar(ptr, data->matrix[i]);
+	data->conf = conf; data->file = file;
 }
 
-void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode *&mode,
+void Parse::get(const char *ptr, int file, Command *&command, Data *&data,
 	Data *&polytope, Data *&system, Data *&script)
 {
-	int len, inc; command = 0; sync = 0; mode = 0; polytope = 0;
+	int len, inc; command = 0; data = 0; polytope = 0;
 
-	len = literal(ptr,"--additive"); if (len) {mode = modes.get();
-	mode->mode = ClickType; mode->click = AdditiveMode; mode->file = file; return;}
+	len = literal(ptr,"--additive"); if (len) {data = datas.get();
+	data->conf = AdditiveConf; data->file = file; return;}
 
-	len = literal(ptr,"--subractive"); if (len) {mode = modes.get();
-	mode->mode = ClickType; mode->click = SubtractiveMode; mode->file = file; return;}
+	len = literal(ptr,"--subractive"); if (len) {data = datas.get();
+	data->conf = SubtractiveConf; data->file = file; return;}
 
-	len = literal(ptr,"--refine"); if (len) {mode = modes.get();
-	mode->mode = ClickType; mode->click = RefineMode; mode->file = file; return;}
+	len = literal(ptr,"--refine"); if (len) {data = datas.get();
+	data->conf = RefineConf; data->file = file; return;}
 
-	len = literal(ptr,"--tweak"); if (len) {mode = modes.get();
-	mode->mode = ClickType; mode->click = TweakMode; mode->file = file; return;}
+	len = literal(ptr,"--tweak"); if (len) {data = datas.get();
+	data->conf = TweakConf; data->file = file; return;}
 
-	len = literal(ptr,"--perform"); if (len) {mode = modes.get();
-	mode->mode = ClickType; mode->click = PerformMode; mode->file = file; return;}
+	len = literal(ptr,"--perform"); if (len) {data = datas.get();
+	data->conf = PerformConf; data->file = file; return;}
 
-	len = literal(ptr,"--transform"); if (len) {mode = modes.get();
-	mode->mode = ClickType; mode->click = TransformMode; mode->file = file; return;}
+	len = literal(ptr,"--transform"); if (len) {data = datas.get();
+	data->conf = TransformConf; data->file = file; return;}
 
-	len = literal(ptr,"--cylinder"); if (len) {mode = modes.get();
-	mode->mode = RollerType; mode->roller = CylinderMode; mode->file = file; return;}
+	len = literal(ptr,"--cylinder"); if (len) {data = datas.get();
+	data->conf = CylinderConf; data->file = file; return;}
 
-	len = literal(ptr,"--clock"); if (len) {mode = modes.get();
-	mode->mode = RollerType; mode->roller = ClockMode; mode->file = file; return;}
+	len = literal(ptr,"--clock"); if (len) {data = datas.get();
+	data->conf = ClockConf; data->file = file; return;}
 
-	len = literal(ptr,"--normal"); if (len) {mode = modes.get();
-	mode->mode = RollerType; mode->roller = NormalMode; mode->file = file; return;}
+	len = literal(ptr,"--normal"); if (len) {data = datas.get();
+	data->conf = NormalConf; data->file = file; return;}
 
-	len = literal(ptr,"--parallel"); if (len) {mode = modes.get();
-	mode->mode = RollerType; mode->roller = ParallelMode; mode->file = file; return;}
+	len = literal(ptr,"--parallel"); if (len) {data = datas.get();
+	data->conf = ParallelConf; data->file = file; return;}
 
-	len = literal(ptr,"--scale"); if (len) {mode = modes.get();
-	mode->mode = RollerType; mode->roller = ScaleMode; mode->file = file; return;}
+	len = literal(ptr,"--scale"); if (len) {data = datas.get();
+	data->conf = ScaleConf; data->file = file; return;}
 
-	len = literal(ptr,"--rotate"); if (len) {mode = modes.get();
-	mode->mode = MouseType; mode->mouse = RotateMode; mode->file = file; return;}
+	len = literal(ptr,"--rotate"); if (len) {data = datas.get();
+	data->conf = RotateConf; data->file = file; return;}
 
-	len = literal(ptr,"--tanget"); if (len) {mode = modes.get();
-	mode->mode = MouseType; mode->mouse = TangentMode; mode->file = file; return;}
+	len = literal(ptr,"--tanget"); if (len) {data = datas.get();
+	data->conf = TangentConf; data->file = file; return;}
 
-	len = literal(ptr,"--translate"); if (len) {mode = modes.get();
-	mode->mode = MouseType; mode->mouse = TranslateMode; mode->file = file; return;}
+	len = literal(ptr,"--translate"); if (len) {data = datas.get();
+	data->conf = TranslateConf; data->file = file; return;}
 
-	len = literal(ptr,"--session"); if (len) {mode = modes.get();
-	mode->mode = TargetType; mode->target = SessionMode; mode->file = file; return;}
+	len = literal(ptr,"--session"); if (len) {data = datas.get();
+	data->conf = SessionConf; data->file = file; return;}
 
-	len = literal(ptr,"--polytope"); if (len) {mode = modes.get();
-	mode->mode = TargetType; mode->target = PolytopeMode; mode->file = file; return;}
+	len = literal(ptr,"--polytope"); if (len) {data = datas.get();
+	data->conf = PolytopeConf; data->file = file; return;}
 
-	len = literal(ptr,"--facet"); if (len) {mode = modes.get();
-	mode->mode = TargetType; mode->target = FacetMode; mode->file = file; return;}
+	len = literal(ptr,"--facet"); if (len) {data = datas.get();
+	data->conf = FacetConf; data->file = file; return;}
 
-	len = literal(ptr,"--numeric"); if (len) {mode = modes.get();
-	mode->mode = TopologyType; mode->topology = NumericMode; mode->file = file; return;}
+	len = literal(ptr,"--numeric"); if (len) {data = datas.get();
+	data->conf = NumericConf; data->file = file; return;}
 
-	len = literal(ptr,"--invariant"); if (len) {mode = modes.get();
-	mode->mode = TopologyType; mode->topology = InvariantMode; mode->file = file; return;}
+	len = literal(ptr,"--invariant"); if (len) {data = datas.get();
+	data->conf = InvariantConf; data->file = file; return;}
 
-	len = literal(ptr,"--symbolic"); if (len) {mode = modes.get();
-	mode->mode = TopologyType; mode->topology = SymbolicMode; mode->file = file; return;}
+	len = literal(ptr,"--symbolic"); if (len) {data = datas.get();
+	data->conf = SymbolicConf; data->file = file; return;}
 
-	len = literal(ptr,"--relative"); if (len) {mode = modes.get();
-	mode->mode = FixedType; mode->fixed = RelativeMode; mode->file = file; return;}
+	len = literal(ptr,"--relative"); if (len) {data = datas.get();
+	data->conf = RelativeConf; data->file = file; return;}
 
-	len = literal(ptr,"--absolute"); if (len) {mode = modes.get();
-	mode->mode = FixedType; mode->fixed = AbsoluteMode; mode->file = file; return;}
+	len = literal(ptr,"--absolute"); if (len) {data = datas.get();
+	data->conf = AbsoluteConf; data->file = file; return;}
 
-	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,PolytopeMode,sync); return;}
+	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,data); return;}
 
-	len = literal(ptr,"--global"); if (len) {get(ptr+len,file,SessionMode,sync); return;}
+	len = literal(ptr,"--global"); if (len) {get(ptr+len,file,GlobalConf,data); return;}
 
 	len = literal(ptr,"--command"); if (len) {get(ptr+len,file,command); if (command) return;}
 
@@ -205,19 +205,9 @@ void Parse::get(const char *ptr, int file, Command *&command, Sync *&sync, Mode 
 	polytope->conf = TestConf; polytope->file = file; return;}
 }
 
-void Parse::put(Sync *sync)
-{
-	if (sync->target == PolytopeMode || sync->target == SessionMode) floats.put(16,sync->matrix);
-	syncs.put(sync);
-}
-
-void Parse::put(Mode *mode)
-{
-	modes.put(mode);
-}
-
 void Parse::put(Data *data)
 {
+	if (data->conf == MatrixConf || data->conf == GlobalConf) floats.put(16,data->matrix);
 	if (data->conf == TestConf) cleanup(data->text);
 	datas.put(data);
 }
