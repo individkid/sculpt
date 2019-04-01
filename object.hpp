@@ -35,8 +35,8 @@ struct Handle
 
 struct Object
 {
-	Message<Command*> *rsp2command2read;
-	Message<Data*> *rsp2data2read;
+	Message<Command*> *rsp2command;
+	Message<Data*> *rsp2read;
 	Message<Data*> *req2write;
 	Message<Data*> *req2polytope;
 	Message<Command*> *rsp2polytope;

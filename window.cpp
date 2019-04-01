@@ -313,8 +313,8 @@ void Window::swapQueue(Queue &queue, Command *&command)
 }
 
 Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
-    read2command2req(this), read2data2req(this), write2rsp(this),
-    polytope2rsp(this), polytope2req(this), script2rsp(this)
+    command2req(this), read2req(this), write2rsp(this),
+    polytope2rsp(this), polytope2req(this), script2rsp(this), script2req(this)
 {
     Queue init = {0}; redraw = pierce = query = init;
 }
@@ -322,8 +322,8 @@ Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Ob
 void Window::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].rsp2command2read = &ptr->command2rsp;
-    object[i].rsp2data2read = &ptr->window2rsp;
+    object[i].rsp2command = &ptr->command2rsp;
+    object[i].rsp2read = &ptr->window2rsp;
 }
 
 void Window::connect(int i, Write *ptr)
@@ -342,6 +342,7 @@ void Window::connect(int i, Polytope *ptr)
 void Window::connect(Script *ptr)
 {
     req2script = &ptr->window2req;
+    rsp2script = &ptr->window2rsp;
 }
 
 void Window::sendWrite(Data *data)
@@ -356,7 +357,7 @@ void Window::sendPolytope(Data *data)
 
 void Window::sendScript(Data *data)
 {
-    object[data->file].req2script->put(data);
+    req2script->put(data);
 }
 
 void Window::warpCursor(float *cursor)
@@ -379,6 +380,12 @@ void Window::maybeKill(int seq)
     if (seq == 0) finish = 0;
     if (seq == 1 && finish == 0) finish = 1;
     if (seq == 2 && finish == 1) kill();
+}
+
+char *Window::lookup(int tagbits)
+{
+    // TODO
+    return 0;
 }
 
 void Window::init()
@@ -417,15 +424,16 @@ void Window::init()
 
 void Window::call()
 {
-    finishQueue(query,&Object::rsp2read);
-    if (isSuspend()) startQueue(pierce,&Object::rsp2read);
-    else startQueue(redraw,&Object::rsp2read);
-    Invoke *response = 0; while (script2rsp.get(response)) processResponse(*response);
-    Action *action = 0; while (polytope2rsp.get(action)) processResponse(*action);
+    finishQueue(query,&Object::rsp2command);
+    if (isSuspend()) startQueue(pierce,&Object::rsp2command);
+    else startQueue(redraw,&Object::rsp2command);
+    Data *response = 0; while (script2rsp.get(response)) processResponse(*response);
+    Data *action = 0; while (polytope2rsp.get(action)) processResponse(*action);
     Data *data = 0; while (write2rsp.get(data)) processResponse(*data);
     Data *sync = 0; while (read2req.get(sync)) processData(*sync);
-    Command *command = 0; while (read2req.get(command)) startCommand(query,*command,&Object::rsp2read);
-    command = 0; while (polytope2req.get(command)) startCommand(query,*command,&Object::rsp2polytope);
+    Command *request = 0; while (script2req.get(request)) startCommand(query,*request,&Object::rsp2command);
+    Command *command = 0; while (command2req.get(command)) startCommand(query,*command,&Object::rsp2command);
+    Command *polytope = 0; while (polytope2req.get(polytope)) startCommand(query,*polytope,&Object::rsp2polytope);
 }
 
 void Window::wait()

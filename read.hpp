@@ -43,7 +43,7 @@ private:
 	Message<Data*> *req2script;
 	Parse parse;
 public:
-	Message<Command*> *command2rsp;
+	Message<Command*> command2rsp;
 	Message<Data*> window2rsp;
 	Message<Data*> polytope2rsp;
 	Message<Data*> system2rsp;

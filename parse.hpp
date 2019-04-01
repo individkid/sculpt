@@ -34,9 +34,9 @@ private:
 	Power<char> chars;
 	int get(const char *ptr, Update *&update);
 	int get(const char *ptr, Render *&render);
-	int get(const char *ptr, int file, Data *&data);
+	int get(const char *ptr, int file, Command *&command);
 public:
-	void get(const char *ptr, int file, enum Configure conf, Command *&command);
+	void get(const char *ptr, int file, enum Configure conf, Data *&data);
 	void get(const char *ptr, int file, Command *&command,
 		Data *&window, Data *&polytope, Data *&system, Data *&script);
 	void put(Command *command);

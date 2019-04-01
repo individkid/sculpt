@@ -39,8 +39,8 @@ Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s
 
 void Read::connect(Window *ptr)
 {
-	req2command = &ptr->read2command2req;
-	req2window = &ptr->read2data2req;
+	req2command = &ptr->command2req;
+	req2window = &ptr->read2req;
 }
 
 void Read::connect(Polytope *ptr)
@@ -81,9 +81,9 @@ void Read::call()
 	sync(dds,"--global",pos,gpos,glen,gnum,GlobalConf);
 	if (*dds == 0) {parse.cleanup(dds); break;}
     Command *command = 0; Data *window = 0; Data *polytope = 0; Data *system = 0; Data *script = 0;
-	parse.get(parse.cleanup(dds),self,window,polytope,system,script);
+	parse.get(parse.cleanup(dds),self,command,window,polytope,system,script);
 	put(*req2command,command);
-	put(*req2window,data);
+	put(*req2window,window);
 	put(*req2polytope,polytope);
 	put(*req2system,system);
 	put(*req2script,script);}
@@ -148,8 +148,8 @@ void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &le
 	lock.l_type = F_UNLCK;
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
 	Data *data; sstr[len] = 0; parse.get(sstr,self,conf,data);
-	if (data->number == num) {parse.put(data); parse.cleanup(sstr); return;}
-	num = data->number; parse.cleanup(sstr); put(*req2data2window,data);
+	if (data->seqnum == num) {parse.put(data); parse.cleanup(sstr); return;}
+	num = data->seqnum; parse.cleanup(sstr); put(*req2window,data);
 }
 
 // nonblocking try to get write lock at end of file to infinity

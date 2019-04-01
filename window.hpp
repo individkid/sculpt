@@ -44,6 +44,7 @@ private:
 	int nfile;
 	Object *object;
 	Message<Data*> *req2script;
+	Message<Command*> *rsp2script;
 	Microcode microcode[Programs];
 	Queue redraw;
 	Queue pierce;
@@ -67,12 +68,13 @@ private:
 	void finishQueue(Queue &queue, Message<Command*> *Object::*response);
 	void swapQueue(Queue &queue, Command *&command);
 public:
-	Message<Command*> read2command2req;
-	Message<Data*> read2data2req;
+	Message<Command*> command2req;
+	Message<Data*> read2req;
 	Message<Data*> write2rsp;
 	Message<Data*> polytope2rsp;
 	Message<Command*> polytope2req;
 	Message<Data*> script2rsp;
+	Message<Command*> script2req;
 	Window(int n);
 	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
@@ -83,6 +85,7 @@ public:
 	void sendScript(Data *data);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);
+	char *lookup(int tagbits);
 	virtual void init();
 	virtual void call();
 	virtual void wait();

@@ -126,73 +126,73 @@ void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 void Parse::get(const char *ptr, int file, Command *&command,
 	Data *&window, Data *&polytope, Data *&system, Data *&script)
 {
-	int len, inc; window = polytope = system = script = 0;
+	int len, inc; command = 0; window = polytope = system = script = 0;
 
 	len = literal(ptr,"--additive"); if (len) {window = datas.get();
-	data->conf = AdditiveConf; data->file = file; return;}
+	window->conf = AdditiveConf; window->file = file; return;}
 
 	len = literal(ptr,"--subractive"); if (len) {window = datas.get();
-	data->conf = SubtractiveConf; data->file = file; return;}
+	window->conf = SubtractiveConf; window->file = file; return;}
 
 	len = literal(ptr,"--refine"); if (len) {window = datas.get();
-	data->conf = RefineConf; data->file = file; return;}
+	window->conf = RefineConf; window->file = file; return;}
 
 	len = literal(ptr,"--tweak"); if (len) {window = datas.get();
-	data->conf = TweakConf; data->file = file; return;}
+	window->conf = TweakConf; window->file = file; return;}
 
 	len = literal(ptr,"--perform"); if (len) {window = datas.get();
-	data->conf = PerformConf; data->file = file; return;}
+	window->conf = PerformConf; window->file = file; return;}
 
 	len = literal(ptr,"--transform"); if (len) {window = datas.get();
-	data->conf = TransformConf; data->file = file; return;}
+	window->conf = TransformConf; window->file = file; return;}
 
 	len = literal(ptr,"--cylinder"); if (len) {window = datas.get();
-	data->conf = CylinderConf; data->file = file; return;}
+	window->conf = CylinderConf; window->file = file; return;}
 
 	len = literal(ptr,"--clock"); if (len) {window = datas.get();
-	data->conf = ClockConf; data->file = file; return;}
+	window->conf = ClockConf; window->file = file; return;}
 
 	len = literal(ptr,"--normal"); if (len) {window = datas.get();
-	data->conf = NormalConf; data->file = file; return;}
+	window->conf = NormalConf; window->file = file; return;}
 
 	len = literal(ptr,"--parallel"); if (len) {window = datas.get();
-	data->conf = ParallelConf; data->file = file; return;}
+	window->conf = ParallelConf; window->file = file; return;}
 
 	len = literal(ptr,"--scale"); if (len) {window = datas.get();
-	data->conf = ScaleConf; data->file = file; return;}
+	window->conf = ScaleConf; window->file = file; return;}
 
 	len = literal(ptr,"--rotate"); if (len) {window = datas.get();
-	data->conf = RotateConf; data->file = file; return;}
+	window->conf = RotateConf; window->file = file; return;}
 
 	len = literal(ptr,"--tanget"); if (len) {window = datas.get();
-	data->conf = TangentConf; data->file = file; return;}
+	window->conf = TangentConf; window->file = file; return;}
 
 	len = literal(ptr,"--translate"); if (len) {window = datas.get();
-	data->conf = TranslateConf; data->file = file; return;}
+	window->conf = TranslateConf; window->file = file; return;}
 
 	len = literal(ptr,"--session"); if (len) {window = datas.get();
-	data->conf = SessionConf; data->file = file; return;}
+	window->conf = SessionConf; window->file = file; return;}
 
 	len = literal(ptr,"--polytope"); if (len) {window = datas.get();
-	data->conf = PolytopeConf; data->file = file; return;}
+	window->conf = PolytopeConf; window->file = file; return;}
 
 	len = literal(ptr,"--facet"); if (len) {window = datas.get();
-	data->conf = FacetConf; data->file = file; return;}
+	window->conf = FacetConf; window->file = file; return;}
 
 	len = literal(ptr,"--numeric"); if (len) {window = datas.get();
-	data->conf = NumericConf; data->file = file; return;}
+	window->conf = NumericConf; window->file = file; return;}
 
 	len = literal(ptr,"--invariant"); if (len) {window = datas.get();
-	data->conf = InvariantConf; data->file = file; return;}
+	window->conf = InvariantConf; window->file = file; return;}
 
 	len = literal(ptr,"--symbolic"); if (len) {window = datas.get();
-	data->conf = SymbolicConf; data->file = file; return;}
+	window->conf = SymbolicConf; window->file = file; return;}
 
 	len = literal(ptr,"--relative"); if (len) {window = datas.get();
-	data->conf = RelativeConf; data->file = file; return;}
+	window->conf = RelativeConf; window->file = file; return;}
 
 	len = literal(ptr,"--absolute"); if (len) {window = datas.get();
-	data->conf = AbsoluteConf; data->file = file; return;}
+	window->conf = AbsoluteConf; window->file = file; return;}
 
 	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,window); return;}
 
@@ -262,14 +262,14 @@ char *Parse::get(const Data *data)
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
 		return str;}
 	case (MatrixConf): {char *str = setup("--matrix ");
-		str = concat(str,string(data->number));
+		str = concat(str,string(data->seqnum));
 		for (int i = 0; i < 16; i++) {
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
 		int len = strlen(str);
 		while (len < MMAP) {str = concat(str," "); len++;}
 		return str;}
 	case (GlobalConf): {char *str = setup("--global ");
-		str = concat(str,string(data->number));
+		str = concat(str,string(data->seqnum));
 		for (int i = 0; i < 16; i++) {
 			str = concat(str," "); str = concat(str,string(data->vector[i]));}
 		int len = strlen(str);

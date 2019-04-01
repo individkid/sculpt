@@ -222,7 +222,7 @@ struct Data
 	// Read->(MatrixConf,GlobalConf)->Window for applying transformations from other processes  
 	// Window->(MatrixConf,GlobalConf)->Write for recording transformations  
 	// Window->TransformConf->Polytope for manipulating planes  
-	struct {int seqnum; float *matrix;}
+	struct {int seqnum; float *matrix;};
 	// Read->SoundConf->System for changing sound  
 	// Script->SoundConf->System for getting stock values  
 	// TODO

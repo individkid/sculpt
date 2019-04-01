@@ -16,7 +16,7 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <lua.hpp>
+#include <lua/lua.hpp>
 #include "script.hpp"
 #include "window.hpp"
 #include "system.hpp"
@@ -26,8 +26,8 @@
 
 Script::Script(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
 	req2polytope(new Message<Data*>*[n]), req2write(new Message<Data*>*[n]),
-	read2req(this), window2req(this), polytope2rsp(this), system2req(this),
-	write2rsp(this), system2rsp(this)
+	read2req(this), window2rsp(this), window2req(this), polytope2rsp(this),
+	system2rsp(this), system2req(this), command2rsp(this), write2rsp(this)
 {
 }
 
@@ -40,6 +40,7 @@ void Script::connect(int i, Read *ptr)
 void Script::connect(Window *ptr)
 {
 	rsp2window = &ptr->script2rsp;
+	req2window = &ptr->script2req;
 }
 
 void Script::connect(int i, Polytope *ptr)

@@ -28,7 +28,7 @@
 #include "script.hpp"
 
 Write::Write(int i, const char *n) : Thread(), name(n), pipe(-1),
-	window2req(this), polytope2req(this), script2req(this)
+	window2req(this), polytope2req(this), script2req(this), command2req(this)
 {
 }
 
@@ -45,6 +45,7 @@ void Write::connect(Polytope *ptr)
 void Write::connect(Script *ptr)
 {
 	rsp2script = &ptr->write2rsp;
+	rsp2command = &ptr->command2rsp;
 }
 
 void Write::init()
