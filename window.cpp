@@ -40,71 +40,68 @@ extern "C" {
 extern Window *window;
 
 static Pool<Data> datas;
-static Pool<Action> actions;
-static Pool<Invoke> invokes;
 static Power<float> floats;
 
 extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix)
 {
-    Data *data = datas.get(); data->matrix = floats.get(9);
+    Data *data = datas.get(); data->matrix = floats.get(16);
     data->file = file; data->plane = plane; data->conf = conf;
-    for (int i = 0; i < 9; i++) data->matrix[i] = matrix[i];
-    window->sendData(data);
+    for (int i = 0; i < 16; i++) data->matrix[i] = matrix[i];
+    window->sendWrite(data);
 }
 
 extern "C" void sendAdditive(int file, int plane)
 {
-    Action *action = actions.get();
-    action->file = file; action->plane = plane; action->click = AdditiveMode;
-    window->sendAction(action);
+    Data *data = datas.get();
+    data->file = file; data->plane = plane; data->conf = AdditiveConf;
+    window->sendPolytope(data);
 }
 
 extern "C" void sendSubtracive(int file, int plane)
 {
-    Action *action = actions.get();
-    action->file = file; action->plane = plane; action->click = SubtractiveMode;
-    window->sendAction(action);
+    Data *data = datas.get();
+    data->file = file; data->plane = plane; data->conf = SubtractiveConf;
+    window->sendPolytope(data);
 }
 
 extern "C" void sendRefine(int file, int plane, float *pierce)
 {
-    Action *action = actions.get(); action->pierce = floats.get(3);
-    action->file = file; action->plane = plane; action->click = RefineMode;
-    for (int i = 0; i < 3; i++) action->pierce[i] = pierce[i];
-    window->sendAction(action);
+    Data *data = datas.get(); data->pierce = floats.get(3);
+    data->file = file; data->plane = plane; data->conf = RefineConf;
+    for (int i = 0; i < 3; i++) data->pierce[i] = pierce[i];
+    window->sendPolytope(data);
 }
 
 extern "C" void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce)
 {
-    Action *action = actions.get(); action->pierce = floats.get(3);
-    action->file = file; action->plane = plane; action->click = TweakMode;
-    action->topology = topology; action->fixed = RelativeMode;
-    for (int i = 0; i < 3; i++) action->pierce[i] = pierce[i];
-    window->sendAction(action);
+    Data *data = datas.get(); data->pierce = floats.get(3);
+    data->file = file; data->plane = plane; data->conf = TweakConf;
+    data->topology = topology; data->fixed = RelativeMode;
+    for (int i = 0; i < 3; i++) data->pierce[i] = pierce[i];
+    window->sendPolytope(data);
 }
 
 extern "C" void sendAbsolute(int file, int plane, enum TopologyMode topology)
 {
-    Action *action = actions.get();
-    action->file = file; action->plane = plane; action->click = TweakMode;
-    action->topology = topology; action->fixed = AbsoluteMode;
-    window->sendAction(action);
+    Data *data = datas.get();
+    data->file = file; data->plane = plane; data->conf = TweakConf;
+    data->topology = topology; data->fixed = AbsoluteMode;
+    window->sendPolytope(data);
 }
 
 extern "C" void sendFacet(int file, int plane, float *matrix)
 {
-    Action *action = actions.get(); action->matrix = floats.get(9);
-    action->file = file; action->plane = plane; action->click = TransformMode;
-    for (int i = 0; i < 9; i++) action->matrix[i] = matrix[i];
-    window->sendAction(action);
+    Data *data = datas.get(); data->matrix = floats.get(16);
+    data->file = file; data->plane = plane; data->conf = TransformConf;
+    for (int i = 0; i < 16; i++) data->matrix[i] = matrix[i];
+    window->sendPolytope(data);
 }
 
-extern "C" void sendInvoke(int file, int plane, int tagbits, float *vector)
+extern "C" void sendInvoke(int file, int plane, int tagbits)
 {
-    Invoke *invoke = invokes.get(); invoke->vector = floats.get(3);
-    invoke->file = file; invoke->plane = plane; invoke->tagbits = tagbits;
-    for (int i = 0; i < 3; i++) invoke->vector[i] = vector[i];
-    window->sendInvoke(invoke);
+    Data *data = datas.get(); data->script = window->lookup(tagbits);
+    data->file = file; data->plane = plane; data->conf = MacroConf;
+    window->sendScript(data);
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -220,11 +217,7 @@ void Window::unbindTexture2d()
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void Window::processResponse(Invoke &invoke)
-{
-}
-
-void Window::processResponse(Action &action)
+void Window::processResponse(Command &command)
 {
 }
 
@@ -235,7 +228,7 @@ void Window::processResponse(Data &data)
 void Window::processData(Data &data)
 {
     changeState(&data);
-    object[data.file].rsp2data2read->put(&data);
+    object[data.file].rsp2read->put(&data);
     glfwPollEvents();
 }
 
@@ -320,8 +313,8 @@ void Window::swapQueue(Queue &queue, Command *&command)
 }
 
 Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
-    read2command2req(this), read2data2req(this), write2data2rsp(this),
-    polytope2action2rsp(this), script2invoke2rsp(this), polytope2command2req(this)
+    read2command2req(this), read2data2req(this), write2rsp(this),
+    polytope2rsp(this), polytope2req(this), script2rsp(this)
 {
     Queue init = {0}; redraw = pierce = query = init;
 }
@@ -329,41 +322,41 @@ Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Ob
 void Window::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].rsp2command2read = &ptr->window2command2rsp;
-    object[i].rsp2data2read = &ptr->window2data2rsp;
+    object[i].rsp2command2read = &ptr->command2rsp;
+    object[i].rsp2data2read = &ptr->window2rsp;
 }
 
 void Window::connect(int i, Write *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].req2data2write = &ptr->window2data2req;
+    object[i].req2write = &ptr->window2req;
 }
 
 void Window::connect(int i, Polytope *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].req2action2polytope = &ptr->window2action2req;
-    object[i].rsp2command2polytope = &ptr->window2command2rsp;
+    object[i].req2polytope = &ptr->window2req;
+    object[i].rsp2polytope = &ptr->window2rsp;
 }
 
 void Window::connect(Script *ptr)
 {
-    req2invoke2script = &ptr->window2invoke2req;
+    req2script = &ptr->window2req;
 }
 
-void Window::sendData(Data *data)
+void Window::sendWrite(Data *data)
 {
-    object[data->file].req2data2write->put(data);
+    object[data->file].req2write->put(data);
 }
 
-void Window::sendAction(Action *action)
+void Window::sendPolytope(Data *data)
 {
-    object[action->file].req2action2polytope->put(action);
+    object[data->file].req2polytope->put(data);
 }
 
-void Window::sendInvoke(Invoke *invoke)
+void Window::sendScript(Data *data)
 {
-    req2invoke2script->put(invoke);
+    object[data->file].req2script->put(data);
 }
 
 void Window::warpCursor(float *cursor)
@@ -424,15 +417,15 @@ void Window::init()
 
 void Window::call()
 {
-    finishQueue(query,&Object::rsp2command2read);
-    if (isSuspend()) startQueue(pierce,&Object::rsp2command2read);
-    else startQueue(redraw,&Object::rsp2command2read);
-    Invoke *response = 0; while (script2invoke2rsp.get(response)) processResponse(*response);
-    Action *action = 0; while (polytope2action2rsp.get(action)) processResponse(*action);
-    Data *data = 0; while (write2data2rsp.get(data)) processResponse(*data);
-    Data *sync = 0; while (read2data2req.get(sync)) processData(*sync);
-    Command *command = 0; while (read2command2req.get(command)) startCommand(query,*command,&Object::rsp2command2read);
-    command = 0; while (polytope2command2req.get(command)) startCommand(query,*command,&Object::rsp2command2polytope);
+    finishQueue(query,&Object::rsp2read);
+    if (isSuspend()) startQueue(pierce,&Object::rsp2read);
+    else startQueue(redraw,&Object::rsp2read);
+    Invoke *response = 0; while (script2rsp.get(response)) processResponse(*response);
+    Action *action = 0; while (polytope2rsp.get(action)) processResponse(*action);
+    Data *data = 0; while (write2rsp.get(data)) processResponse(*data);
+    Data *sync = 0; while (read2req.get(sync)) processData(*sync);
+    Command *command = 0; while (read2req.get(command)) startCommand(query,*command,&Object::rsp2read);
+    command = 0; while (polytope2req.get(command)) startCommand(query,*command,&Object::rsp2polytope);
 }
 
 void Window::wait()

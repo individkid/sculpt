@@ -27,11 +27,6 @@ class Polytope;
 class System;
 class Script;
 
-	// Read->Command->Window
-	// Read->Data->Window
-	// Read->Data->Polytope
-	// Read->Data->System
-	// Read->Data->Script
 class Read : public Thread
 {
 private:
@@ -41,18 +36,18 @@ private:
 	int self;
 	off_t fpos, mpos, gpos;
 	int mlen, glen, mnum, gnum;
-	Message<Command*> *req2command2window;
-	Message<Data*> *req2data2window;
-	Message<Data*> *req2data2polytope;
-	Message<Data*> *req2data2system;
-	Message<Data*> *req2data2script;
+	Message<Command*> *req2command;
+	Message<Data*> *req2window;
+	Message<Data*> *req2polytope;
+	Message<Data*> *req2system;
+	Message<Data*> *req2script;
 	Parse parse;
 public:
-	Message<Command*> window2command2rsp;
-	Message<Data*> window2data2rsp;
-	Message<Data*> polytope2data2rsp;
-	Message<Data*> system2data2rsp;
-	Message<Data*> script2data2rsp;
+	Message<Command*> *command2rsp;
+	Message<Data*> window2rsp;
+	Message<Data*> polytope2rsp;
+	Message<Data*> system2rsp;
+	Message<Data*> script2rsp;
 	Read(int i, const char *n);
 	void connect(Window *ptr);
 	void connect(Polytope *ptr);

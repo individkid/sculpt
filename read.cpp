@@ -32,30 +32,30 @@
 
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
 	fpos(0), mlen(0), glen(0), mnum(0), gnum(0),
-	window2command2rsp(this), window2data2rsp(this),
-	polytope2data2rsp(this,"Read<-Data<-Polytope"), system2data2rsp(this), script2data2rsp(this)
+	command2rsp(this), window2rsp(this), polytope2rsp(this,"Read<-Data<-Polytope"),
+	system2rsp(this), script2rsp(this)
 {
 }
 
 void Read::connect(Window *ptr)
 {
-	req2command2window = &ptr->read2command2req;
-	req2data2window = &ptr->read2data2req;
+	req2command = &ptr->read2command2req;
+	req2window = &ptr->read2data2req;
 }
 
 void Read::connect(Polytope *ptr)
 {
-	req2data2polytope = &ptr->read2data2req;
+	req2polytope = &ptr->read2req;
 }
 
 void Read::connect(System *ptr)
 {
-	req2data2system = &ptr->read2data2req;
+	req2system = &ptr->read2req;
 }
 
 void Read::connect(Script *ptr)
 {
-	req2data2script = &ptr->read2data2req;
+	req2script = &ptr->read2req;
 }
 
 void Read::init()
@@ -68,24 +68,25 @@ void Read::init()
 
 void Read::call()
 {
-	get(window2data2rsp);
-    get(polytope2data2rsp);
-    get(system2data2rsp);
-    get(script2data2rsp);
+	get(command2rsp);
+	get(window2rsp);
+    get(polytope2rsp);
+    get(system2rsp);
+    get(script2rsp);
 	off_t pos = fpos;
 	char *str = read();
 	while (1) {
 	char *dds = split(str);
 	sync(dds,"--matrix",pos,mpos,mlen,mnum,MatrixConf);
 	sync(dds,"--global",pos,gpos,glen,gnum,GlobalConf);
-	if (*dds == 0) break;
-    Command *command = 0; Data *data = 0; Data *polytope = 0; Data *system = 0; Data *script = 0;
-	parse.get(parse.cleanup(dds),self,command,data,polytope,system,script);
-	put(*req2command2window,command);
-	put(*req2data2window,data);
-	put(*req2data2polytope,polytope);
-	put(*req2data2system,system);
-	put(*req2data2script,script);}
+	if (*dds == 0) {parse.cleanup(dds); break;}
+    Command *command = 0; Data *window = 0; Data *polytope = 0; Data *system = 0; Data *script = 0;
+	parse.get(parse.cleanup(dds),self,window,polytope,system,script);
+	put(*req2command,command);
+	put(*req2window,data);
+	put(*req2polytope,polytope);
+	put(*req2system,system);
+	put(*req2script,script);}
 	parse.cleanup(str);
 }
 
@@ -99,6 +100,7 @@ void Read::wait()
 	if (sync(str,"--matrix",mpos,mlen,mnum)) {parse.cleanup(str); unwrlck(); return;}
 	if (sync(str,"--global",gpos,glen,gnum)) {parse.cleanup(str); unwrlck(); return;}
 	write(str); parse.cleanup(str); unwrlck(); return;}
+	if (check()) return;
 	if (getrdlck()) unrdlck();
 }
 

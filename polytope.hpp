@@ -30,22 +30,17 @@ class Script;
 class Polytope : public Thread
 {
 private:
-	// Read->Data->Polytope
-	Message<Data*> *rsp2data2read;
-	// Window->Action->Polytope
-	Message<Action*> *rsp2action2window;
-	// Polytope->Data->Write
-	Message<Data*> *req2data2write;
-	// Polytope->Command->Window
-	Message<Command*> *req2command2window;
-	// Script->Question->Polytope
-	Message<Question*> *rsp2question2script;
+	Message<Data*> *rsp2read;
+	Message<Data*> *rsp2window;
+	Message<Data*> *req2write;
+	Message<Data*> *req2window;
+	Message<Data*> *rsp2script;
 public:
-	Message<Data*> read2data2req;
-	Message<Action*> window2action2req;
-	Message<Data*> write2data2rsp;
-	Message<Command*> window2command2rsp;
-	Message<Question*> script2question2req;
+	Message<Data*> read2req;
+	Message<Data*> window2req;
+	Message<Data*> write2rsp;
+	Message<Data*> window2rsp;
+	Message<Data*> script2req;
 	Polytope(int i);
 	void connect(Read *ptr);
 	void connect(Window *ptr);

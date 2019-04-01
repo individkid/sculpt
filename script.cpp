@@ -16,6 +16,7 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <lua.hpp>
 #include "script.hpp"
 #include "window.hpp"
 #include "system.hpp"
@@ -23,40 +24,41 @@
 #include "polytope.hpp"
 #include "write.hpp"
 
-Script::Script(int n) : nfile(n), rsp2data2read(new Message<Data*>*[n]),
-	req2question2polytope(new Message<Question*>*[n]), req2data2write(new Message<Data*>*[n]),
-	read2data2req(this), window2invoke2req(this), polytope2question2rsp(this), system2invoke2req(this),
-	write2data2rsp(this), system2question2rsp(this)
+Script::Script(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
+	req2polytope(new Message<Data*>*[n]), req2write(new Message<Data*>*[n]),
+	read2req(this), window2req(this), polytope2rsp(this), system2req(this),
+	write2rsp(this), system2rsp(this)
 {
 }
 
 void Script::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    rsp2data2read[i] = &ptr->script2data2rsp;
+    rsp2read[i] = &ptr->script2rsp;
 }
 
 void Script::connect(Window *ptr)
 {
-	rsp2invoke2window = &ptr->script2invoke2rsp;
+	rsp2window = &ptr->script2rsp;
 }
 
 void Script::connect(int i, Polytope *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    req2question2polytope[i] = &ptr->script2question2req;
+    req2polytope[i] = &ptr->script2req;
 }
 
 void Script::connect(System *ptr)
 {
-	rsp2invoke2system = &ptr->script2invoke2rsp;
-	req2question2system = &ptr->script2question2req;
+	rsp2system = &ptr->script2rsp;
+	req2system = &ptr->script2req;
 }
 
 void Script::connect(int i, Write *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    req2data2write[i] = &ptr->script2data2req;
+    req2command[i] = &ptr->command2req;
+    req2write[i] = &ptr->script2req;
 }
 
 void Script::call()

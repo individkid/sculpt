@@ -23,35 +23,34 @@
 #include "script.hpp"
 
 Polytope::Polytope(int i) : Thread(),
-	read2data2req(this,"Read->Data->Polytope"), window2action2req(this),
-	write2data2rsp(this), window2command2rsp(this),
-	script2question2req(this)
+	read2req(this,"Read->Data->Polytope"), window2req(this),
+	write2rsp(this), window2rsp(this), script2req(this)
 {
 }
 
 void Polytope::connect(Read *ptr)
 {
-	rsp2data2read = &ptr->polytope2data2rsp;
+	rsp2read = &ptr->polytope2rsp;
 }
 
 void Polytope::connect(Window *ptr)
 {
-	rsp2action2window = &ptr->polytope2action2rsp;
-	req2command2window = &ptr->polytope2command2req;
+	rsp2window = &ptr->polytope2rsp;
+	req2window = &ptr->polytope2req;
 }
 
 void Polytope::connect(Write *ptr)
 {
-	req2data2write = &ptr->polytope2data2req;
+	req2write = &ptr->polytope2req;
 }
 
 void Polytope::connect(Script *ptr)
 {
-	rsp2question2script = &ptr->polytope2question2rsp;
+	rsp2script = &ptr->polytope2rsp;
 }
 
 void Polytope::call()
 {
-    Data *data = 0; while (read2data2req.get(data)) {
-    printf("polytope:%s",data->text); rsp2data2read->put(data);}
+    Data *data = 0; while (read2req.get(data)) {
+    printf("polytope:%s",data->text); rsp2read->put(data);}
 }

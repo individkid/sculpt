@@ -31,17 +31,14 @@ class Write : public Thread
 private:
 	const char *name;
 	int pipe;
-	// Window->Data->Write
-	Message<Data*> *rsp2data2window;
-	// Polytope->Data->Write
-	Message<Data*> *rsp2data2polytope;
-	// Script->Data->Write
-	Message<Data*> *rsp2data2script;
+	Message<Data*> *rsp2window;
+	Message<Data*> *rsp2polytope;
+	Message<Data*> *rsp2script;
 	Parse parse;
 public:
-	Message<Data*> window2data2req;
-	Message<Data*> polytope2data2req;
-	Message<Data*> script2data2req;
+	Message<Data*> window2req;
+	Message<Data*> polytope2req;
+	Message<Data*> script2req;
 	Write(int i, const char *n);
 	void connect(Window *ptr);
 	void connect(Polytope *ptr);

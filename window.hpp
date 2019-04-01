@@ -43,7 +43,7 @@ private:
 	int finish;
 	int nfile;
 	Object *object;
-	Message<Invoke*> *req2invoke2script;
+	Message<Data*> *req2script;
 	Microcode microcode[Programs];
 	Queue redraw;
 	Queue pierce;
@@ -57,8 +57,7 @@ private:
 	void writeTexture2d(Update &update);
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
-	void processResponse(Invoke &invoke);
-	void processResponse(Action &action);
+	void processResponse(Command &command);
 	void processResponse(Data &data);
 	void processData(Data &data);
 	void processCommand(Command &command);
@@ -68,26 +67,20 @@ private:
 	void finishQueue(Queue &queue, Message<Command*> *Object::*response);
 	void swapQueue(Queue &queue, Command *&command);
 public:
-	// Read->Command->Window
 	Message<Command*> read2command2req;
-	// Read->Data->Window
 	Message<Data*> read2data2req;
-	// Window->Data->Write
-	Message<Data*> write2data2rsp;
-	// Window->Data->Polytope
-	Message<Action*> polytope2action2rsp;
-	// Window->Invoke->Script
-	Message<Invoke*> script2invoke2rsp;
-	// Polytope->Command->Window
-	Message<Command*> polytope2command2req;
+	Message<Data*> write2rsp;
+	Message<Data*> polytope2rsp;
+	Message<Command*> polytope2req;
+	Message<Data*> script2rsp;
 	Window(int n);
 	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(Script *ptr);
-	void sendData(Data *data);
-	void sendAction(Action *action);
-	void sendInvoke(Invoke *invoke);
+	void sendWrite(Data *data);
+	void sendPolytope(Data *data);
+	void sendScript(Data *data);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);
 	virtual void init();

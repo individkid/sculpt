@@ -20,21 +20,21 @@
 #include "read.hpp"
 #include "script.hpp"
 
-System::System(int n) : nfile(n), rsp2data2read(new Message<Data*>*[n]),
-	read2data2req(this), script2invoke2rsp(this), script2question2req(this)
+System::System(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
+	read2req(this), script2rsp(this), script2req(this)
 {
 }
 
 void System::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    rsp2data2read[i] = &ptr->system2data2rsp;
+    rsp2read[i] = &ptr->system2rsp;
 }
 
 void System::connect(Script *ptr)
 {
-	req2invoke2script = &ptr->system2invoke2req;
-	rsp2question2script = &ptr->system2question2rsp;
+	req2script = &ptr->system2req;
+	rsp2script = &ptr->system2rsp;
 }
 
 void System::call()

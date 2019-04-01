@@ -28,16 +28,13 @@ class System : public Thread
 {
 private:
 	int nfile;
-	// Read->Data->System  
-	Message<Data*> **rsp2data2read;
-	// System->Invoke->Script  
-	Message<Invoke*> *req2invoke2script;
-	// Script->Question->System
-	Message<Question*> *rsp2question2script;
+	Message<Data*> **rsp2read;
+	Message<Data*> *req2script;
+	Message<Data*> *rsp2script;
 public:
-	Message<Data*> read2data2req;
-	Message<Invoke*> script2invoke2rsp;
-	Message<Question*> script2question2req;
+	Message<Data*> read2req;
+	Message<Data*> script2rsp;
+	Message<Data*> script2req;
 	System(int n);
 	void connect(int i, Read *ptr);
 	void connect(Script *ptr);

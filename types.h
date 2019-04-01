@@ -119,7 +119,9 @@ enum Configure {
 	PictureConf,
 	SoundConf,
 	MetricConf,
+	MacroConf,
 	ScriptConf,
+	InvokeConf,
 	CommandConf,
 	ConfigureConf,
 	TestConf,
@@ -130,47 +132,6 @@ enum Field {
 	BindField,
 	ReadField,
 	Fields};
-enum ModeType {
-	ClickType,
-	MouseType,
-	RollerType,
-	TargetType,
-	TopologyType,
-	FixedType,
-	ModeTypes};
-struct Data
-{
-	int file;
-	int plane;
-	enum Configure conf;
-	union {
-	struct {int boundaries; int regions; int *planes; int **sides;};
-	struct {int insides; int outsides; int *inside; int *outside; int side;};
-	struct {int versor; float *vector;};
-	struct {int number; enum TargetMode target; float *matrix;};
-	char *text;};
-};
-struct Action
-{
-	int file;
-	int plane;
-	enum ClickMode click; // additive subtractive refine tweak or transform facet
-	enum TopologyMode topology; // tweak
-	enum FixedMode fixed; // tweak
-	union {float *pierce; // refine or tweak relative
-	float *matrix;}; // transform facet
-};
-struct Invoke
-{
-	int file;
-	int plane;
-	int tagbits;
-	float *vector;
-};
-struct Question
-{
-	int file;
-};
 struct Format
 {
 	float cursor[2];
@@ -218,6 +179,9 @@ struct Response
 	struct Response *next;
 	int file;
 };
+// Read->Window for bringup  
+// Script->Window for queries to microcode  
+// Polytope->Window for changing what is displayed  
 struct Command
 {
 	struct Command *next;
@@ -227,6 +191,46 @@ struct Command
 	struct Command *redraw;
 	struct Command *pierce;
 	struct Response *response;
+};
+struct Data
+{
+	int file;
+	int plane;
+	enum Configure conf; // Script->*->Write for side effects  
+	// Read->(AdditiveConf..AbsoluteConf)->Window for changing modes  
+	// Read->InflateConf->Polytope for changing which regions are in the polytope  
+	// Window->AdditiveConf,SubtractiveConf->Polytope for sculpting polytope  
+	union {
+	// Read->SpaceConf->Polytope for creating sample of space  
+	// Script->SpaceConf->Polytope for feedback from topology  
+	struct {int boundaries; int regions; int *planes; int **sides;};
+	// Read->RegionConf->Polytope for changing which regions are in the polytope  
+	// Script->RegionConf->Polytope for feedback from topology  
+	// Polytope->RegionConf->Write for changing whether region is in polytope  
+	struct {int insides; int outsides; int *inside; int *outside; int side;};
+	// Read->PlaneConf->Polytope for adding or changing planes  
+	// Script->PlaneConf->Polytope for feedback from topology  
+	// Polytope->PlaneConf->Write for appending manipulated or randomized planes  
+	struct {int versor; float *vector;};
+	// Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
+	// Window->MacroConf->Script for starting macro from click  
+	// System->MetricConf->Script for getting value from metric  
+	struct {float *argument; char *script;};
+	// Window->TweakConf->Polytope for tweaking planes  
+	// Window->RefineConf->Polytope for adding planes  
+	struct {enum TopologyMode topology; enum FixedMode fixed; float *pierce;};
+	// Read->(MatrixConf,GlobalConf)->Window for applying transformations from other processes  
+	// Window->(MatrixConf,GlobalConf)->Write for recording transformations  
+	// Window->TransformConf->Polytope for manipulating planes  
+	struct {int seqnum; float *matrix;}
+	// Read->SoundConf->System for changing sound  
+	// Script->SoundConf->System for getting stock values  
+	// TODO
+	// Read->ConfigureConf->Window for changing configurations  
+	// TODO
+	// Read->(PictureConf,MacroConf)->Polytope for decorating planes  
+	// Read->TestConf->Polytope for testing topology functions
+	char *text;};
 };
 
 #endif

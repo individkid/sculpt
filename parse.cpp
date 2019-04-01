@@ -84,7 +84,8 @@ int Parse::get(const char *ptr, Render *&render)
 
 int Parse::get(const char *ptr, int file, Command *&command)
 {
-	Command init = {0}; command = commands.get(); *command = init; int len = 0; int inc, i;
+	Command init = {0}; command = commands.get(); *command = init;
+	int len = 0; int inc, i;
 	if ((inc = literal(ptr+len," feedback"))) {len += inc; command->feedback = 1;}
 	for (i = 0; i < Fields; i++) {
 		const char *pat = cleanup(concat(" ",field[i]));
@@ -122,80 +123,80 @@ void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 	data->conf = conf; data->file = file;
 }
 
-void Parse::get(const char *ptr, int file, Command *&command, Data *&data,
-	Data *&polytope, Data *&system, Data *&script)
+void Parse::get(const char *ptr, int file, Command *&command,
+	Data *&window, Data *&polytope, Data *&system, Data *&script)
 {
-	int len, inc; command = 0; data = 0; polytope = 0;
+	int len, inc; window = polytope = system = script = 0;
 
-	len = literal(ptr,"--additive"); if (len) {data = datas.get();
+	len = literal(ptr,"--additive"); if (len) {window = datas.get();
 	data->conf = AdditiveConf; data->file = file; return;}
 
-	len = literal(ptr,"--subractive"); if (len) {data = datas.get();
+	len = literal(ptr,"--subractive"); if (len) {window = datas.get();
 	data->conf = SubtractiveConf; data->file = file; return;}
 
-	len = literal(ptr,"--refine"); if (len) {data = datas.get();
+	len = literal(ptr,"--refine"); if (len) {window = datas.get();
 	data->conf = RefineConf; data->file = file; return;}
 
-	len = literal(ptr,"--tweak"); if (len) {data = datas.get();
+	len = literal(ptr,"--tweak"); if (len) {window = datas.get();
 	data->conf = TweakConf; data->file = file; return;}
 
-	len = literal(ptr,"--perform"); if (len) {data = datas.get();
+	len = literal(ptr,"--perform"); if (len) {window = datas.get();
 	data->conf = PerformConf; data->file = file; return;}
 
-	len = literal(ptr,"--transform"); if (len) {data = datas.get();
+	len = literal(ptr,"--transform"); if (len) {window = datas.get();
 	data->conf = TransformConf; data->file = file; return;}
 
-	len = literal(ptr,"--cylinder"); if (len) {data = datas.get();
+	len = literal(ptr,"--cylinder"); if (len) {window = datas.get();
 	data->conf = CylinderConf; data->file = file; return;}
 
-	len = literal(ptr,"--clock"); if (len) {data = datas.get();
+	len = literal(ptr,"--clock"); if (len) {window = datas.get();
 	data->conf = ClockConf; data->file = file; return;}
 
-	len = literal(ptr,"--normal"); if (len) {data = datas.get();
+	len = literal(ptr,"--normal"); if (len) {window = datas.get();
 	data->conf = NormalConf; data->file = file; return;}
 
-	len = literal(ptr,"--parallel"); if (len) {data = datas.get();
+	len = literal(ptr,"--parallel"); if (len) {window = datas.get();
 	data->conf = ParallelConf; data->file = file; return;}
 
-	len = literal(ptr,"--scale"); if (len) {data = datas.get();
+	len = literal(ptr,"--scale"); if (len) {window = datas.get();
 	data->conf = ScaleConf; data->file = file; return;}
 
-	len = literal(ptr,"--rotate"); if (len) {data = datas.get();
+	len = literal(ptr,"--rotate"); if (len) {window = datas.get();
 	data->conf = RotateConf; data->file = file; return;}
 
-	len = literal(ptr,"--tanget"); if (len) {data = datas.get();
+	len = literal(ptr,"--tanget"); if (len) {window = datas.get();
 	data->conf = TangentConf; data->file = file; return;}
 
-	len = literal(ptr,"--translate"); if (len) {data = datas.get();
+	len = literal(ptr,"--translate"); if (len) {window = datas.get();
 	data->conf = TranslateConf; data->file = file; return;}
 
-	len = literal(ptr,"--session"); if (len) {data = datas.get();
+	len = literal(ptr,"--session"); if (len) {window = datas.get();
 	data->conf = SessionConf; data->file = file; return;}
 
-	len = literal(ptr,"--polytope"); if (len) {data = datas.get();
+	len = literal(ptr,"--polytope"); if (len) {window = datas.get();
 	data->conf = PolytopeConf; data->file = file; return;}
 
-	len = literal(ptr,"--facet"); if (len) {data = datas.get();
+	len = literal(ptr,"--facet"); if (len) {window = datas.get();
 	data->conf = FacetConf; data->file = file; return;}
 
-	len = literal(ptr,"--numeric"); if (len) {data = datas.get();
+	len = literal(ptr,"--numeric"); if (len) {window = datas.get();
 	data->conf = NumericConf; data->file = file; return;}
 
-	len = literal(ptr,"--invariant"); if (len) {data = datas.get();
+	len = literal(ptr,"--invariant"); if (len) {window = datas.get();
 	data->conf = InvariantConf; data->file = file; return;}
 
-	len = literal(ptr,"--symbolic"); if (len) {data = datas.get();
+	len = literal(ptr,"--symbolic"); if (len) {window = datas.get();
 	data->conf = SymbolicConf; data->file = file; return;}
 
-	len = literal(ptr,"--relative"); if (len) {data = datas.get();
+	len = literal(ptr,"--relative"); if (len) {window = datas.get();
 	data->conf = RelativeConf; data->file = file; return;}
 
-	len = literal(ptr,"--absolute"); if (len) {data = datas.get();
+	len = literal(ptr,"--absolute"); if (len) {window = datas.get();
 	data->conf = AbsoluteConf; data->file = file; return;}
 
-	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,data); return;}
+	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,window); return;}
 
-	len = literal(ptr,"--global"); if (len) {get(ptr+len,file,GlobalConf,data); return;}
+	len = literal(ptr,"--global"); if (len) {get(ptr+len,file,GlobalConf,window); return;}
 
 	len = literal(ptr,"--command"); if (len) {get(ptr+len,file,command); if (command) return;}
 
@@ -203,13 +204,6 @@ void Parse::get(const char *ptr, int file, Command *&command, Data *&data,
 	inc = 0; while (ptr[len+inc]) if (ptr[len+inc] == '-' && ptr[len+inc+1] == '-') break; else inc++;
 	polytope->text = prefix(ptr+len,inc+1); polytope->text[inc] = 0; len += inc;
 	polytope->conf = TestConf; polytope->file = file; return;}
-}
-
-void Parse::put(Data *data)
-{
-	if (data->conf == MatrixConf || data->conf == GlobalConf) floats.put(16,data->matrix);
-	if (data->conf == TestConf) cleanup(data->text);
-	datas.put(data);
 }
 
 void Parse::put(Command *command)
@@ -225,6 +219,13 @@ void Parse::put(Command *command)
 	Response *response = command->response;
 	while (response) {responses.put(response); response = response->next;}
 	command = command->next;}
+}
+
+void Parse::put(Data *data)
+{
+	if (data->conf == MatrixConf || data->conf == GlobalConf) floats.put(16,data->matrix);
+	if (data->conf == TestConf) cleanup(data->text);
+	datas.put(data);
 }
 
 char *Parse::get(const Data *data)

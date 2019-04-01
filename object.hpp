@@ -35,16 +35,11 @@ struct Handle
 
 struct Object
 {
-	// Read->Command->Window
 	Message<Command*> *rsp2command2read;
-	// Read->Data->Window
 	Message<Data*> *rsp2data2read;
-	// Window->Data->Write
-	Message<Data*> *req2data2write;
-	// Window->Action->Polytope
-	Message<Action*> *req2action2polytope;
-	// Polytope->Command->Window
-	Message<Command*> *rsp2command2polytope;
+	Message<Data*> *req2write;
+	Message<Data*> *req2polytope;
+	Message<Command*> *rsp2polytope;
 	Handle handle[Buffers];
 	MYuint vao[Programs];
 	void initFile(int first);
