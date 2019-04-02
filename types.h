@@ -214,6 +214,8 @@ struct Data
 	// Polytope->PlaneConf->Write for appending manipulated or randomized planes  
 	struct {int versor; float *vector;};
 	// Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
+	// Read->MacroConf->Polytope for attaching scripts to planes  
+	// Read->MetricConf->System for allowing system to query state  
 	// Window->MacroConf->Polytope for tagbits associated with click  
 	// Polytope->MacroConf->Script for starting macro from click  
 	// System->MetricConf->Script for getting value from metric  
