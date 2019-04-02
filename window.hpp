@@ -36,6 +36,13 @@ struct Queue
 	Command *loop;
 };
 
+struct Queues
+{
+	Queue redraw;
+	Queue pierce;
+	Queue query;
+};
+
 class Window : public Thread
 {
 private:
@@ -43,12 +50,11 @@ private:
 	int finish;
 	int nfile;
 	Object *object;
-	Message<Data*> *req2script;
 	Message<Command*> *rsp2script;
 	Microcode microcode[Programs];
-	Queue redraw;
-	Queue pierce;
-	Queue query;
+	Queues script;
+	Queues command;
+	Queues polytope;
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
 	void bindBuffer(Update &update);
@@ -58,22 +64,27 @@ private:
 	void writeTexture2d(Update &update);
 	void bindTexture2d(Update &update);
 	void unbindTexture2d();
-	void processResponse(Command &command);
+	void swapQueue(Queue &queue, Command *&command);
+	void processCommand(Command &command);
+	void finishCommand(Command &command, Queues &queues);
+	void finishQueue(Queues &queues, void (Window::*response)(Command *command,int file));
+	void startQueue(Queue &queue, Queues &queues);
 	void processResponse(Data &data);
 	void processData(Data &data);
-	void processCommand(Command &command);
-	void finishCommand(Command &command);
-	void startCommand(Queue &queue, Command &command);
-	void startQueue(Queue &queue);
-	void finishQueue(Queue &queue);
-	void swapQueue(Queue &queue, Command *&command);
+	void startCommand(Command &command, Queues &queues, void (Window::*response)(Command *command,int file));
+	void startQueues(Queues &queues, void (Window::*response)(Command *command,int file));
+	void processResponses(Message<Data*> &response);
+	void processRequests(Message<Data*> &request);
+	void startCommands(Message<Command*> &request, Queues &queues, void (Window::*response)(Command *command,int file));
+	void respondScript(Command *command, int file);
+	void respondCommand(Command *command, int file);
+	void respondPolytope(Command *command, int file);
 public:
 	Message<Command*> command2req;
 	Message<Data*> read2req;
 	Message<Data*> write2rsp;
 	Message<Data*> polytope2rsp;
 	Message<Command*> polytope2req;
-	Message<Data*> script2rsp;
 	Message<Command*> script2req;
 	Window(int n);
 	void connect(int i, Read *ptr);
@@ -85,7 +96,6 @@ public:
 	void sendScript(Data *data);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);
-	char *lookup(int tagbits);
 	virtual void init();
 	virtual void call();
 	virtual void wait();

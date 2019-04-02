@@ -56,15 +56,15 @@ Read->PlaneConf->Polytope for adding or changing planes
 Read->(RegionConf,InflateConf)->Polytope for changing which regions are in the polytope  
 Read->SpaceConf->Polytope for creating sample of space  
 Read->(PictureConf,MacroConf)->Polytope for decorating planes  
-Read->TestConf->Polytope for testing topology functions
-Read->SoundConf->System for changing sound  
+Read->TestConf->Polytope for testing topology functions  
+Read->(SoundConf,MetricConf)->System for changing sound  
 Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
 Window->(MatrixConf,GlobalConf)->Write for recording transformations  
 Window->TransformConf->Polytope for manipulating planes  
 Window->TweakConf->Polytope for tweaking planes  
 Window->RefineConf->Polytope for adding planes  
 Window->AdditiveConf,SubtractiveConf->Polytope for sculpting polytope  
-Window->MacroConf->Script for starting macro from click  
+Window->MetricConf->Polytope for tagbits associated with click  
 Script->*->Write for side effects  
 Script->PlaneConf,SpaceConf,RegionConf->Polytope for feedback from topology  
 Script->SoundConf->System for getting stock values  
@@ -72,9 +72,9 @@ Script->CommandConf->Window for queries to microcode
 Polytope->PlaneConf->Write for appending manipulated or randomized planes  
 Polytope->RegionConf->Write for changing whether region is in polytope  
 Polytope->CommandConf->Window for changing what is displayed  
+Polytope->MacroConf->Script for starting macro from click  
 System->MetricConf->Script for getting value from metric  
 
 For example, --plane sends a stuct to the Polytope thread that sends a Command to the Window thread to append the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.
 
 For another example, --space sends a stuct to the Polytope thread that sends a Command, one boundary at a time, threat points from the Small space, to microcode to reinterpret those as planes, run microcode to classify each reinterpreted plane into a Large subspace. Then the Polytope thread reads the region's corners from the Large subspace, finds the average or throw, back-interprets that, and does the --plane operations on that.
-

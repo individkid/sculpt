@@ -31,7 +31,7 @@
 #include "script.hpp"
 
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
-	fpos(0), mlen(0), glen(0), mnum(0), gnum(0),
+	fpos(0), mlen(0), glen(0), mnum(0), gnum(0), livelock(0),
 	command2rsp(this), window2rsp(this), polytope2rsp(this,"Read<-Data<-Polytope"),
 	system2rsp(this), script2rsp(this)
 {
@@ -80,6 +80,7 @@ void Read::call()
 	sync(dds,"--matrix",pos,mpos,mlen,mnum,MatrixConf);
 	sync(dds,"--global",pos,gpos,glen,gnum,GlobalConf);
 	if (*dds == 0) {parse.cleanup(dds); break;}
+	livelock = 0;
     Command *command = 0; Data *window = 0; Data *polytope = 0; Data *system = 0; Data *script = 0;
 	parse.get(parse.cleanup(dds),self,command,window,polytope,system,script);
 	put(*req2command,command);
@@ -100,7 +101,7 @@ void Read::wait()
 	if (sync(str,"--matrix",mpos,mlen,mnum)) {parse.cleanup(str); unwrlck(); return;}
 	if (sync(str,"--global",gpos,glen,gnum)) {parse.cleanup(str); unwrlck(); return;}
 	write(str); parse.cleanup(str); unwrlck(); return;}
-	if (check()) return;
+	if (livelock) backoff(); livelock = 1;
 	if (getrdlck()) unrdlck();
 }
 
@@ -149,6 +150,7 @@ void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &le
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
 	Data *data; sstr[len] = 0; parse.get(sstr,self,conf,data);
 	if (data->seqnum == num) {parse.put(data); parse.cleanup(sstr); return;}
+	livelock = 0;
 	num = data->seqnum; parse.cleanup(sstr); put(*req2window,data);
 }
 
@@ -244,6 +246,14 @@ void Read::write(const char *str)
 	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
 	int num = ::write(file,str,len);
 	if (num != len) error("write failed",errno,__FILE__,__LINE__);
+}
+
+// pause shortly to break livelock
+void Read::backoff()
+{
+	struct timespec tv; tv.tv_sec = 0; tv.tv_nsec = BREAK;
+	int num = pselect(0,0,0,0,&tv,0);
+	if (num < 0) error("pselect failed",errno,__FILE__,__LINE__);
 }
 
 // wait for readlock or return nonzero if interrupted by signal

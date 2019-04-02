@@ -36,6 +36,7 @@ private:
 	int self;
 	off_t fpos, mpos, gpos;
 	int mlen, glen, mnum, gnum;
+	int livelock;
 	Message<Command*> *req2command;
 	Message<Data*> *req2window;
 	Message<Data*> *req2polytope;
@@ -70,6 +71,7 @@ public:
 	int read(char *&str);
 	int sync(const char *str, const char *pat, off_t pos, int len, int &num);
 	void write(const char *str);
+	void backoff();
 	int getrdlck();
 	void unrdlck();
 };

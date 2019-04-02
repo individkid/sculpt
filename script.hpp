@@ -33,7 +33,7 @@ private:
 	int nfile;
 	Message<Data*> **rsp2read;
 	Message<Command*> *req2window;
-	Message<Data*> *rsp2window;
+	Message<Data*> **rsp2polytope;
 	Message<Data*> **req2polytope;
 	Message<Data*> *req2system;
 	Message<Data*> *rsp2system;
@@ -42,7 +42,7 @@ private:
 public:
 	Message<Data*> read2req;
 	Message<Command*> window2rsp;
-	Message<Data*> window2req;
+	Message<Data*> polytope2req;
 	Message<Data*> polytope2rsp;
 	Message<Data*> system2rsp;
 	Message<Data*> system2req;

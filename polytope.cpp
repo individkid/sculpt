@@ -24,7 +24,7 @@
 
 Polytope::Polytope(int i) : Thread(),
 	read2req(this,"Read->Data->Polytope"), window2req(this),
-	write2rsp(this), window2rsp(this), script2req(this)
+	write2rsp(this), window2rsp(this), script2req(this), script2rsp(this)
 {
 }
 
@@ -46,6 +46,7 @@ void Polytope::connect(Write *ptr)
 
 void Polytope::connect(Script *ptr)
 {
+	req2script = &ptr->polytope2req;
 	rsp2script = &ptr->polytope2rsp;
 }
 

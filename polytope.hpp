@@ -34,12 +34,14 @@ private:
 	Message<Data*> *rsp2window;
 	Message<Data*> *req2write;
 	Message<Command*> *req2window;
+	Message<Data*> *req2script;
 	Message<Data*> *rsp2script;
 public:
 	Message<Data*> read2req;
 	Message<Data*> window2req;
 	Message<Data*> write2rsp;
 	Message<Command*> window2rsp;
+	Message<Data*> script2rsp;
 	Message<Data*> script2req;
 	Polytope(int i);
 	void connect(Read *ptr);

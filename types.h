@@ -26,6 +26,7 @@
 #define LENGTH (1.0/30.0)
 #define INVALID 1.0e37
 #define MMAP 256
+#define BREAK 97
 
 struct GLFWwindow;
 typedef unsigned MYenum;
@@ -213,9 +214,10 @@ struct Data
 	// Polytope->PlaneConf->Write for appending manipulated or randomized planes  
 	struct {int versor; float *vector;};
 	// Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
-	// Window->MacroConf->Script for starting macro from click  
+	// Window->MacroConf->Polytope for tagbits associated with click  
+	// Polytope->MacroConf->Script for starting macro from click  
 	// System->MetricConf->Script for getting value from metric  
-	struct {float *argument; char *script;};
+	struct {int tagbits; float *argument; char *script;};
 	// Window->TweakConf->Polytope for tweaking planes  
 	// Window->RefineConf->Polytope for adding planes  
 	struct {enum TopologyMode topology; enum FixedMode fixed; float *pierce;};
