@@ -30,18 +30,6 @@ static struct Matrix matrix = {0};
 static struct Matrix last = {0};
 static struct State state = {0};
 
-void warpCursor(float *cursor);
-int decodeClick(int button, int action, int mods);
-void sendData(int file, int plane, enum Configure conf, float *matrix);
-void sendAdditive(int file, int plane);
-void sendSubtracive(int file, int plane);
-void sendRefine(int file, int plane, float *pierce);
-void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce);
-void sendAbsolute(int file, int plane, enum TopologyMode topology);
-void sendFacet(int file, int plane, float *matrix);
-void sendInvoke(int file, int plane, int tagbits, float *vector);
-void maybeKill(int seq);
-
 int isSuspend()
 {
 	return (state.click != TransformMode);
@@ -374,7 +362,7 @@ void changeToggle(int toggle)
 
 void triggerAction()
 {
-	if (current.tagbits) sendInvoke(current.file,current.plane,current.tagbits,current.pierce);
+	if (current.tagbits) sendInvoke(current.file,current.plane,current.tagbits);
 	switch (state.click) {
 	case (AdditiveMode): sendAdditive(current.file,current.plane); break;
 	case (SubtractiveMode): sendSubtracive(current.file,current.plane); break;

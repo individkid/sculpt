@@ -50,6 +50,18 @@ struct State
 
 extern int testGoon;
 
+void warpCursor(float *cursor);
+int decodeClick(int button, int action, int mods);
+void sendData(int file, int plane, enum Configure conf, float *matrix);
+void sendAdditive(int file, int plane);
+void sendSubtracive(int file, int plane);
+void sendRefine(int file, int plane, float *pierce);
+void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce);
+void sendAbsolute(int file, int plane, enum TopologyMode topology);
+void sendFacet(int file, int plane, float *matrix);
+void sendInvoke(int file, int plane, int tagbits);
+void maybeKill(int seq);
+
 int isSuspend();
 void globalInit(int nfile);
 void getUniform(struct Update *update);
