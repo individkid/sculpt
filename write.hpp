@@ -16,9 +16,6 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef WRITE_HPP
-#define WRITE_HPP
-
 #include "message.hpp"
 #include "parse.hpp"
 
@@ -50,5 +47,3 @@ public:
 	virtual void done();
 	void process(Message<Data*> &req, Message<Data*> &rsp);
 };
-
-#endif

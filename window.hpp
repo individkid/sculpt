@@ -16,9 +16,6 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
-
 #include "message.hpp"
 #include "microcode.hpp"
 
@@ -102,5 +99,3 @@ public:
 	virtual void wake();
 	virtual void done();
 };
-
-#endif

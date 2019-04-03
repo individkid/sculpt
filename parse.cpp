@@ -18,12 +18,11 @@
 
 #include <string.h>
 #include <math.h>
-#include "parse.hpp"
 
-extern "C" void getUniform(struct Update *update);
-extern "C" void firstUniform(struct Update *update);
-extern "C" void putUniform(struct Update *update);
-extern "C" void checkQuery(struct Update *update);
+#include "parse.hpp"
+extern "C" {
+#include "callback.h"
+}
 
 const char *field[] = {"AllocField","WriteField","BindField","ReadField",0};
 const char *buffer[] = {

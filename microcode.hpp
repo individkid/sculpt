@@ -16,9 +16,6 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MICROCODE_HPP
-#define MICROCODE_HPP
-
 extern "C" {
 #include "types.h"
 }
@@ -37,5 +34,3 @@ struct Microcode
 	void initConfigure(const char *vertex, const char *geometry, const char *fragment, int count, const char **feedback);
 	void initShader(MYenum type, const char *source, MYuint &handle);
 };
-
-#endif

@@ -16,9 +16,6 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OBJECT_HPP
-#define OBJECT_HPP
-
 #include "message.hpp"
 
 class Write;
@@ -51,5 +48,3 @@ struct Object
 	void initVao2u(MYuint index, MYuint handle);
 	void initVao1u(MYuint index, MYuint handle);
 };
-
-#endif

@@ -16,9 +16,6 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef POLYTOPE_HPP
-#define POLYTOPE_HPP
-
 #include "message.hpp"
 
 class Polytope;
@@ -50,5 +47,3 @@ public:
 	void connect(Script *ptr);
 	virtual void call();
 };
-
-#endif

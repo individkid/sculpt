@@ -16,9 +16,6 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SCRIPT_HPP
-#define SCRIPT_HPP
-
 #include "message.hpp"
 
 class Read;
@@ -56,5 +53,3 @@ public:
 	void connect(int i, Write *ptr);
 	virtual void call();
 };
-
-#endif

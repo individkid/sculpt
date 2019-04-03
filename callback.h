@@ -48,8 +48,6 @@ struct State
 	enum FixedMode fixed;
 };
 
-extern int testGoon;
-
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
 void sendData(int file, int plane, enum Configure conf, float *matrix);
@@ -65,6 +63,7 @@ void maybeKill(int seq);
 int isSuspend();
 void globalInit(int nfile);
 void getUniform(struct Update *update);
+void firstUniform(struct Update *update);
 void putUniform(struct Update *update);
 void checkQuery(struct Update *update);
 void changeState(struct Data *data);

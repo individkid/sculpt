@@ -16,9 +16,6 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef READ_HPP
-#define READ_HPP
-
 #include "message.hpp"
 #include "parse.hpp"
 
@@ -75,5 +72,3 @@ public:
 	int getrdlck();
 	void unrdlck();
 };
-
-#endif
