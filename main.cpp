@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < argc; i++) {polytope[i]->connect(script); script->connect(i,polytope[i]);}
 	for (int i = 0; i < argc; i++) {polytope[i]->connect(read[i]); read[i]->connect(polytope[i]);}
 
-	script->fork(); system->fork();
+	window->fork(); script->fork(); system->fork();
 	for (int i = 0; i < argc; i++) write[i]->fork();
 	for (int i = 0; i < argc; i++) polytope[i]->fork();
 	for (int i = 0; i < argc; i++) read[i]->fork();
