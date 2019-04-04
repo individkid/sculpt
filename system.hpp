@@ -35,5 +35,6 @@ public:
 	System(int n);
 	void connect(int i, Read *ptr);
 	void connect(Script *ptr);
+	virtual void init();
 	virtual void call();
 };

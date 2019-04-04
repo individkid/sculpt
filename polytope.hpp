@@ -45,5 +45,6 @@ public:
 	void connect(Window *ptr);
 	void connect(Write *ptr);
 	void connect(Script *ptr);
+	virtual void init();
 	virtual void call();
 };

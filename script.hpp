@@ -51,5 +51,6 @@ public:
 	void connect(int i, Polytope *ptr);
 	void connect(System *ptr);
 	void connect(int i, Write *ptr);
+	virtual void init();
 	virtual void call();
 };

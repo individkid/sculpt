@@ -166,6 +166,10 @@ extern "C" void signalFunc(int sig)
 
 Thread::Thread(int m) : isMain(m), isDone(0)
 {
+}
+
+void Thread::fork()
+{
 	if (isMain) {sigset_t sigs = {0}; sigaddset(&sigs, SIGUSR1);
 	if (sigprocmask(SIG_BLOCK,&sigs,0) < 0) error("cannot set mask",errno,__FILE__,__LINE__);}
 	else if (pthread_create(&thread,NULL,threadFunc,(void *)this)) error("cannot create thread",errno,__FILE__,__LINE__);

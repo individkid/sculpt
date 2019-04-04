@@ -50,6 +50,16 @@ void Polytope::connect(Script *ptr)
 	rsp2script = &ptr->polytope2rsp;
 }
 
+void Polytope::init()
+{
+	if (rsp2read == 0) error("unconnected rsp2read",0,__FILE__,__LINE__);
+	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
+	if (req2write == 0) error("unconnected req2write",0,__FILE__,__LINE__);
+	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
+	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
+	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
+}
+
 void Polytope::call()
 {
     Data *data = 0; while (read2req.get(data)) {

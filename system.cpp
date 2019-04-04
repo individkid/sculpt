@@ -37,6 +37,13 @@ void System::connect(Script *ptr)
 	rsp2script = &ptr->system2rsp;
 }
 
+void System::init()
+{
+	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
+	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
+}
+
 void System::call()
 {
 }

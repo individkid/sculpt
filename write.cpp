@@ -50,6 +50,10 @@ void Write::connect(Script *ptr)
 
 void Write::init()
 {
+	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
+	if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
+	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
+	if (rsp2command == 0) error("unconnected rsp2command",0,__FILE__,__LINE__);
 	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
 	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
 	if ((pipe = open(pname,O_WRONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);

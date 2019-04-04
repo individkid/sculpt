@@ -423,6 +423,12 @@ void Window::maybeKill(int seq)
 
 void Window::init()
 {
+    for (int i = 0; i < nfile; i++) if (object[i].rsp2command == 0) error("unconnected rsp2command",i,__FILE__,__LINE__);
+    for (int i = 0; i < nfile; i++) if (object[i].rsp2read == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+    for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
+    for (int i = 0; i < nfile; i++) if (object[i].req2polytope == 0) error("unconnected req2polytope",i,__FILE__,__LINE__);
+    for (int i = 0; i < nfile; i++) if (object[i].rsp2polytope == 0) error("unconnected rsp2polytope",i,__FILE__,__LINE__);
+    if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
     if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
     if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);

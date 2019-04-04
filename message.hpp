@@ -66,6 +66,7 @@ private:
 	int isDone;
 public:
 	Thread(int m = 0);
+	virtual void fork();
 	virtual void run();
 	virtual void init() {}
 	virtual void call() = 0;
