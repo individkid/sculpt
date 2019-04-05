@@ -32,8 +32,9 @@
 
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
 	fpos(0), mlen(0), glen(0), mnum(0), gnum(0), livelock(0),
-	command2rsp(this), window2rsp(this), polytope2rsp(this,"Read<-Data<-Polytope"),
-	system2rsp(this), script2rsp(this)
+	command2rsp(this,"Read<-Data<-Command"), window2rsp(this,"Read<-Data<-Window"),
+	polytope2rsp(this,"Read<-Data<-Polytope"), system2rsp(this,"Read<-Data<-System"),
+	script2rsp(this,"Read<-Data<-Script")
 {
 }
 
@@ -60,6 +61,11 @@ void Read::connect(Script *ptr)
 
 void Read::init()
 {
+	if (req2command == 0) error("unconnected req2command",0,__FILE__,__LINE__);
+	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
+	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
+	if (req2system == 0) error("unconnected req2system",0,__FILE__,__LINE__);
+	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
 	if ((file = open(name,O_RDWR)) < 0) error("cannot open",name,__FILE__,__LINE__);
 	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);

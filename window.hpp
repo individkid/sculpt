@@ -47,8 +47,8 @@ private:
 	int finish;
 	int nfile;
 	Object *object;
-	Message<Command*> *rsp2script;
 	Microcode microcode[Programs];
+	Message<Command*> *rsp2script;
 	Queues script;
 	Queues command;
 	Queues polytope;
@@ -79,9 +79,9 @@ private:
 public:
 	Message<Command*> command2req;
 	Message<Data*> read2req;
-	Message<Data*> write2rsp;
 	Message<Data*> polytope2rsp;
 	Message<Command*> polytope2req;
+	Message<Data*> write2rsp;
 	Message<Command*> script2req;
 	Window(int n);
 	void connect(int i, Read *ptr);

@@ -23,8 +23,9 @@
 #include "script.hpp"
 
 Polytope::Polytope(int i) : Thread(),
-	read2req(this,"Read->Data->Polytope"), window2req(this),
-	write2rsp(this), window2rsp(this), script2req(this), script2rsp(this)
+	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-Data<-Write"),
+	script2rsp(this,"Polytope<-Data<-Script"), script2req(this,"Script->Data->Polytope"),
+	window2rsp(this,"Polytope<-Data<-Window"), window2req(this,"Window->Data->Polytope")
 {
 }
 

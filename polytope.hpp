@@ -28,18 +28,18 @@ class Polytope : public Thread
 {
 private:
 	Message<Data*> *rsp2read;
-	Message<Data*> *rsp2window;
 	Message<Data*> *req2write;
-	Message<Command*> *req2window;
-	Message<Data*> *req2script;
 	Message<Data*> *rsp2script;
+	Message<Data*> *req2script;
+	Message<Data*> *rsp2window;
+	Message<Command*> *req2window;
 public:
 	Message<Data*> read2req;
-	Message<Data*> window2req;
 	Message<Data*> write2rsp;
-	Message<Command*> window2rsp;
 	Message<Data*> script2rsp;
 	Message<Data*> script2req;
+	Message<Command*> window2rsp;
+	Message<Data*> window2req;
 	Polytope(int i);
 	void connect(Read *ptr);
 	void connect(Window *ptr);

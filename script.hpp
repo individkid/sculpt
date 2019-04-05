@@ -29,22 +29,22 @@ class Script : public Thread
 private:
 	int nfile;
 	Message<Data*> **rsp2read;
-	Message<Command*> *req2window;
 	Message<Data*> **rsp2polytope;
 	Message<Data*> **req2polytope;
-	Message<Data*> *req2system;
-	Message<Data*> *rsp2system;
 	Message<Command*> **req2command;
 	Message<Data*> **req2write;
+	Message<Data*> *rsp2system;
+	Message<Data*> *req2system;
+	Message<Command*> *req2window;
 public:
 	Message<Data*> read2req;
-	Message<Command*> window2rsp;
-	Message<Data*> polytope2req;
 	Message<Data*> polytope2rsp;
-	Message<Data*> system2rsp;
-	Message<Data*> system2req;
+	Message<Data*> polytope2req;
 	Message<Command*> command2rsp;
 	Message<Data*> write2rsp;
+	Message<Data*> system2rsp;
+	Message<Data*> system2req;
+	Message<Command*> window2rsp;
 	Script(int n);
 	void connect(int i, Read *ptr);
 	void connect(Window *ptr);

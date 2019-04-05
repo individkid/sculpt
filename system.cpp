@@ -20,8 +20,9 @@
 #include "read.hpp"
 #include "script.hpp"
 
-System::System(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
-	read2req(this), script2rsp(this), script2req(this)
+System::System(int n) : nfile(n),
+	rsp2read(new Message<Data*>*[n]), read2req(this,"Read->Data->System"),
+	script2rsp(this,"System<-Data<-Script"), script2req(this,"Script->Data->System")
 {
 }
 
@@ -33,15 +34,15 @@ void System::connect(int i, Read *ptr)
 
 void System::connect(Script *ptr)
 {
-	req2script = &ptr->system2req;
 	rsp2script = &ptr->system2rsp;
+	req2script = &ptr->system2req;
 }
 
 void System::init()
 {
 	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
-	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
+	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 }
 
 void System::call()
