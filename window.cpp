@@ -483,10 +483,11 @@ void Window::wait()
 
 void Window::wake()
 {
-	glfwPostEmptyEvent();
+	if (window) glfwPostEmptyEvent();
 }
 
 void Window::done()
 {
     glfwTerminate();
+    window = 0;
 }

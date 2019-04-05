@@ -64,10 +64,11 @@ private:
 	pthread_t thread;
 	int isMain;
 	int isDone;
+	void run();
+	friend void *threadFunc(void *thread);
 public:
 	Thread(int m = 0);
-	virtual void fork();
-	virtual void run();
+	virtual void exec();
 	virtual void init() {}
 	virtual void call() = 0;
 	virtual void wait();
