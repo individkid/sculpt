@@ -168,10 +168,10 @@ void Thread::run()
 {
     struct sigaction sigact; sigemptyset(&sigact.sa_mask); sigact.sa_handler = signalFunc;
     if (sigaction(SIGUSR1, &sigact, 0) < 0) error("sigaction faile",errno,__FILE__,__LINE__);
-	init(); while (1) {if (isDone) break; call(); if (isDone) break; wait();} done();
+	valid = 1; init(); while (1) {if (isDone) break; call(); if (isDone) break; wait();} done(); valid = 0;
 }
 
-Thread::Thread(int m) : isMain(m), isDone(0)
+Thread::Thread(int m) : valid(0), isMain(m), isDone(0)
 {
 	if (isMain) {sigset_t sigs = {0}; sigaddset(&sigs, SIGUSR1);
 	if (sigprocmask(SIG_BLOCK,&sigs,0) < 0) error("cannot set mask",errno,__FILE__,__LINE__);}
@@ -193,7 +193,8 @@ void Thread::wait()
 
 void Thread::wake()
 {
-	if (pthread_kill(thread,SIGUSR1) != 0) error("cannot kill thread",errno,__FILE__,__LINE__);
+	if (valid) {
+	if (pthread_kill(thread,SIGUSR1) != 0) error("cannot kill thread",errno,__FILE__,__LINE__);}
 }
 
 void Thread::kill()

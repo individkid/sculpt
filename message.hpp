@@ -62,6 +62,7 @@ class Thread
 {
 private:
 	pthread_t thread;
+	int valid;
 	int isMain;
 	int isDone;
 	void run();
