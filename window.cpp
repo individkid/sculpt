@@ -483,7 +483,8 @@ void Window::wait()
 
 void Window::wake()
 {
-	if (window) glfwPostEmptyEvent();
+    if (window)
+	glfwPostEmptyEvent();
 }
 
 void Window::done()

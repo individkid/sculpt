@@ -168,7 +168,7 @@ void Thread::run()
 {
     struct sigaction sigact; sigemptyset(&sigact.sa_mask); sigact.sa_handler = signalFunc;
     if (sigaction(SIGUSR1, &sigact, 0) < 0) error("sigaction faile",errno,__FILE__,__LINE__);
-	init(); while (!isDone) {call(); wait();} done();
+	init(); while (1) {if (isDone) break; call(); if (isDone) break; wait();} done();
 }
 
 Thread::Thread(int m) : isMain(m), isDone(0)
