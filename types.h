@@ -175,23 +175,17 @@ struct Render
 	int count;
 	int size;
 };
-struct Response
-{
-	struct Response *next;
-	int file;
-};
 // Read->Window for bringup  
 // Script->Window for queries to microcode  
 // Polytope->Window for changing what is displayed  
 struct Command
 {
 	struct Command *next;
-	int feedback; int finish;
+	int feedback; int finish; int file;
 	struct Update *update[Fields];
 	struct Render *render;
 	struct Command *redraw;
 	struct Command *pierce;
-	struct Response *response;
 };
 struct Data
 {

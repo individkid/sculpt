@@ -41,10 +41,13 @@ public:
 	Message<Command*> window2rsp;
 	Message<Data*> window2req;
 	Polytope(int i);
+	virtual ~Polytope();
 	void connect(Read *ptr);
 	void connect(Window *ptr);
 	void connect(Write *ptr);
 	void connect(Script *ptr);
+private:
 	virtual void init();
 	virtual void call();
+	virtual void done();
 };

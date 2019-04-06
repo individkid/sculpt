@@ -28,7 +28,6 @@ private:
 	Pool<Command> commands;
 	Pool<Update> updates;
 	Pool<Render> renders;
-	Pool<Response> responses;
 	Pool<Data> datas;
 	Power<float> floats;
 	Power<char> chars;
@@ -36,6 +35,9 @@ private:
 	int get(const char *ptr, Render *&render);
 	int get(const char *ptr, int file, Command *&command);
 public:
+	Parse(const char *file, int line) :
+		commands(file,line), updates(file,line), renders(file,line),
+		datas(file,line), floats(file,line), chars(file,line) {}
 	void get(const char *ptr, int file, enum Configure conf, Data *&data);
 	void get(const char *ptr, int file, Command *&command,
 		Data *&window, Data *&polytope, Data *&system, Data *&script);

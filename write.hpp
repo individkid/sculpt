@@ -17,7 +17,6 @@
 */
 
 #include "message.hpp"
-#include "parse.hpp"
 
 class Window;
 class Polytope;
@@ -32,7 +31,6 @@ private:
 	Message<Command*> *rsp2command;
 	Message<Data*> *rsp2script;
 	Message<Data*> *rsp2window;
-	Parse parse;
 public:
 	Message<Data*> polytope2req;
 	Message<Command*> command2req;
@@ -42,6 +40,7 @@ public:
 	void connect(Window *ptr);
 	void connect(Polytope *ptr);
 	void connect(Script *ptr);
+private:
 	virtual void init();
 	virtual void call();
 	virtual void done();

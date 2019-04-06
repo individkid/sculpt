@@ -21,12 +21,23 @@
 #include "read.hpp"
 #include "write.hpp"
 #include "script.hpp"
+#include "parse.hpp"
+
+static Parse parse(__FILE__,__LINE__);
 
 Polytope::Polytope(int i) : Thread(),
 	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-Data<-Write"),
 	script2rsp(this,"Polytope<-Data<-Script"), script2req(this,"Script->Data->Polytope"),
 	window2rsp(this,"Polytope<-Data<-Window"), window2req(this,"Window->Data->Polytope")
 {
+}
+
+Polytope::~Polytope()
+{
+	Command *command; Data *data;
+	while (write2rsp.get(data)) parse.put(data);
+	while (script2rsp.get(data)) parse.put(data);
+	while (window2rsp.get(command)) parse.put(command);
 }
 
 void Polytope::connect(Read *ptr)
@@ -65,4 +76,12 @@ void Polytope::call()
 {
     Data *data = 0; while (read2req.get(data)) {
     printf("polytope:%s",data->text); rsp2read->put(data);}
+}
+
+void Polytope::done()
+{
+	Data *data;
+	while (read2req.get(data)) rsp2read->put(data);
+	while (script2req.get(data)) rsp2script->put(data);
+	while (window2req.get(data)) rsp2window->put(data);
 }

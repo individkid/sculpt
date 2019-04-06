@@ -164,13 +164,6 @@ extern "C" void signalFunc(int sig)
 {
 }
 
-void Thread::run()
-{
-    struct sigaction sigact; sigemptyset(&sigact.sa_mask); sigact.sa_handler = signalFunc;
-    if (sigaction(SIGUSR1, &sigact, 0) < 0) error("sigaction faile",errno,__FILE__,__LINE__);
-	valid = 1; init(); while (1) {if (isDone) break; call(); if (isDone) break; wait();} done(); valid = 0;
-}
-
 Thread::Thread(int m) : valid(0), isMain(m), isDone(0)
 {
 	if (isMain) {sigset_t sigs = {0}; sigaddset(&sigs, SIGUSR1);
@@ -183,14 +176,6 @@ void Thread::exec()
 	if (pthread_create(&thread,NULL,threadFunc,(void *)this)) error("cannot create thread",errno,__FILE__,__LINE__);}
 }
 
-void Thread::wait()
-{
-	sigset_t unblock;
-	if (pthread_sigmask(SIG_SETMASK,0,&unblock)) error ("cannot get mask",errno,__FILE__,__LINE__);
-	sigdelset(&unblock, SIGUSR1);
-   	if (pselect(0, 0, 0, 0, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
-}
-
 void Thread::wake()
 {
 	if (valid) {
@@ -201,4 +186,19 @@ void Thread::kill()
 {
 	isDone = 1; wake(); if (!isMain) {
 	if (pthread_join(thread,NULL) != 0) error("cannot join thread",errno,__FILE__,__LINE__);}
+}
+
+void Thread::wait()
+{
+	sigset_t unblock;
+	if (pthread_sigmask(SIG_SETMASK,0,&unblock)) error ("cannot get mask",errno,__FILE__,__LINE__);
+	sigdelset(&unblock, SIGUSR1);
+   	if (pselect(0, 0, 0, 0, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
+}
+
+void Thread::run()
+{
+    struct sigaction sigact; sigemptyset(&sigact.sa_mask); sigact.sa_handler = signalFunc;
+    if (sigaction(SIGUSR1, &sigact, 0) < 0) error("sigaction faile",errno,__FILE__,__LINE__);
+	valid = 1; init(); while (1) {if (isDone) break; call(); if (isDone) break; wait();} done(); valid = 0;
 }

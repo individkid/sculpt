@@ -23,6 +23,9 @@
 #include "read.hpp"
 #include "polytope.hpp"
 #include "write.hpp"
+#include "parse.hpp"
+
+static Parse parse(__FILE__,__LINE__);
 
 Script::Script(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
 	rsp2polytope(new Message<Data*>*[n]), req2polytope(new Message<Data*>*[n]),
@@ -32,6 +35,16 @@ Script::Script(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
 	write2rsp(this,"Script<-Data<-Write"), system2rsp(this,"Script<-Data<-System"),
 	system2req(this,"System->Data->Script"), window2rsp(this,"Script<-Command<-Window")
 {
+}
+
+Script::~Script()
+{
+	Command *command; Data *data;
+	while (polytope2rsp.get(data)) parse.put(data);
+	while (command2rsp.get(command)) parse.put(command);
+	while (write2rsp.get(data)) parse.put(data);
+	while (system2rsp.get(data)) parse.put(data);
+	while (window2rsp.get(command)) parse.put(command);
 }
 
 void Script::connect(int i, Read *ptr)
@@ -79,4 +92,13 @@ void Script::init()
 
 void Script::call()
 {
+	// TODO
+}
+
+void Script::done()
+{
+	Data *data;
+	while (read2req.get(data)) rsp2read[data->file]->put(data);
+	while (polytope2req.get(data)) rsp2polytope[data->file]->put(data);
+	while (system2req.get(data)) rsp2system->put(data);
 }

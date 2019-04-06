@@ -58,5 +58,11 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < argc; i++) polytope[i]->kill();
 	for (int i = 0; i < argc; i++) write[i]->kill();
 	system->kill(); script->kill(); window->kill();
+
+	for (int i = 0; i < argc; i++) delete read[i];
+	for (int i = 0; i < argc; i++) delete polytope[i];
+	for (int i = 0; i < argc; i++) delete write[i];
+	delete system; delete script; delete window;
+
 	return 0;
 }

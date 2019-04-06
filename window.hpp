@@ -64,18 +64,23 @@ private:
 	void swapQueue(Queue &queue, Command *&command);
 	void processCommand(Command &command);
 	void finishCommand(Command &command, Queues &queues);
-	void finishQueue(Queues &queues, void (Window::*response)(Command *command,int file));
+	void finishQueue(Queues &queues, void (Window::*response)(Command *command));
 	void startQueue(Queue &queue, Queues &queues);
-	void processResponse(Data &data);
-	void processData(Data &data);
-	void startCommand(Command &command, Queues &queues, void (Window::*response)(Command *command,int file));
-	void startQueues(Queues &queues, void (Window::*response)(Command *command,int file));
-	void processResponses(Message<Data*> &response);
-	void processRequests(Message<Data*> &request);
-	void startCommands(Message<Command*> &request, Queues &queues, void (Window::*response)(Command *command,int file));
-	void respondScript(Command *command, int file);
-	void respondCommand(Command *command, int file);
-	void respondPolytope(Command *command, int file);
+	void startCommand(Command &command, Queues &queues, void (Window::*response)(Command *command));
+	void startQueues(Queues &queues, void (Window::*response)(Command *command));
+	void startCommands(Message<Command*> &request, Queues &queues, void (Window::*response)(Command *command));
+	void processPolytope(Data &data);
+	void processWrite(Data &data);
+	void processRead(Data &data);
+	void processPolytopes();
+	void processWrites();
+	void processReads();
+	void respondScript(Command *command);
+	void respondCommand(Command *command);
+	void respondPolytope(Command *command);
+	void respondQueue(Queue &queue, void (Window::*response)(Command *command));
+	void respondQueues(Queues &queues, void (Window::*response)(Command *command));
+	void respondCommands(Message<Command*> &request, void (Window::*response)(Command *command));
 public:
 	Message<Command*> command2req;
 	Message<Data*> read2req;
@@ -84,6 +89,7 @@ public:
 	Message<Data*> write2rsp;
 	Message<Command*> script2req;
 	Window(int n);
+	virtual ~Window();
 	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
 	void connect(int i, Polytope *ptr);
@@ -93,6 +99,7 @@ public:
 	void sendScript(Data *data);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);
+private:
 	virtual void init();
 	virtual void call();
 	virtual void wait();

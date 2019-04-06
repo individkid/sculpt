@@ -110,8 +110,7 @@ int Parse::get(const char *ptr, int file, Command *&command)
 	if ((inc = literal(ptr+len," pierce"))) {len += inc;
 		inc = get(ptr+len,file,command->pierce); if (inc) len += inc;
 		else {put(command); command = 0; return 0;}}
-	Response *response = responses.get(); command->response = response;
-	response->next = 0; response->file = file;
+	command->file = file;
 	return len;
 }
 
@@ -215,8 +214,6 @@ void Parse::put(Command *command)
 	while (render) {renders.put(render); render = render->next;}
 	if (command->redraw) put(command->redraw);
 	if (command->pierce) put(command->pierce);
-	Response *response = command->response;
-	while (response) {responses.put(response); response = response->next;}
 	command = command->next;}
 }
 

@@ -39,8 +39,8 @@ extern "C" {
 
 extern Window *window;
 
-static Pool<Data> datas;
-static Power<float> floats;
+static Pool<Data> datas(__FILE__,__LINE__);
+static Power<float> floats(__FILE__,__LINE__);
 
 extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix)
 {
@@ -256,11 +256,10 @@ void Window::finishCommand(Command &command, Queues &queues)
     if (command.pierce && command.pierce->finish) return;
     if (command.pierce) swapQueue(queues.pierce,command.pierce);
     if (command.redraw) swapQueue(queues.redraw,command.redraw);
-    for (Response *next = command.response; next; next = next->next)
     command.finish = 0;
 }
 
-void Window::finishQueue(Queues &queues, void (Window::*response)(Command *command,int file))
+void Window::finishQueue(Queues &queues, void (Window::*response)(Command *command))
 {
     Command *next = 0;
     while (next != queues.query.loop) {
@@ -270,8 +269,7 @@ void Window::finishQueue(Queues &queues, void (Window::*response)(Command *comma
     glfwPollEvents();
     if (next->finish) enque(queues.query.first,queues.query.last,next);
     if (!next->finish)
-    for (Response *resp = next->response; resp; resp = resp->next)
-    (*this.*response)(next,resp->file);}
+    (*this.*response)(next);}
     queues.query.loop = queues.query.last;
 }
 
@@ -288,19 +286,7 @@ void Window::startQueue(Queue &queue, Queues &queues)
     enque(queue.first,queue.last,next);}
 }
 
-void Window::processResponse(Data &data)
-{
-    // TODO
-}
-
-void Window::processData(Data &data)
-{
-    changeState(&data);
-    object[data.file].rsp2read->put(&data);
-    glfwPollEvents();
-}
-
-void Window::startCommand(Command &command, Queues &queues, void (Window::*response)(Command *command,int file))
+void Window::startCommand(Command &command, Queues &queues, void (Window::*response)(Command *command))
 {
     Command *next = &command;
     while (next) {
@@ -310,51 +296,107 @@ void Window::startCommand(Command &command, Queues &queues, void (Window::*respo
     if (next->finish) enque(queues.query.first,queues.query.last,next);    
     Command *temp = next; next = next->next;
     if (!temp->finish)
-    for (Response *resp = temp->response; resp; resp = resp->next)
-    (*this.*response)(temp,resp->file);}
+    (*this.*response)(temp);}
 }
 
-void Window::startQueues(Queues &queues, void (Window::*response)(Command *command,int file))
+void Window::startQueues(Queues &queues, void (Window::*response)(Command *command))
 {
     finishQueue(queues,response);
     if (isSuspend()) startQueue(queues.pierce,queues);
     else startQueue(queues.redraw,queues);
 }
 
-void Window::processResponses(Message<Data*> &response)
-{
-    Data *data;
-    while (response.get(data))
-    processResponse(*data);
-}
-
-void Window::processRequests(Message<Data*> &request)
-{
-    Data *data;
-    while (request.get(data))
-    processData(*data);
-}
-
-void Window::startCommands(Message<Command*> &request, Queues &queues, void (Window::*response)(Command *command,int file))
+void Window::startCommands(Message<Command*> &request, Queues &queues, void (Window::*response)(Command *command))
 {
     Command *command;
     while (request.get(command))
     startCommand(*command,queues,response);
 }
 
-void Window::respondScript(Command *command, int file)
+void Window::processPolytope(Data &data)
+{
+    floats.put(16,data.matrix);
+    datas.put(&data);
+}
+
+void Window::processWrite(Data &data)
+{
+    switch (data.conf) {
+    case (AdditiveConf): datas.put(&data); break;
+    case (SubtractiveConf): datas.put(&data); break;
+    case (RefineConf): floats.put(3,data.pierce); datas.put(&data); break;
+    case (TweakConf): switch (data.fixed) {
+    case (RelativeMode): floats.put(3,data.pierce); datas.put(&data); break;
+    case (AbsoluteMode): datas.put(&data); break;
+    default: error("unexpected fixed",data.fixed,__FILE__,__LINE__);} break;
+    case (TransformConf): floats.put(16,data.matrix); datas.put(&data); break;
+    case (MacroConf): datas.put(&data); break;
+    default: error("unexpected conf",data.conf,__FILE__,__LINE__);}
+}
+
+void Window::processRead(Data &data)
+{
+    changeState(&data);
+    object[data.file].rsp2read->put(&data);
+    glfwPollEvents();
+}
+
+void Window::processPolytopes()
+{
+    Data *data;
+    while (polytope2rsp.get(data))
+    processPolytope(*data);
+}
+
+void Window::processWrites()
+{
+    Data *data;
+    while (polytope2rsp.get(data))
+    processWrite(*data);
+}
+
+void Window::processReads()
+{
+    Data *data;
+    while (read2req.get(data))
+    processRead(*data);
+}
+
+void Window::respondScript(Command *command)
 {
     rsp2script->put(command);
 }
 
-void Window::respondCommand(Command *command, int file)
+void Window::respondCommand(Command *command)
 {
-    object[file].rsp2command->put(command);
+    object[command->file].rsp2command->put(command);
 }
 
-void Window::respondPolytope(Command *command, int file)
+void Window::respondPolytope(Command *command)
 {
-    object[file].rsp2polytope->put(command);
+    object[command->file].rsp2polytope->put(command);
+}
+
+void Window::respondQueue(Queue &queue, void (Window::*response)(Command *command))
+{
+    while (queue.first) {
+    Command *command = queue.first;
+    (this->*response)(command);
+    deque(command,queue.last);}
+}
+
+void Window::respondQueues(Queues &queues, void (Window::*response)(Command *command))
+{
+    respondQueue(queues.redraw,response);
+    respondQueue(queues.pierce,response);
+    respondQueue(queues.query,response);
+}
+
+void Window::respondCommands(Message<Command*> &request, void (Window::*response)(Command *command))
+{
+    Command *command;
+    while (request.get(command))
+    (this->*response)(command);
 }
 
 Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
@@ -363,6 +405,12 @@ Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Ob
     write2rsp(this,"Window<-Data<-Write"), script2req(this,"Script->Data->Window")
 {
     Queues init = {0}; script = command = polytope = init;
+}
+
+Window::~Window()
+{
+    processPolytopes();
+    processWrites();
 }
 
 void Window::connect(int i, Read *ptr)
@@ -467,9 +515,9 @@ void Window::call()
     startQueues(script,&Window::respondScript);
     startQueues(command,&Window::respondCommand);
     startQueues(polytope,&Window::respondPolytope);
-    processResponses(polytope2rsp);
-    processResponses(write2rsp);
-    processRequests(read2req);
+    processPolytopes();
+    processWrites();
+    processReads();
     startCommands(script2req,script,&Window::respondScript);
     startCommands(command2req,command,&Window::respondCommand);
     startCommands(polytope2req,polytope,&Window::respondPolytope);
@@ -492,4 +540,10 @@ void Window::done()
 {
     glfwTerminate();
     window = 0;
+    respondQueues(script,&Window::respondScript);
+    respondQueues(command,&Window::respondCommand);
+    respondQueues(polytope,&Window::respondPolytope);
+    respondCommands(script2req,&Window::respondScript);
+    respondCommands(command2req,&Window::respondCommand);
+    respondCommands(polytope2req,&Window::respondPolytope);
 }

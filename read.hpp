@@ -17,7 +17,6 @@
 */
 
 #include "message.hpp"
-#include "parse.hpp"
 
 class Window;
 class Polytope;
@@ -39,7 +38,6 @@ private:
 	Message<Data*> *req2polytope;
 	Message<Data*> *req2system;
 	Message<Data*> *req2script;
-	Parse parse;
 public:
 	Message<Command*> command2rsp;
 	Message<Data*> window2rsp;
@@ -47,15 +45,17 @@ public:
 	Message<Data*> system2rsp;
 	Message<Data*> script2rsp;
 	Read(int i, const char *n);
+	virtual ~Read();
 	void connect(Window *ptr);
 	void connect(Polytope *ptr);
 	void connect(System *ptr);
 	void connect(Script *ptr);
+private:
 	virtual void init();
 	virtual void call();
 	virtual void wait();
 	virtual void done();
-	template<class T> void get(Message<T*> &msg) {T *t; while (msg.get(t)) parse.put(t);}
+	template<class T, class P> void get(Message<T*> &msg, P &parse) {T *t; while (msg.get(t)) parse.put(t);}
 	template<class T> void put(Message<T*> &msg, T *t) {if (t) msg.put(t);}
 	char *read();
 	char *split(char *&str);

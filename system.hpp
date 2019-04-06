@@ -28,13 +28,19 @@ private:
 	Message<Data*> **rsp2read;
 	Message<Data*> *req2script;
 	Message<Data*> *rsp2script;
+	int *tagbits2size;
+	int tagbits;
+	void processResponse(Data &data);
 public:
 	Message<Data*> read2req;
 	Message<Data*> script2rsp;
 	Message<Data*> script2req;
 	System(int n);
+	virtual ~System();
 	void connect(int i, Read *ptr);
 	void connect(Script *ptr);
+private:
 	virtual void init();
 	virtual void call();
+	virtual void done();
 };

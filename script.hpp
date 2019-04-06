@@ -46,11 +46,14 @@ public:
 	Message<Data*> system2req;
 	Message<Command*> window2rsp;
 	Script(int n);
+	virtual ~Script();
 	void connect(int i, Read *ptr);
 	void connect(Window *ptr);
 	void connect(int i, Polytope *ptr);
 	void connect(System *ptr);
 	void connect(int i, Write *ptr);
+private:
 	virtual void init();
 	virtual void call();
+	virtual void done();
 };

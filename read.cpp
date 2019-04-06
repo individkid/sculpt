@@ -29,6 +29,9 @@
 #include "polytope.hpp"
 #include "system.hpp"
 #include "script.hpp"
+#include "parse.hpp"
+
+static Parse parse(__FILE__,__LINE__);
 
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
 	fpos(0), mlen(0), glen(0), mnum(0), gnum(0), livelock(0),
@@ -36,6 +39,15 @@ Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s
 	polytope2rsp(this,"Read<-Data<-Polytope"), system2rsp(this,"Read<-Data<-System"),
 	script2rsp(this,"Read<-Data<-Script")
 {
+}
+
+Read::~Read()
+{
+	get(command2rsp,parse);
+	get(window2rsp,parse);
+    get(polytope2rsp,parse);
+    get(system2rsp,parse);
+    get(script2rsp,parse);
 }
 
 void Read::connect(Window *ptr)
@@ -74,11 +86,11 @@ void Read::init()
 
 void Read::call()
 {
-	get(command2rsp);
-	get(window2rsp);
-    get(polytope2rsp);
-    get(system2rsp);
-    get(script2rsp);
+	get(command2rsp,parse);
+	get(window2rsp,parse);
+    get(polytope2rsp,parse);
+    get(system2rsp,parse);
+    get(script2rsp,parse);
 	off_t pos = fpos;
 	char *str = read();
 	while (1) {

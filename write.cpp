@@ -26,6 +26,9 @@
 #include "window.hpp"
 #include "polytope.hpp"
 #include "script.hpp"
+#include "parse.hpp"
+
+static Parse parse(__FILE__,__LINE__);
 
 Write::Write(int i, const char *n) : Thread(), name(n), pipe(-1),
 	polytope2req(this,"Polytope->Data->Write"), command2req(this,"Script->Command->Write"),
@@ -70,6 +73,11 @@ void Write::call()
 void Write::done()
 {
 	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
+	Command *command; Data *data;
+	while (polytope2req.get(data)) rsp2polytope->put(data);
+	while (command2req.get(command)) rsp2command->put(command);
+	while (script2req.get(data)) rsp2script->put(data);
+	while (window2req.get(data)) rsp2window->put(data);
 }
 
 void Write::process(Message<Data*> &req, Message<Data*> &rsp)

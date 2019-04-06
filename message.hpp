@@ -65,16 +65,18 @@ private:
 	int valid;
 	int isMain;
 	int isDone;
-	void run();
-	friend void *threadFunc(void *thread);
 public:
 	Thread(int m = 0);
 	virtual void exec();
-	virtual void init() {}
-	virtual void call() = 0;
-	virtual void wait();
 	virtual void wake();
 	virtual void kill();
+protected:
+	virtual void wait();
+private:
+	void run();
+	friend void *threadFunc(void *thread);
+	virtual void init() {}
+	virtual void call() = 0;
 	virtual void done() {}
 };
 
@@ -127,47 +129,61 @@ template <class T>
 class Pool
 {
 private:
-	Next<T*> *full;
-	Next<T*> *free;
+	const char *file;
+	int line;
+	Next<T*> *full; // box is significant
+	Next<T*> *free; // box is overwritable
 	int size;
 public:
-	Pool(int s = 1) : full(0), free(0), size(s) {}
+	Pool(const char *f, int l, int s = 1) : file(f), line(l), full(0), free(0), size(s) {}
+	~Pool()
+	{
+		Next<T*> *ptr;
+		if (free) error("nonempty pool",0,file,line);
+		for (ptr = full; ptr; ptr = ptr->next)
+		if (size == 1) delete ptr->box; else delete[] ptr->box;
+	}
 	T *get()
 	{
-		if (!full) return (size == 1 ? new T() : new T[size]);
-		Next<T*> *ptr = full; remove(full,ptr); insert(free,ptr);
+		Next<T*> *ptr;
+		if (!full) {
+		ptr = new Next<T*>();
+		ptr->box = (size == 1 ? new T() : new T[size]);
+		insert(full,ptr);}
+		ptr = full; remove(full,ptr); insert(free,ptr);
 		return ptr->box;
 	}
 	void put(T *val)
 	{
 		Next<T*> *ptr;
-		if (free) {ptr = free; remove(free,ptr);}
-		else ptr = new Next<T*>();
+		if (!free) error("empty pool",0,file,line);
+		ptr = free; remove(free,ptr); insert(full,ptr);
 		ptr->box = val;
-		insert(full,ptr);
 	}
 };
 
 template <class T>
 class Power {
 private:
+	const char *file;
+	int line;
 	Pool<T> *pool[10];
 public:
-	Power() {for (int i = 0; i < 10; i++) pool[i] = 0;}
+	Power(const char *f, int l) : file(f), line(l) {for (int i = 0; i < 10; i++) pool[i] = 0;}
 	Pool<T> &operator[](int i)
 	{
-		if (!pool[i]) pool[i] = new Pool<T>(1<<i);
+		if (!pool[i]) pool[i] = new Pool<T>(file,line,1<<i);
 		return *pool[i];}
 	T *get(int siz)
 	{
 		int pow = 0; while (siz>(1<<pow)) pow++;
-		if (pow >= 10) error("string too size",siz,__FILE__,__LINE__);
+		if (pow >= 10) error("string too size",siz,file,line);
 		return (*this)[pow].get();
 	}
 	void put(int siz, T *ptr)
 	{
 		int pow = 0; while (siz>(1<<pow)) pow++;
-		if (pow >= 10) error("string too size",siz,__FILE__,__LINE__);
+		if (pow >= 10) error("string too size",siz,file,line);
 		(*this)[pow].put(ptr);
 	}
 };
@@ -187,13 +203,13 @@ private:
 public:
 	Message(Thread *ptr) : str(0), thread(ptr), head(0), tail(0), pool(0), wait(0)
 	{
-		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",errno,__FILE__,__LINE__);
-		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",errno,__FILE__,__LINE__);
+		if (pthread_mutex_init(&mutex,NULL) != 0) error((str?str:"message invalid mutex"),errno,__FILE__,__LINE__);
+		if (pthread_cond_init(&cond,NULL) != 0) error((str?str:"message invalid cond"),errno,__FILE__,__LINE__);
 	}
 	Message(Thread *ptr, const char *s) : str(s), thread(ptr), head(0), tail(0), pool(0), wait(0)
 	{
-		if (pthread_mutex_init(&mutex,NULL) != 0) error("message invalid mutex",errno,__FILE__,__LINE__);
-		if (pthread_cond_init(&cond,NULL) != 0) error("message invalid cond",errno,__FILE__,__LINE__);
+		if (pthread_mutex_init(&mutex,NULL) != 0) error((str?str:"message invalid mutex"),errno,__FILE__,__LINE__);
+		if (pthread_cond_init(&cond,NULL) != 0) error((str?str:"message invalid cond"),errno,__FILE__,__LINE__);
 	}
 	void put(T val)
 	{
@@ -202,24 +218,24 @@ public:
 		if (pool) {ptr = pool; remove(pool,ptr);}
 		else ptr = new Next<T>();
 		ptr->box = val;
-		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",errno,__FILE__,__LINE__);		
+		if (pthread_mutex_lock(&mutex) != 0) error((str?str:"mutex invalid lock"),errno,__FILE__,__LINE__);		
 		while (head && wait) 
-		if (pthread_cond_wait(&cond,&mutex) != 0) error("cond invalid wait",errno,__FILE__,__LINE__);
+		if (pthread_cond_wait(&cond,&mutex) != 0) error((str?str:"cond invalid wait"),errno,__FILE__,__LINE__);
 		enque(head,tail,ptr);
 		if (thread) thread->wake();
-		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",errno,__FILE__,__LINE__);
+		if (pthread_mutex_unlock(&mutex) != 0) error((str?str:"mutex invalid unlock"),errno,__FILE__,__LINE__);
 	}
 	int get(T &val)
 	{
 		if (!head) return 0;
 		wait = 1;
-		if (pthread_mutex_lock(&mutex) != 0) error("mutex invalid lock",errno,__FILE__,__LINE__);		
+		if (pthread_mutex_lock(&mutex) != 0) error((str?str:"mutex invalid lock"),errno,__FILE__,__LINE__);		
 		Next<T> *ptr = deque(head,tail);
 		val = ptr->box;
 		insert(pool,ptr);
 		wait = 0;
-		if (pthread_cond_signal(&cond) != 0) error("cond invalid signal",errno,__FILE__,__LINE__);
-		if (pthread_mutex_unlock(&mutex) != 0) error("mutex invalid unlock",errno,__FILE__,__LINE__);
+		if (pthread_cond_signal(&cond) != 0) error((str?str:"cond invalid signal"),errno,__FILE__,__LINE__);
+		if (pthread_mutex_unlock(&mutex) != 0) error((str?str:"mutex invalid unlock"),errno,__FILE__,__LINE__);
 		if (str) std::cout << "get " << str << std::endl;
 		return 1;
 	}
