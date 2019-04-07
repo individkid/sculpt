@@ -139,7 +139,7 @@ public:
 	~Pool()
 	{
 		Next<T*> *ptr;
-		if (free) error("nonempty pool",0,file,line);
+		if (free) {message("nonempty pool",0,file,line); return;}
 		for (ptr = full; ptr; ptr = ptr->next)
 		if (size == 1) delete ptr->box; else delete[] ptr->box;
 	}
@@ -213,7 +213,7 @@ public:
 	}
 	void put(T val)
 	{
-		if (str) std::cout << "put " << str << std::endl;
+		if (DEBUG && str) std::cout << "put " << str << std::endl;
 		Next<T> *ptr;
 		if (pool) {ptr = pool; remove(pool,ptr);}
 		else ptr = new Next<T>();
@@ -236,7 +236,7 @@ public:
 		wait = 0;
 		if (pthread_cond_signal(&cond) != 0) error((str?str:"cond invalid signal"),errno,__FILE__,__LINE__);
 		if (pthread_mutex_unlock(&mutex) != 0) error((str?str:"mutex invalid unlock"),errno,__FILE__,__LINE__);
-		if (str) std::cout << "get " << str << std::endl;
+		if (DEBUG && str) std::cout << "get " << str << std::endl;
 		return 1;
 	}
 };

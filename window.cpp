@@ -491,15 +491,15 @@ void Window::init()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwSetErrorCallback(displayError);
     window = glfwCreateWindow(1024, 768, "SideGeo", NULL, NULL);
-    if (!window) {std::cerr << "Failed to open GLFW window" << std::endl; glfwTerminate(); exit(-1);}
+    if (!window) error("Failed to open GLFW window",0,__FILE__,__LINE__);
     glfwSetKeyCallback(window, displayKey);
     glfwSetCursorPosCallback(window, displayCursor);
     glfwSetScrollCallback(window, displayScroll);
     glfwSetMouseButtonCallback(window, displayClick);
     glfwMakeContextCurrent(window);
-    if (gl3wInit()) {std::cerr << "Failed to initialize OpenGL" << std::endl; exit(-1);}
-    if (!gl3wIsSupported(3, 3)) {std::cerr << "OpenGL 3.3 not supported\n" << std::endl; exit(-1);}
-    std::cout << "OpenGL " << glGetString(GL_VERSION) << " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    if (gl3wInit()) error("Failed to initialize OpenGL",0,__FILE__,__LINE__);
+    if (!gl3wIsSupported(3, 3)) error("OpenGL 3.3 not supported",0,__FILE__,__LINE__);
+    if (DEBUG) std::cout << "OpenGL " << glGetString(GL_VERSION) << " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glClearColor(0.2f, 0.3f, 0.2f, 1.0f);

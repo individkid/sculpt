@@ -27,6 +27,9 @@
 #define INVALID 1.0e37
 #define MMAP 256
 #define BREAK 97
+#ifndef DEBUG
+#define DEBUG 0
+#endif
 
 struct GLFWwindow;
 typedef unsigned MYenum;

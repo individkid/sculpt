@@ -392,7 +392,7 @@ void displayError(int error, const char *description)
 
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mods)
 {
-    if (action == 1) printf("GLFW key %d %d %d %d\n",key,scancode,action,mods);
+    if (DEBUG && action == 1) printf("GLFW key %d %d %d %d\n",key,scancode,action,mods);
     if (key == 256 && action == 1) maybeKill(1);
     else if (key == 257 && action == 1) maybeKill(2);
     else if (action == 1) maybeKill(0);
