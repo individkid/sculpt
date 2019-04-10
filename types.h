@@ -216,7 +216,7 @@ struct Data
 	// Window->MacroConf->Polytope for tagbits associated with click  
 	// Polytope->MacroConf->Script for starting macro from click  
 	// System->MetricConf->Script for getting value from metric  
-	struct {int tagbits; float *argument; char *script;};
+	struct {int tagbits; union {float *argument; int *ident;}; char *script;};
 	// Window->TweakConf->Polytope for tweaking planes  
 	// Window->RefineConf->Polytope for adding planes  
 	struct {enum TopologyMode topology; enum FixedMode fixed; float *pierce;};

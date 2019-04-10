@@ -36,6 +36,33 @@ private:
 	Message<Data*> *rsp2system;
 	Message<Data*> *req2system;
 	Message<Command*> *req2window;
+	void requestPolytope(/*TODO*/);
+	void requestCommand(/*TODO*/);
+	void requestWrite(/*TODO*/);
+	void requestSystem(/*TODO*/);
+	void requestWindow(/*TODO*/);
+	void respondRead(Data *data);
+	void respondPolytope(Data *data);
+	void responsePolytope(Data *data);
+	void responseCommand(Command *command);
+	void responseWrite(Data *data);
+	void respondSystem(Data *data);
+	void responseSystem(Data *data);
+	void responseWindow(Command *command);
+	void processRead(Data *data, void (Script::*respond)(Data *data));
+	void processPolytope(Data *data, void (Script::*respond)(Data *data));
+	void processedPolytope(Data *data, void (Script::*respond)(Data *data));
+	void processedCommand(Command *command, void (Script::*respond)(Command *command));
+	void processedWrite(Data *data, void (Script::*respond)(Data *data));
+	void processSystem(Data *data, void (Script::*respond)(Data *data));
+	void processedSystem(Data *data, void (Script::*respond)(Data *data));
+	void processedWindow(Command *command, void (Script::*respond)(Command *command));
+	void callbackCommand(Command *command, void (Script::*respond)(Command *command));
+	void callbackData(Data *data, void (Script::*respond)(Data *data));
+	void processCommands(Message<Command*> &message, void (Script::*process)(Command *command,
+		void (Script::*respond)(Command *command)), void (Script::*respond)(Command *command));
+	void processDatas(Message<Data*> &message, void (Script::*process)(Data *command,
+		void (Script::*respond)(Data *command)), void (Script::*respond)(Data *data));
 public:
 	Message<Data*> read2req;
 	Message<Data*> polytope2rsp;

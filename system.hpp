@@ -28,9 +28,16 @@ private:
 	Message<Data*> **rsp2read;
 	Message<Data*> *req2script;
 	Message<Data*> *rsp2script;
-	int *tagbits2size;
-	int tagbits;
-	void processResponse(Data &data);
+	void requestScript(/*TODO*/);
+	void respondRead(Data *data);
+	void responseScript(Data *data);
+	void respondScript(Data *data);
+	void processRead(Data *data, void (System::*respond)(Data *data));
+	void processedScript(Data *data, void (System::*respond)(Data *data));
+	void processScript(Data *data, void (System::*respond)(Data *data));
+	void callbackData(Data *data, void (System::*respond)(Data *data));
+	void processDatas(Message<Data*> &message, void (System::*process)(Data *command,
+		void (System::*respond)(Data *command)), void (System::*respond)(Data *data));
 public:
 	Message<Data*> read2req;
 	Message<Data*> script2rsp;

@@ -228,7 +228,7 @@ void Window::swapQueue(Queue &queue, Command *&command)
     queue.loop = queue.last; command = temp;}
 }
 
-void Window::processCommand(Command &command)
+void Window::startCommand(Command &command)
 {
     for (Update *next = command.update[AllocField]; next; next = next->next) allocBuffer(*next);
     for (Update *next = command.update[WriteField]; next; next = next->next) writeBuffer(*next);
@@ -247,124 +247,61 @@ void Window::processCommand(Command &command)
     command.finish = 1;
 }
 
-void Window::finishCommand(Command &command, Queues &queues)
+void Window::finishCommand(Command &command)
 {
     for (Update *next = command.update[ReadField]; next; next = next->next) {
     if (next->finish) readBuffer(*next);
     if (next->finish) return;}
-    if (command.pierce && queues.pierce.last != queues.pierce.loop) return;
+    if (command.pierce && current->pierce.last != current->pierce.loop) return;
     if (command.pierce && command.pierce->finish) return;
-    if (command.pierce) swapQueue(queues.pierce,command.pierce);
-    if (command.redraw) swapQueue(queues.redraw,command.redraw);
+    if (command.pierce) swapQueue(current->pierce,command.pierce);
+    if (command.redraw) swapQueue(current->redraw,command.redraw);
     command.finish = 0;
 }
 
-void Window::finishQueue(Queues &queues, void (Window::*response)(Command *command))
+void Window::processRedraw(Command *command, void (Window::*respond)(Command *command))
 {
-    Command *next = 0;
-    while (next != queues.query.loop) {
-    next = deque(queues.query.first,queues.query.last);
-    if (!next->finish) processCommand(*next);
-    if (next->finish) finishCommand(*next,queues);
-    glfwPollEvents();
-    if (next->finish) enque(queues.query.first,queues.query.last,next);
-    if (!next->finish)
-    (*this.*response)(next);}
-    queues.query.loop = queues.query.last;
+    if (!command->finish) startCommand(*command);
+    if (command->finish) finishCommand(*command);
+    if (!command->finish) {
+    remove(current->redraw.first,current->redraw.last,command);
+    enque(current->redraw.first,current->redraw.last,command);}
 }
 
-void Window::startQueue(Queue &queue, Queues &queues)
+void Window::processPierce(Command *command, void (Window::*respond)(Command *command))
 {
-    Command *next = 0;
-    while (next != queue.loop) {
-    next = queue.first;
-    if (!next->finish) processCommand(*next);
-    if (next->finish) finishCommand(*next,queues);
-    glfwPollEvents();
-    if (next->finish) break;
-    deque(queue.first,queue.last);
-    enque(queue.first,queue.last,next);}
+    if (!command->finish) startCommand(*command);
+    if (command->finish) finishCommand(*command);
+    if (!command->finish) {
+    remove(current->pierce.first,current->pierce.last,command);
+    enque(current->pierce.first,current->pierce.last,command);}
 }
 
-void Window::startCommand(Command &command, Queues &queues, void (Window::*response)(Command *command))
+void Window::processQuery(Command *command, void (Window::*respond)(Command *command))
 {
-    Command *next = &command;
-    while (next) {
-    if (!next->finish) processCommand(*next);
-    if (next->finish) finishCommand(*next,queues);
-    glfwPollEvents();
-    if (next->finish) enque(queues.query.first,queues.query.last,next);    
-    Command *temp = next; next = next->next;
-    if (!temp->finish)
-    (*this.*response)(temp);}
+    if (!command->finish) startCommand(*command);
+    if (command->finish) finishCommand(*command);
+    if (!command->finish) {remove(current->query.first,current->query.last,command);
+    (this->*respond)(command);}
 }
 
-void Window::startQueues(Queues &queues, void (Window::*response)(Command *command))
+void Window::processCommand(Command *command, void (Window::*respond)(Command *command))
 {
-    finishQueue(queues,response);
-    if (isSuspend()) startQueue(queues.pierce,queues);
-    else startQueue(queues.redraw,queues);
+    if (!command->finish) startCommand(*command);
+    if (command->finish) finishCommand(*command);
+    if (command->finish) enque(current->query.first,current->query.last,command);
+    else (this->*respond)(command);
 }
 
-void Window::startCommands(Message<Command*> &request, Queues &queues, void (Window::*response)(Command *command))
+void Window::processRespond(Command *command, void (Window::*respond)(Command *command))
 {
-    Command *command;
-    while (request.get(command))
-    startCommand(*command,queues,response);
+    (this->*respond)(command);
 }
 
-void Window::processPolytope(Data &data)
+void Window::processRead(Data *data)
 {
-    floats.put(16,data.matrix);
-    datas.put(&data);
-}
-
-void Window::processWrite(Data &data)
-{
-    switch (data.conf) {
-    case (AdditiveConf): datas.put(&data); break;
-    case (SubtractiveConf): datas.put(&data); break;
-    case (RefineConf): floats.put(3,data.pierce); datas.put(&data); break;
-    case (TweakConf): switch (data.fixed) {
-    case (RelativeMode): floats.put(3,data.pierce); datas.put(&data); break;
-    case (AbsoluteMode): datas.put(&data); break;
-    default: error("unexpected fixed",data.fixed,__FILE__,__LINE__);} break;
-    case (TransformConf): floats.put(16,data.matrix); datas.put(&data); break;
-    case (MacroConf): datas.put(&data); break;
-    default: error("unexpected conf",data.conf,__FILE__,__LINE__);}
-}
-
-void Window::processRead(Data &data)
-{
-    changeState(&data);
-    object[data.file].rsp2read->put(&data);
-    glfwPollEvents();
-}
-
-void Window::processPolytopes()
-{
-    Data *data;
-    while (polytope2rsp.get(data))
-    processPolytope(*data);
-}
-
-void Window::processWrites()
-{
-    Data *data;
-    while (polytope2rsp.get(data))
-    processWrite(*data);
-}
-
-void Window::processReads()
-{
-    Data *data;
-    while (read2req.get(data))
-    processRead(*data);
-}
-
-void Window::respondScript(Command *command)
-{
-    rsp2script->put(command);
+    changeState(data);
+    respondRead(data);
 }
 
 void Window::respondCommand(Command *command)
@@ -372,34 +309,79 @@ void Window::respondCommand(Command *command)
     object[command->file].rsp2command->put(command);
 }
 
+void Window::respondRead(Data *data)
+{
+    object[data->file].rsp2read->put(data);
+}
+
+void Window::responsePolytope(Data *data)
+{
+    floats.put(16,data->matrix);
+    datas.put(data);
+}
+
 void Window::respondPolytope(Command *command)
 {
     object[command->file].rsp2polytope->put(command);
 }
 
-void Window::respondQueue(Queue &queue, void (Window::*response)(Command *command))
+void Window::responseWrite(Data *data)
+{
+    switch (data->conf) {
+    case (AdditiveConf): datas.put(data); break;
+    case (SubtractiveConf): datas.put(data); break;
+    case (RefineConf): floats.put(3,data->pierce); datas.put(data); break;
+    case (TweakConf): switch (data->fixed) {
+    case (RelativeMode): floats.put(3,data->pierce); datas.put(data); break;
+    case (AbsoluteMode): datas.put(data); break;
+    default: error("unexpected fixed",data->fixed,__FILE__,__LINE__);} break;
+    case (TransformConf): floats.put(16,data->matrix); datas.put(data); break;
+    case (MacroConf): datas.put(data); break;
+    default: error("unexpected conf",data->conf,__FILE__,__LINE__);}
+}
+
+void Window::respondScript(Command *command)
+{
+    rsp2script->put(command);
+}
+
+void Window::processTwice(Queues &queues, void (Window::*respond)(Command *command))
+{
+    processQueues(queues,respond);
+    processQueues(queues,respond);
+}
+
+void Window::processQueues(Queues &queues, void (Window::*respond)(Command *command))
+{
+    current = &queues;
+    processQueue(queues.redraw,&Window::processRedraw,respond);
+    processQueue(queues.pierce,&Window::processPierce,respond);
+    processQueue(queues.query,&Window::processQuery,respond);
+}
+
+void Window::processQueue(Queue &queue, void (Window::*process)(Command *command,
+    void (Window::*respond)(Command *command)), void (Window::*respond)(Command *command))
 {
     while (queue.first) {
     Command *command = queue.first;
-    (this->*response)(command);
-    deque(command,queue.last);}
+    (this->*process)(command,respond);
+    if (command->finish) return;
+    if (command == queue.loop) break;}
+    queue.loop = queue.last;
 }
 
-void Window::respondQueues(Queues &queues, void (Window::*response)(Command *command))
+void Window::processCommands(Message<Command*> &message, void (Window::*process)(Command *command,
+    void (Window::*respond)(Command *command)), void (Window::*respond)(Command *command))
 {
-    respondQueue(queues.redraw,response);
-    respondQueue(queues.pierce,response);
-    respondQueue(queues.query,response);
+    Command *command; while (message.get(command)) (this->*process)(command,respond);
 }
 
-void Window::respondCommands(Message<Command*> &request, void (Window::*response)(Command *command))
+void Window::processDatas(Message<Data*> &message, void (Window::*process)(Data *data))
 {
-    Command *command;
-    while (request.get(command))
-    (this->*response)(command);
+    Data *data; while (message.get(data)) (this->*process)(data);
 }
 
-Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
+Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), current(0), object(new Object[n]),
     command2req(this,"Read->Command->Window"), read2req(this,"Read->Data->Window"),
     polytope2rsp(this,"Window<-Data<-Polytope"), polytope2req(this,"Polytope->Data->Window"),
     write2rsp(this,"Window<-Data<-Write"), script2req(this,"Script->Data->Window")
@@ -409,8 +391,8 @@ Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Ob
 
 Window::~Window()
 {
-    processPolytopes();
-    processWrites();
+    processDatas(polytope2rsp,&Window::responsePolytope);
+    processDatas(write2rsp,&Window::responseWrite);
 }
 
 void Window::connect(int i, Read *ptr)
@@ -512,15 +494,14 @@ void Window::init()
 
 void Window::call()
 {
-    startQueues(script,&Window::respondScript);
-    startQueues(command,&Window::respondCommand);
-    startQueues(polytope,&Window::respondPolytope);
-    processPolytopes();
-    processWrites();
-    processReads();
-    startCommands(script2req,script,&Window::respondScript);
-    startCommands(command2req,command,&Window::respondCommand);
-    startCommands(polytope2req,polytope,&Window::respondPolytope);
+
+    processQueues(script,&Window::respondScript);
+    processQueues(command,&Window::respondCommand);
+    processQueues(polytope,&Window::respondPolytope);
+    processCommands(script2req,&Window::processCommand,&Window::respondScript);
+    processCommands(command2req,&Window::processCommand,&Window::respondCommand);
+    processCommands(polytope2req,&Window::processCommand,&Window::respondPolytope);
+    processDatas(read2req,&Window::processRead);
 }
 
 void Window::wait()
@@ -540,10 +521,11 @@ void Window::done()
 {
     glfwTerminate();
     window = 0;
-    respondQueues(script,&Window::respondScript);
-    respondQueues(command,&Window::respondCommand);
-    respondQueues(polytope,&Window::respondPolytope);
-    respondCommands(script2req,&Window::respondScript);
-    respondCommands(command2req,&Window::respondCommand);
-    respondCommands(polytope2req,&Window::respondPolytope);
+    processTwice(script,&Window::respondScript);
+    processTwice(command,&Window::respondCommand);
+    processTwice(polytope,&Window::respondPolytope);
+    processCommands(script2req,&Window::processRespond,&Window::respondScript);
+    processCommands(command2req,&Window::processRespond,&Window::respondCommand);
+    processCommands(polytope2req,&Window::processRespond,&Window::respondPolytope);
+    processDatas(read2req,&Window::respondRead);
 }

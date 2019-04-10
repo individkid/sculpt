@@ -98,6 +98,12 @@ void remove(T *&list, T *ptr)
 	error("remove missing ptr",ptr,__FILE__,__LINE__);
 }
 template <class T>
+void remove(T *&head, T *&tail, T *ptr)
+{
+	remove(head,ptr);
+	if (head == 0) tail = 0;
+}
+template <class T>
 void enque(T *&head, T *&tail, T *ptr)
 {
 	if ((head == 0) != (tail == 0)) error("enque invalid queue",head,__FILE__,__LINE__);
@@ -170,6 +176,10 @@ private:
 	Pool<T> *pool[10];
 public:
 	Power(const char *f, int l) : file(f), line(l) {for (int i = 0; i < 10; i++) pool[i] = 0;}
+	~Power()
+	{
+		for (int i = 0; i < 10; i++) if (pool[i]) delete pool[i];
+	}
 	Pool<T> &operator[](int i)
 	{
 		if (!pool[i]) pool[i] = new Pool<T>(file,line,1<<i);
@@ -185,6 +195,43 @@ public:
 		int pow = 0; while (siz>(1<<pow)) pow++;
 		if (pow >= 10) error("string too size",siz,file,line);
 		(*this)[pow].put(ptr);
+	}
+};
+
+template <class S, class T>
+class Sparse {
+private:
+	Power<int> vlds;
+	Power<S> keys;
+	Power<T> vals;
+	int *vld;
+	S *key;
+	T *val;
+	int size;
+public:
+	Sparse(const char *f, int l) : vlds(f,l), keys(f,l), vals(f,l),
+		vld(vlds.get(1)), key(keys.get(1)), val(vals.get(1)), size(1) {}
+	~Sparse()
+	{
+		vlds.put(size,vld); keys.put(size,key); vals.put(size,val);
+	}
+	T &operator[](S s)
+	{
+		for (int i = 0; i < size; i++) if (vld[i] && key[i] == s) return val[i];
+		for (int i = 0; i < size; i++) if (!vld[i]) {vld[i] = 1; return val[i];}
+		int temp = size; size *= 2;
+		int *tvld = vld; vld = vlds.get(size);
+		S *tkey = key; key = keys.get(size);
+		T *tval = val; val = vals.get(size);
+		for (int i = 0; i < size; i++) vld[i] = (i < temp ? tvld[i] : 0);
+		for (int i = 0; i < temp; i++) key[i] = tkey[i];
+		for (int i = 0; i < temp; i++) val[i] = tval[i];
+		vlds.put(temp,tvld); keys.put(temp,tkey); vals.put(temp,tval);
+		vld[temp] = 1; return val[temp];
+	}
+	void remove(S s)
+	{
+		for (int i = 0; i < size; i++) if (vld[i] && key[i] == s) {vld[i] = 0; return;}
 	}
 };
 
