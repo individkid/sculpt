@@ -1,6 +1,6 @@
 #! /usr/bin/lldb -f ./a.out -s
 breakpoint set -b main
-breakpoint set -b malloc_error_break
 run test.--
+breakpoint set -b malloc_error_break
 process handle -n false -p true -s false SIGUSR1
 continue

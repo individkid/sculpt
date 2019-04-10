@@ -114,8 +114,8 @@ void Read::wait()
 	if (trywrlck()) {
 	if (race()) {unwrlck(); return;}
 	char *str = parse.setup("");
-	if (intr()) {unwrlck(); return;}
-	while (check()) if (!read(str)) {unwrlck(); Thread::wait(); return;}
+	if (intr()) {parse.cleanup(str); unwrlck(); return;}
+	while (check()) if (!read(str)) {parse.cleanup(str); unwrlck(); Thread::wait(); return;}
 	if (sync(str,"--matrix",mpos,mlen,mnum)) {parse.cleanup(str); unwrlck(); return;}
 	if (sync(str,"--global",gpos,glen,gnum)) {parse.cleanup(str); unwrlck(); return;}
 	write(str); parse.cleanup(str); unwrlck(); return;}

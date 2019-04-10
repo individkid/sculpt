@@ -21,9 +21,9 @@
 #include "read.hpp"
 #include "write.hpp"
 #include "script.hpp"
-#include "parse.hpp"
 
-static Parse parse(__FILE__,__LINE__);
+static Pool<Data> datas(__FILE__,__LINE__);
+static Pool<Command> commands(__FILE__,__LINE__);
 
 Polytope::Polytope(int i) : Thread(),
 	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-Data<-Write"),
@@ -35,9 +35,9 @@ Polytope::Polytope(int i) : Thread(),
 Polytope::~Polytope()
 {
 	Command *command; Data *data;
-	while (write2rsp.get(data)) parse.put(data);
-	while (script2rsp.get(data)) parse.put(data);
-	while (window2rsp.get(command)) parse.put(command);
+	while (write2rsp.get(data)) datas.put(data);
+	while (script2rsp.get(data)) datas.put(data);
+	while (window2rsp.get(command)) commands.put(command);
 }
 
 void Polytope::connect(Read *ptr)

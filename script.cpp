@@ -23,9 +23,9 @@
 #include "read.hpp"
 #include "polytope.hpp"
 #include "write.hpp"
-#include "parse.hpp"
 
-static Parse parse(__FILE__,__LINE__);
+static Pool<Data> datas(__FILE__,__LINE__);
+static Pool<Command> commands(__FILE__,__LINE__);
 
 void Script::requestPolytope(/*TODO*/)
 {
@@ -75,17 +75,17 @@ void Script::respondPolytope(Data *data)
 
 void Script::responsePolytope(Data *data)
 {
-	parse.put(data);
+	datas.put(data);
 }
 
 void Script::responseCommand(Command *command)
 {
-	parse.put(command);
+	commands.put(command);
 }
 
 void Script::responseWrite(Data *data)
 {
-	parse.put(data);
+	datas.put(data);
 }
 
 void Script::respondSystem(Data *data)
@@ -95,12 +95,12 @@ void Script::respondSystem(Data *data)
 
 void Script::responseSystem(Data *data)
 {
-	parse.put(data);
+	datas.put(data);
 }
 
 void Script::responseWindow(Command *command)
 {
-	parse.put(command);
+	commands.put(command);
 }
 
 void Script::processRead(Data *data, void (Script::*respond)(Data *data))
