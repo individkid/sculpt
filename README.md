@@ -45,6 +45,7 @@ The -- commands are as follows.
 --invoke script to run if this command is at end of file  
 --command send command to window thread  
 --configure change aspect ratio granularity base delay etc  
+--timewheel start stop timewheel, change speaker volume, etc  
 --test run tests of functions in the polytope thread  
 
 Threads send structs to each other. Each sent struct is sent back to the sender for deallocation.  

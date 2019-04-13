@@ -46,10 +46,9 @@ private:
 	GLFWwindow *window;
 	int finish;
 	int nfile;
-	Queues script;
 	Queues command;
 	Queues polytope;
-	Queues *current;
+	Queues script;
 	Object *object;
 	Microcode microcode[Programs];
 	Message<Command*> *rsp2script;
@@ -64,26 +63,11 @@ private:
 	void unbindTexture2d();
 	void swapQueue(Queue &queue, Command *&command);
 	void startCommand(Command &command);
-	void finishCommand(Command &command);
-	void processRedraw(Command *command, void (Window::*respond)(Command *command));
-	void processPierce(Command *command, void (Window::*respond)(Command *command));
-	void processQuery(Command *command, void (Window::*respond)(Command *command));
-	void processCommand(Command *command, void (Window::*respond)(Command *command));
-	void processRespond(Command *command, void (Window::*respond)(Command *command));
-	void processRead(Data *data);
-	void respondCommand(Command *command);
-	void respondRead(Data *data);
-	void responsePolytope(Data *data);
-	void respondPolytope(Command *command);
-	void responseWrite(Data *data);
-	void respondScript(Command *command);
-	void processTwice(Queues &queues, void (Window::*respond)(Command *command));
-	void processQueues(Queues &queues, void (Window::*respond)(Command *command));
-	void processQueue(Queue &queue, void (Window::*process)(Command *command,
-		void (Window::*respond)(Command *command)), void (Window::*respond)(Command *command));
-	void processCommands(Message<Command*> &message, void (Window::*process)(Command *command,
-		void (Window::*respond)(Command *command)), void (Window::*respond)(Command *command));
-	void processDatas(Message<Data*> &message, void (Window::*process)(Data *data));
+	void finishCommand(Command &command, Queues &queues);
+	void processQueues(Queues &queues);
+	void processQueue(Queue &queue, Queues &queues);
+	void processCommands(Message<Command*> &message, Queues &queues);
+	void processDatas(Message<Data*> &message);
 public:
 	Message<Command*> command2req;
 	Message<Data*> read2req;

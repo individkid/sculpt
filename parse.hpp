@@ -43,6 +43,7 @@ public:
 		Data *&window, Data *&polytope, Data *&system, Data *&script);
 	void put(Command *command);
 	void put(Data *data);
+	char *get(const Command *command);
 	char *get(const Data *data);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}

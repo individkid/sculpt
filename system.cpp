@@ -25,61 +25,46 @@ static Power<float> floats(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
 static Sparse<int,int> ints(__FILE__,__LINE__);
 
-void System::requestScript(/*TODO*/)
+void System::processDatas(Message<Data*> &message)
 {
-	Data *data;
-	// TODO get and initialze
-	req2script->put(data);
+	Data *data; while (message.get(data)) {
+		if (!cleanup) {
+			if (&message == &read2req) {
+				if (data->conf == SoundConf) {
+					// TODO add stock to state
+				}
+				if (data->conf == MetricConf) {
+					// TODO add macro to state
+				}
+			}
+			if (&message == &script2rsp) {
+				// TODO update metric value from script result
+			}
+			if (&message == &script2req) {
+				if (data->conf == SoundConf) {
+					// TODO fill arguments with stock values
+				}
+				if (data->conf == MetricConf) {
+					// TODO fill arguments with stock values
+				}
+			}
+		}
+		if (&message == &read2req) {
+			rsp2read[data->file]->put(data);
+		}
+		if (&message == &script2rsp) {
+			floats.put(ints[data->tagbits],data->argument);
+			ints.remove(data->tagbits);
+			chars.put(strlen(data->script)+1,data->script);
+			datas.put(data);
+		}
+		if (&message == &script2req) {
+			rsp2script->put(data);
+		}
+	}
 }
 
-void System::respondRead(Data *data)
-{
-	rsp2read[data->file]->put(data);
-}
-
-void System::responseScript(Data *data)
-{
-	floats.put(ints[data->tagbits],data->argument);
-	ints.remove(data->tagbits);
-	chars.put(strlen(data->script)+1,data->script);
-	datas.put(data);
-}
-
-void System::respondScript(Data *data)
-{
-	rsp2script->put(data);
-}
-
-void System::processRead(Data *data, void (System::*respond)(Data *data))
-{
-	// TODO add stock or macro to state
-	(this->*respond)(data);
-}
-
-void System::processedScript(Data *data, void (System::*respond)(Data *data))
-{
-	// TODO update stock value from script result
-	(this->*respond)(data);
-}
-
-void System::processScript(Data *data, void (System::*respond)(Data *data))
-{
-	// TODO fill arguments with stock values
-	(this->*respond)(data);
-}
-
-void System::callbackData(Data *data, void (System::*respond)(Data *data))
-{
-	(this->*respond)(data);
-}
-
-void System::processDatas(Message<Data*> &message, void (System::*process)(Data *command,
-	void (System::*respond)(Data *command)), void (System::*respond)(Data *data))
-{
-	Data *data; while (message.get(data)) (this->*process)(data,respond);
-}
-
-System::System(int n) : nfile(n),
+System::System(int n) : nfile(n), cleanup(0),
 	rsp2read(new Message<Data*>*[n]), read2req(this,"Read->Data->System"),
 	script2rsp(this,"System<-Data<-Script"), script2req(this,"Script->Data->System")
 {
@@ -87,7 +72,8 @@ System::System(int n) : nfile(n),
 
 System::~System()
 {
-	processDatas(script2rsp,&System::callbackData,&System::responseScript);
+	if (!cleanup) error("done not called",0,__FILE__,__LINE__);
+	processDatas(script2rsp);
 }
 
 void System::connect(int i, Read *ptr)
@@ -111,13 +97,14 @@ void System::init()
 
 void System::call()
 {
-	processDatas(read2req,&System::processRead,&System::respondRead);
-	processDatas(script2rsp,&System::processedScript,&System::responseScript);
-	processDatas(script2req,&System::processScript,&System::respondScript);
+	processDatas(read2req);
+	processDatas(script2rsp);
+	processDatas(script2req);
 }
 
 void System::done()
 {
-	processDatas(read2req,&System::callbackData,&System::respondRead);
-	processDatas(script2req,&System::callbackData,&System::respondScript);
+	cleanup = 1;
+	processDatas(read2req);
+	processDatas(script2req);
 }

@@ -36,11 +36,6 @@ Write::Write(int i, const char *n) : Thread(), name(n), pipe(-1),
 {
 }
 
-void Write::connect(Window *ptr)
-{
-	rsp2window = &ptr->write2rsp;
-}
-
 void Write::connect(Polytope *ptr)
 {
 	rsp2polytope = &ptr->write2rsp;
@@ -52,12 +47,17 @@ void Write::connect(Script *ptr)
 	rsp2script = &ptr->write2rsp;
 }
 
+void Write::connect(Window *ptr)
+{
+	rsp2window = &ptr->write2rsp;
+}
+
 void Write::init()
 {
-	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
 	if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
-	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
 	if (rsp2command == 0) error("unconnected rsp2command",0,__FILE__,__LINE__);
+	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
+	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
 	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
 	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
 	if ((pipe = open(pname,O_WRONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);
@@ -65,9 +65,11 @@ void Write::init()
 
 void Write::call()
 {
-	process(window2req,*rsp2window);
-	process(polytope2req,*rsp2polytope);
-	process(script2req,*rsp2script);
+	Command *command; Data *data;
+	while (polytope2req.get(data)) {write(parse.cleanup(parse.get(data))); rsp2polytope->put(data);}
+	while (command2req.get(command)) {write(parse.cleanup(parse.get(command))); rsp2command->put(command);}
+	while (script2req.get(data)) {write(parse.cleanup(parse.get(data))); rsp2script->put(data);}
+	while (window2req.get(data)) {write(parse.cleanup(parse.get(data))); rsp2window->put(data);}
 }
 
 void Write::done()
@@ -80,16 +82,12 @@ void Write::done()
 	while (window2req.get(data)) rsp2window->put(data);
 }
 
-void Write::process(Message<Data*> &req, Message<Data*> &rsp)
+void Write::write(const char *str)
 {
-	Data *data;
-    while (req.get(data)) {
-	const char *str = parse.cleanup(parse.get(data));
 	int len = strlen(str);
 	int val = ::write(pipe,str,len);
 	while (val != len) {
 	if (val < 0 && errno != EINTR) error("write failed",errno,__FILE__,__LINE__);
 	if (val > 0) {len -= val; str += val;}
 	val = ::write(pipe,str,len);}
-	rsp.put(data);}
 }

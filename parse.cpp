@@ -298,6 +298,12 @@ char *Parse::get(const Data *data)
 	return 0;
 }
 
+char *Parse::get(const Command *command)
+{
+	// TODO
+	return 0;
+}
+
 char *Parse::string(int val)
 {
 	int len = 0; int tmp = val; int rem = 0; char *str;

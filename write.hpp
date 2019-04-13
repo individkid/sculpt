@@ -37,12 +37,12 @@ public:
 	Message<Data*> script2req;
 	Message<Data*> window2req;
 	Write(int i, const char *n);
-	void connect(Window *ptr);
 	void connect(Polytope *ptr);
 	void connect(Script *ptr);
+	void connect(Window *ptr);
 private:
 	virtual void init();
 	virtual void call();
 	virtual void done();
-	void process(Message<Data*> &req, Message<Data*> &rsp);
+	void write(const char *str);
 };

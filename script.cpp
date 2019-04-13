@@ -27,150 +27,73 @@
 static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<Command> commands(__FILE__,__LINE__);
 
-void Script::requestPolytope(/*TODO*/)
+void Script::processCommands(Message<Command*> &message)
 {
-	Data *data;
-	// TODO get and initialze
-	req2polytope[data->file]->put(data);
+	Command *command; while (message.get(command)) {
+		if (!cleanup) {
+			if (&message == &window2rsp) {
+				// TODO wite feedback, execute script at tagbits
+			}
+		}
+		if (&message == &command2rsp) {
+			// TODO deallocate field lists
+			commands.put(command);
+		}
+		if (&message == &window2rsp) {
+			// TODO deallocate field lists
+			commands.put(command);
+		}
+	}
 }
 
-void Script::requestCommand(/*TODO*/)
+void Script::processDatas(Message<Data*> &message)
 {
-	Command *command;
-	// TODO get and initialize
-	req2command[command->file]->put(command);
+	Data *data; while (message.get(data)) {
+		if (!cleanup) {
+			if (&message == &read2req) {
+				// TODO execute script
+			}
+			if (&message == &polytope2rsp) {
+				// TODO write topology, and execute script
+			}
+			if (&message == &polytope2req) {
+				// TODO write pierce plane file, execute script, and read result
+			}
+			if (&message == &system2rsp) {
+				// TODO write stocks, and execute script
+			}
+			if (&message == &system2req) {
+				// TODO write stocks, execute script, and read metric
+			}
+		}
+		if (&message == &read2req) {
+			// TODO deallocate fields
+			rsp2read[data->file]->put(data);
+		}
+		if (&message == &polytope2rsp) {
+			// TODO deallocate fields
+			datas.put(data);
+		}
+		if (&message == &polytope2req) {
+			// TODO deallocate fields
+			rsp2polytope[data->file]->put(data);
+		}
+		if (&message == &write2rsp) {
+			// TODO deallocate fields
+			datas.put(data);
+		}
+		if (&message == &system2rsp) {
+			// TODO deallocate fields
+			datas.put(data);
+		}
+		if (&message == &system2req) {
+			// TODO deallocate fields
+			datas.put(data);
+		}
+	}
 }
 
-void Script::requestWrite(/*TODO*/)
-{
-	Data *data;
-	// TODO get and initialze
-	req2write[data->file]->put(data);
-}
-
-void Script::requestSystem(/*TODO*/)
-{
-	Data *data;
-	// TODO get and initialze
-	req2system->put(data);
-}
-
-void Script::requestWindow(/*TODO*/)
-{
-	Command *command;
-	// TODO get and initialize
-	req2window->put(command);
-}
-
-
-void Script::respondRead(Data *data)
-{
-	rsp2read[data->file]->put(data);
-}
-
-void Script::respondPolytope(Data *data)
-{
-	rsp2polytope[data->file]->put(data);
-}
-
-void Script::responsePolytope(Data *data)
-{
-	datas.put(data);
-}
-
-void Script::responseCommand(Command *command)
-{
-	commands.put(command);
-}
-
-void Script::responseWrite(Data *data)
-{
-	datas.put(data);
-}
-
-void Script::respondSystem(Data *data)
-{
-	rsp2system->put(data);
-}
-
-void Script::responseSystem(Data *data)
-{
-	datas.put(data);
-}
-
-void Script::responseWindow(Command *command)
-{
-	commands.put(command);
-}
-
-void Script::processRead(Data *data, void (Script::*respond)(Data *data))
-{
-	// TODO execute script
-	(this->*respond)(data);
-}
-
-void Script::processPolytope(Data *data, void (Script::*respond)(Data *data))
-{
-	// TODO write pierce plane file, execute script, and read result
-	(this->*respond)(data);
-}
-
-void Script::processedPolytope(Data *data, void (Script::*respond)(Data *data))
-{
-	// TODO write topology, and execute script
-	(this->*respond)(data);
-}
-
-void Script::processedCommand(Command *command, void (Script::*respond)(Command *command))
-{
-	(this->*respond)(command);
-}
-
-void Script::processedWrite(Data *data, void (Script::*respond)(Data *data))
-{
-	(this->*respond)(data);
-}
-
-void Script::processSystem(Data *data, void (Script::*respond)(Data *data))
-{
-	// TODO write stocks, execute script, and read metric
-	(this->*respond)(data);
-}
-
-void Script::processedSystem(Data *data, void (Script::*respond)(Data *data))
-{
-	// TODO write stocks, and execute script
-	(this->*respond)(data);
-}
-
-void Script::processedWindow(Command *command, void (Script::*respond)(Command *command))
-{
-	(this->*respond)(command);
-}
-
-void Script::callbackCommand(Command *command, void (Script::*respond)(Command *command))
-{
-	(this->*respond)(command);
-}
-
-void Script::callbackData(Data *data, void (Script::*respond)(Data *data))
-{
-	(this->*respond)(data);
-}
-
-void Script::processCommands(Message<Command*> &message, void (Script::*process)(Command *command,
-	void (Script::*respond)(Command *command)), void (Script::*respond)(Command *command))
-{
-	Command *command; while (message.get(command)) (this->*process)(command,respond);
-}
-
-void Script::processDatas(Message<Data*> &message, void (Script::*process)(Data *command,
-	void (Script::*respond)(Data *command)), void (Script::*respond)(Data *data))
-{
-	Data *data; while (message.get(data)) (this->*process)(data,respond);
-}
-
-Script::Script(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
+Script::Script(int n) : nfile(n), cleanup(0), rsp2read(new Message<Data*>*[n]),
 	rsp2polytope(new Message<Data*>*[n]), req2polytope(new Message<Data*>*[n]),
 	req2command(new Message<Command*>*[n]), req2write(new Message<Data*>*[n]),
 	read2req(this,"Read->Data->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
@@ -182,22 +105,17 @@ Script::Script(int n) : nfile(n), rsp2read(new Message<Data*>*[n]),
 
 Script::~Script()
 {
-	processDatas(polytope2rsp,&Script::callbackData,&Script::responsePolytope);
-	processCommands(command2rsp,&Script::callbackCommand,&Script::responseCommand);
-	processDatas(write2rsp,&Script::callbackData,&Script::responseWrite);
-	processDatas(system2rsp,&Script::callbackData,&Script::responseSystem);
-	processCommands(window2rsp,&Script::callbackCommand,&Script::responseWindow);
+	processDatas(polytope2rsp);
+	processCommands(command2rsp);
+	processDatas(write2rsp);
+	processDatas(system2rsp);
+	processCommands(window2rsp);
 }
 
 void Script::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
     rsp2read[i] = &ptr->script2rsp;
-}
-
-void Script::connect(Window *ptr)
-{
-	req2window = &ptr->script2req;
 }
 
 void Script::connect(int i, Polytope *ptr)
@@ -207,17 +125,22 @@ void Script::connect(int i, Polytope *ptr)
     req2polytope[i] = &ptr->script2req;
 }
 
+void Script::connect(int i, Write *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    req2command[i] = &ptr->command2req;
+    req2write[i] = &ptr->script2req;
+}
+
 void Script::connect(System *ptr)
 {
 	rsp2system = &ptr->script2rsp;
 	req2system = &ptr->script2req;
 }
 
-void Script::connect(int i, Write *ptr)
+void Script::connect(Window *ptr)
 {
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    req2command[i] = &ptr->command2req;
-    req2write[i] = &ptr->script2req;
+	req2window = &ptr->script2req;
 }
 
 void Script::init()
@@ -234,19 +157,20 @@ void Script::init()
 
 void Script::call()
 {
-	processDatas(read2req,&Script::processRead,&Script::respondRead);
-	processDatas(polytope2rsp,&Script::processedPolytope,&Script::responsePolytope);
-	processDatas(polytope2req,&Script::processPolytope,&Script::respondPolytope);
-	processCommands(command2rsp,&Script::processedCommand,&Script::responseCommand);
-	processDatas(write2rsp,&Script::processedWrite,&Script::responseWrite);
-	processDatas(system2rsp,&Script::processedSystem,&Script::responseSystem);
-	processDatas(system2req,&Script::processSystem,&Script::respondSystem);
-	processCommands(window2rsp,&Script::processedWindow,&Script::responseWindow);
+	processDatas(read2req);
+	processDatas(polytope2rsp);
+	processDatas(polytope2req);
+	processCommands(command2rsp);
+	processDatas(write2rsp);
+	processDatas(system2rsp);
+	processDatas(system2req);
+	processCommands(window2rsp);
 }
 
 void Script::done()
 {
-	processDatas(read2req,&Script::callbackData,&Script::respondRead);
-	processDatas(polytope2req,&Script::callbackData,&Script::respondPolytope);
-	processDatas(system2req,&Script::callbackData,&Script::respondSystem);
+	cleanup = 1;
+	processDatas(read2req);
+	processDatas(polytope2req);
+	processDatas(system2req);
 }

@@ -55,8 +55,6 @@ private:
 	virtual void call();
 	virtual void wait();
 	virtual void done();
-	template<class T, class P> void get(Message<T*> &msg, P &parse) {T *t; while (msg.get(t)) parse.put(t);}
-	template<class T> void put(Message<T*> &msg, T *t) {if (t) msg.put(t);}
 	char *read();
 	char *split(char *&str);
 	void sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum Configure conf);

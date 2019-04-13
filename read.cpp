@@ -43,11 +43,12 @@ Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s
 
 Read::~Read()
 {
-	get(command2rsp,parse);
-	get(window2rsp,parse);
-    get(polytope2rsp,parse);
-    get(system2rsp,parse);
-    get(script2rsp,parse);
+	Command *command; Data *data;
+	while (command2rsp.get(command)) parse.put(command);
+	while (window2rsp.get(data)) parse.put(data);
+    while (polytope2rsp.get(data)) parse.put(data);
+    while (system2rsp.get(data)) parse.put(data);
+    while (script2rsp.get(data)) parse.put(data);
 }
 
 void Read::connect(Window *ptr)
@@ -86,11 +87,12 @@ void Read::init()
 
 void Read::call()
 {
-	get(command2rsp,parse);
-	get(window2rsp,parse);
-    get(polytope2rsp,parse);
-    get(system2rsp,parse);
-    get(script2rsp,parse);
+	Command *temp; Data *data;
+	while (command2rsp.get(temp)) parse.put(temp);
+	while (window2rsp.get(data)) parse.put(data);
+    while (polytope2rsp.get(data)) parse.put(data);
+    while (system2rsp.get(data)) parse.put(data);
+    while (script2rsp.get(data)) parse.put(data);
 	off_t pos = fpos;
 	char *str = read();
 	while (1) {
@@ -101,11 +103,11 @@ void Read::call()
 	livelock = 0;
     Command *command = 0; Data *window = 0; Data *polytope = 0; Data *system = 0; Data *script = 0;
 	parse.get(parse.cleanup(dds),self,command,window,polytope,system,script);
-	put(*req2command,command);
-	put(*req2window,window);
-	put(*req2polytope,polytope);
-	put(*req2system,system);
-	put(*req2script,script);}
+	if (command) req2command->put(command);
+	if (window) req2window->put(window);
+	if (polytope) req2polytope->put(polytope);
+	if (system) req2system->put(system);
+	if (script) req2script->put(script);}
 	parse.cleanup(str);
 }
 
@@ -169,7 +171,7 @@ void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &le
 	Data *data; sstr[len] = 0; parse.get(sstr,self,conf,data);
 	if (data->seqnum == num) {parse.put(data); parse.cleanup(sstr); return;}
 	livelock = 0;
-	num = data->seqnum; parse.cleanup(sstr); put(*req2window,data);
+	num = data->seqnum; parse.cleanup(sstr); req2window->put(data);
 }
 
 // nonblocking try to get write lock at end of file to infinity

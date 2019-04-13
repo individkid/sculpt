@@ -184,7 +184,8 @@ struct Render
 struct Command
 {
 	struct Command *next;
-	int feedback; int finish; int file;
+	int feedback; int finish;
+	union {int file;/*Read,Polytope*/ int tagbits;/*Script*/};
 	struct Update *update[Fields];
 	struct Render *render;
 	struct Command *redraw;

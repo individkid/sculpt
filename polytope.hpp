@@ -18,11 +18,10 @@
 
 #include "message.hpp"
 
-class Polytope;
-class Window;
 class Read;
 class Write;
 class Script;
+class Window;
 
 class Polytope : public Thread
 {
@@ -33,6 +32,8 @@ private:
 	Message<Data*> *req2script;
 	Message<Data*> *rsp2window;
 	Message<Command*> *req2window;
+	void processCommands(Message<Command*> &message);
+	void processDatas(Message<Data*> &message);
 public:
 	Message<Data*> read2req;
 	Message<Data*> write2rsp;
@@ -43,9 +44,9 @@ public:
 	Polytope(int i);
 	virtual ~Polytope();
 	void connect(Read *ptr);
-	void connect(Window *ptr);
 	void connect(Write *ptr);
 	void connect(Script *ptr);
+	void connect(Window *ptr);
 private:
 	virtual void init();
 	virtual void call();

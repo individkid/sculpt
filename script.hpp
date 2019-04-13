@@ -27,7 +27,7 @@ class Write;
 class Script : public Thread
 {
 private:
-	int nfile;
+	int nfile; int cleanup;
 	Message<Data*> **rsp2read;
 	Message<Data*> **rsp2polytope;
 	Message<Data*> **req2polytope;
@@ -36,33 +36,8 @@ private:
 	Message<Data*> *rsp2system;
 	Message<Data*> *req2system;
 	Message<Command*> *req2window;
-	void requestPolytope(/*TODO*/);
-	void requestCommand(/*TODO*/);
-	void requestWrite(/*TODO*/);
-	void requestSystem(/*TODO*/);
-	void requestWindow(/*TODO*/);
-	void respondRead(Data *data);
-	void respondPolytope(Data *data);
-	void responsePolytope(Data *data);
-	void responseCommand(Command *command);
-	void responseWrite(Data *data);
-	void respondSystem(Data *data);
-	void responseSystem(Data *data);
-	void responseWindow(Command *command);
-	void processRead(Data *data, void (Script::*respond)(Data *data));
-	void processPolytope(Data *data, void (Script::*respond)(Data *data));
-	void processedPolytope(Data *data, void (Script::*respond)(Data *data));
-	void processedCommand(Command *command, void (Script::*respond)(Command *command));
-	void processedWrite(Data *data, void (Script::*respond)(Data *data));
-	void processSystem(Data *data, void (Script::*respond)(Data *data));
-	void processedSystem(Data *data, void (Script::*respond)(Data *data));
-	void processedWindow(Command *command, void (Script::*respond)(Command *command));
-	void callbackCommand(Command *command, void (Script::*respond)(Command *command));
-	void callbackData(Data *data, void (Script::*respond)(Data *data));
-	void processCommands(Message<Command*> &message, void (Script::*process)(Command *command,
-		void (Script::*respond)(Command *command)), void (Script::*respond)(Command *command));
-	void processDatas(Message<Data*> &message, void (Script::*process)(Data *command,
-		void (Script::*respond)(Data *command)), void (Script::*respond)(Data *data));
+	void processCommands(Message<Command*> &message);
+	void processDatas(Message<Data*> &message);
 public:
 	Message<Data*> read2req;
 	Message<Data*> polytope2rsp;
@@ -75,10 +50,10 @@ public:
 	Script(int n);
 	virtual ~Script();
 	void connect(int i, Read *ptr);
-	void connect(Window *ptr);
 	void connect(int i, Polytope *ptr);
-	void connect(System *ptr);
 	void connect(int i, Write *ptr);
+	void connect(System *ptr);
+	void connect(Window *ptr);
 private:
 	virtual void init();
 	virtual void call();

@@ -17,10 +17,10 @@
 */
 
 #include "polytope.hpp"
-#include "window.hpp"
 #include "read.hpp"
 #include "write.hpp"
 #include "script.hpp"
+#include "window.hpp"
 
 static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<Command> commands(__FILE__,__LINE__);
@@ -45,12 +45,6 @@ void Polytope::connect(Read *ptr)
 	rsp2read = &ptr->polytope2rsp;
 }
 
-void Polytope::connect(Window *ptr)
-{
-	rsp2window = &ptr->polytope2rsp;
-	req2window = &ptr->polytope2req;
-}
-
 void Polytope::connect(Write *ptr)
 {
 	req2write = &ptr->polytope2req;
@@ -62,14 +56,20 @@ void Polytope::connect(Script *ptr)
 	rsp2script = &ptr->polytope2rsp;
 }
 
+void Polytope::connect(Window *ptr)
+{
+	rsp2window = &ptr->polytope2rsp;
+	req2window = &ptr->polytope2req;
+}
+
 void Polytope::init()
 {
 	if (rsp2read == 0) error("unconnected rsp2read",0,__FILE__,__LINE__);
-	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
 	if (req2write == 0) error("unconnected req2write",0,__FILE__,__LINE__);
-	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
-	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
+	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
+	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
+	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
 }
 
 void Polytope::call()
