@@ -27,6 +27,12 @@
 static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<Command> commands(__FILE__,__LINE__);
 
+int req2polytope(lua_State *state)
+{
+	// TODO send Data from stack
+	return 0;
+}
+
 void Script::processCommands(Message<Command*> &message)
 {
 	Command *command; while (message.get(command)) {
@@ -51,7 +57,10 @@ void Script::processDatas(Message<Data*> &message)
 	Data *data; while (message.get(data)) {
 		if (!cleanup) {
 			if (&message == &read2req) {
-				// TODO execute script
+				// execute script
+				if (luaL_loadstring(state,data->script) != 0) error("luaL_loadstring",0,__FILE__,__LINE__);
+				int num = lua_pcall(state,0,0,0);
+				if (num != 0) ::message("script error",num,__FILE__,__LINE__);
 			}
 			if (&message == &polytope2rsp) {
 				// TODO write topology, and execute script
@@ -93,7 +102,7 @@ void Script::processDatas(Message<Data*> &message)
 	}
 }
 
-Script::Script(int n) : nfile(n), cleanup(0), rsp2read(new Message<Data*>*[n]),
+Script::Script(int n) : state(0), nfile(n), cleanup(0), rsp2read(new Message<Data*>*[n]),
 	rsp2polytope(new Message<Data*>*[n]), req2polytope(new Message<Data*>*[n]),
 	req2command(new Message<Command*>*[n]), req2write(new Message<Data*>*[n]),
 	read2req(this,"Read->Data->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
@@ -145,6 +154,8 @@ void Script::connect(Window *ptr)
 
 void Script::init()
 {
+	state = luaL_newstate();
+	lua_pushcfunction(state,::req2polytope);
 	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (rsp2polytope[i] == 0) error("unconnected rsp2polytope",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2polytope[i] == 0) error("unconnected req2polytope",i,__FILE__,__LINE__);

@@ -219,13 +219,18 @@ void Window::unbindTexture2d()
 
 void Window::swapQueue(Queue &queue, Command *&command)
 {
-    if (command == queue.first) {
-    queue.first = queue.last = queue.loop = 0;}
-    else {
-    Command *temp = queue.first; queue.first = command; command = temp;
-    temp = queue.last = queue.first;
-    while (temp) {queue.last = temp; temp = temp->next;}
-    queue.loop = queue.last;}
+    int islast = (queue.loop == queue.last);
+    if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
+    Command *next = 0;
+    for (next = queue.first; next; next = next->next)
+    if (next == command) {remove(queue.first,queue.last,next); break;}
+    if (next == 0)
+    for (next = queue.first; next; next = next->next)
+    if (next->file == command->file) {
+    Command *temp = next; remove(queue.first,queue.last,next);
+    enque(queue.first,queue.last,command); command = next; break;}
+    enque(queue.first,queue.last,command); command = 0;
+    if (islast) queue.loop = queue.last;
 }
 
 void Window::startCommand(Command &command)
@@ -288,6 +293,7 @@ void Window::processQueue(Queue &queue, Queues &queues)
 void Window::processCommands(Message<Command*> &message, Queues &queues)
 {
     Command *command; while (message.get(command)) {
+        if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
         if (!command->finish) startCommand(*command);
         if (command->finish) finishCommand(*command,queues);
         if (command->finish) {

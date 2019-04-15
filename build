@@ -1,2 +1,2 @@
 clang -g -DDEBUG=1 -I ../gl3w/include/ -c ../gl3w/src/gl3w.c arithmetic.c callback.c
-clang++ -g -DDEBUG=1 -I ../gl3w/include/ -I /usr/local/include/lua main.cpp message.cpp window.cpp microcode.cpp object.cpp write.cpp polytope.cpp read.cpp parse.cpp system.cpp script.cpp gl3w.o arithmetic.o callback.o -lglfw3 -framework Cocoa -framework IOKit -framework OpenGL -framework CoreVideo
+clang++ -g -DDEBUG=1 -I ../gl3w/include/ -I /usr/local/include/lua main.cpp message.cpp window.cpp microcode.cpp object.cpp write.cpp polytope.cpp read.cpp parse.cpp system.cpp script.cpp gl3w.o arithmetic.o callback.o -llua -lglfw3 -framework Cocoa -framework IOKit -framework OpenGL -framework CoreVideo
