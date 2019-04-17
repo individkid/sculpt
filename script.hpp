@@ -26,6 +26,7 @@ class Write;
 struct lua_State;
 
 extern "C" int req2polytope(lua_State *state);
+extern "C" int req2write(lua_State *state);
 
 class Script : public Thread
 {
@@ -41,6 +42,7 @@ private:
 	Message<Data*> *req2system;
 	Message<Command*> *req2window;
 	friend int ::req2polytope(lua_State *state);
+	friend int ::req2write(lua_State *state);
 	void processCommands(Message<Command*> &message);
 	void processDatas(Message<Data*> &message);
 public:

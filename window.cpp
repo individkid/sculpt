@@ -266,8 +266,8 @@ void Window::finishCommand(Command &command, Queues &queues)
 
 void Window::processQueues(Queues &queues)
 {
-    processQueue(queues.redraw,queues);
-    processQueue(queues.pierce,queues);
+    if (isSuspend()) processQueue(queues.pierce,queues);
+    else processQueue(queues.redraw,queues);
     processQueue(queues.query,queues);
 }
 

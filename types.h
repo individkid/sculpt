@@ -202,11 +202,11 @@ struct Data
 	union {
 	// Read->SpaceConf->Polytope for creating sample of space  
 	// Script->SpaceConf->Polytope for feedback from topology  
-	struct {int boundaries; int regions; int *planes; int **sides;};
+	struct {int boundaries; int regions; int *planes; int *sides;};
 	// Read->RegionConf->Polytope for changing which regions are in the polytope  
 	// Script->RegionConf->Polytope for feedback from topology  
 	// Polytope->RegionConf->Write for changing whether region is in polytope  
-	struct {int insides; int outsides; int *inside; int *outside; int side;};
+	struct {int side; int insides; int outsides; int *inside; int *outside;};
 	// Read->PlaneConf->Polytope for adding or changing planes  
 	// Script->PlaneConf->Polytope for feedback from topology  
 	// Polytope->PlaneConf->Write for appending manipulated or randomized planes  
@@ -229,6 +229,7 @@ struct Data
 	// Script->SoundConf->System for getting stock values  
 	// TODO
 	// Read->ConfigureConf->Window for changing configurations  
+	// Read->TimewheelConf->System for starting and changing sound
 	// TODO
 	// Read->(PictureConf,MacroConf)->Polytope for decorating planes  
 	// Read->TestConf->Polytope for testing topology functions

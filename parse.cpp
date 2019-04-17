@@ -275,7 +275,7 @@ char *Parse::get(const Data *data)
 		for (int i = 0; i < data->boundaries; i++) {
 			str = concat(str," #"); str = concat(str,string(data->planes[i]));
 			for (int j = 0; j < data->regions; j++) {
-				str = concat(str," "); str = concat(str,string(data->sides[i][j]));}}
+				str = concat(str," "); str = concat(str,string(data->sides[i*data->regions+j]));}}
 		return str;}
 	case (RegionConf): {char *str = setup("--region ");
 		str = concat(str,string(data->side));

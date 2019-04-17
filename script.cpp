@@ -24,13 +24,83 @@
 #include "polytope.hpp"
 #include "write.hpp"
 
+static Power<int> ints(__FILE__,__LINE__);
+static Power<float> floats(__FILE__,__LINE__);
 static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<Command> commands(__FILE__,__LINE__);
+
+#define POP_ERROR(MESSAGE,LINE) { \
+	message(MESSAGE,LINE,__FILE__,__LINE__); \
+	datas.put(data); lua_error(state);}
+
+#define POP_VALUE(RESULT,POP,TYPE,LINE) \
+	if (lua_type(state,-1) != TYPE) POP_ERROR("bad script",LINE); \
+	RESULT = POP(state,-1); lua_pop(state,1);
+
+#define POP_TABLE(RESULT,POP,TYPE,LIMIT,LINE) \
+	if (lua_type(state,-1) != LUA_TTABLE) POP_ERROR("bad script",LINE); \
+	lua_pushnil(state); \
+	for (int i = 0; i <= LIMIT; i++) { \
+	if (lua_next(state,-2) == 0) { \
+	if (i != LIMIT) POP_ERROR("extra table",LINE); \
+	break;} \
+	if (i == LIMIT) POP_ERROR("table extra",LINE); \
+	POP_VALUE(RESULT[i],POP,TYPE,LINE);}
+
+#define POP_SCRIPT(RESULT,LINE) POP_VALUE(RESULT,(Script*)lua_touserdata,LUA_TUSERDATA,LINE)
+#define POP_INT(RESULT,LINE) POP_VALUE(data->RESULT,lua_tointeger,LUA_TNUMBER,LINE)
+#define POP_FLOAT(RESULT,LINE) POP_VALUE(data->RESULT,lua_tonumber,LUA_TNUMBER,LINE)
+#define POP_CONF(RESULT,LINE) POP_VALUE(data->RESULT,(Configure)lua_tointeger,LUA_TNUMBER,LINE)
+#define POP_INTS(RESULT,LIMIT,LINE) POP_TABLE(data->RESULT,lua_tointeger,LUA_TNUMBER,LIMIT,LINE)
+#define POP_FLOATS(RESULT,LIMIT,LINE) POP_TABLE(data->RESULT,lua_tonumber,LUA_TNUMBER,LIMIT,LINE)
 
 int req2polytope(lua_State *state)
 {
 	// TODO send Data from stack
 	return 0;
+}
+
+int req2write(lua_State *state)
+{
+	Data *data = datas.get(); Script *self;
+	POP_SCRIPT(self,__LINE__);
+	POP_INT(file,__LINE__);
+	POP_INT(plane,__LINE__);
+	POP_CONF(conf,__LINE__);
+	switch (data->conf) {
+	case (SpaceConf):
+	POP_INT(boundaries,__LINE__);
+	POP_INT(regions,__LINE__);
+	data->planes = ints.get(data->boundaries);
+	POP_INTS(planes,data->boundaries,__LINE__);
+	data->sides = ints.get(data->boundaries*data->regions);
+	POP_INTS(sides,data->boundaries*data->regions,__LINE__);
+	break;
+	case (RegionConf):
+	POP_INT(side,__LINE__);
+	POP_INT(insides,__LINE__);
+	POP_INT(outsides,__LINE__);
+	data->inside = ints.get(data->insides);
+	POP_INTS(inside,data->insides,__LINE__);
+	data->outside = ints.get(data->outsides);
+	POP_INTS(outside,data->outsides,__LINE__);
+	break;
+	case (PlaneConf):
+	POP_INT(versor,__LINE__);
+	data->vector = floats.get(3);
+	POP_FLOATS(vector,3,__LINE__);
+	break;
+	default: POP_ERROR("unimplemented",__LINE__);}
+	self->req2write[data->file]->put(data);
+	return 0;
+}
+
+const char *reader (lua_State *L, void *data, size_t *size)
+{
+	static int done = 0;
+	char *result = (char *)data;
+	if (done) {done = 0; *size = 0; return 0;}
+	done = 1; *size = strlen(result); return result;
 }
 
 void Script::processCommands(Message<Command*> &message)
@@ -58,10 +128,11 @@ void Script::processDatas(Message<Data*> &message)
 		if (!cleanup) {
 			if (&message == &read2req) {
 				// execute script
-				if (luaL_loadstring(state,data->script) != 0) error("luaL_loadstring",0,__FILE__,__LINE__);
-				int num = lua_pcall(state,0,0,0);
-				if (num != 0) ::message("script error",num,__FILE__,__LINE__);
-			}
+				if (lua_load(state,reader,data->script,"read2req",0) == LUA_OK) {
+				lua_pushlightuserdata(state,this);
+				lua_call(state,1,0);} else {
+				error(lua_tostring(state,-1),0,__FILE__,__LINE__);
+				lua_pop(state,1);}}
 			if (&message == &polytope2rsp) {
 				// TODO write topology, and execute script
 			}
