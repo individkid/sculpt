@@ -128,6 +128,7 @@ enum Configure {
 	InvokeConf,
 	CommandConf,
 	ConfigureConf,
+	TimewheelConf,
 	TestConf,
 	Configures};
 enum Field {
@@ -217,7 +218,12 @@ struct Data
 	// Window->MacroConf->Polytope for tagbits associated with click  
 	// Polytope->MacroConf->Script for starting macro from click  
 	// System->MetricConf->Script for getting value from metric  
-	struct {int tagbits; union {float *argument; int *ident;}; char *script;};
+	struct {int tagbits;/*from pierce in polytope; ident in system*/
+	float delay;/*only for metric*/
+	int count; /*number of arguments or idents; zero for config to polytope*/
+	union {float *argument;/*values from system; pierce point from polytope*/
+	int *ident;/*config to system*/};
+	char *script;};
 	// Window->TweakConf->Polytope for tweaking planes  
 	// Window->RefineConf->Polytope for adding planes  
 	struct {enum TopologyMode topology; enum FixedMode fixed; float *pierce;};
@@ -225,15 +231,41 @@ struct Data
 	// Window->(MatrixConf,GlobalConf)->Write for recording transformations  
 	// Window->TransformConf->Polytope for manipulating planes  
 	struct {int seqnum; float *matrix;};
-	// Read->SoundConf->System for changing sound  
-	// Script->SoundConf->System for getting stock values  
-	// TODO
 	// Read->ConfigureConf->Window for changing configurations  
 	// Read->TimewheelConf->System for starting and changing sound
 	// TODO
 	// Read->(PictureConf,MacroConf)->Polytope for decorating planes  
 	// Read->TestConf->Polytope for testing topology functions
 	char *text;};
+};
+struct Term
+{
+	float coef;
+	int factor;
+	int square;
+	int comp;
+};
+struct Sum
+{
+	int count;
+	struct Term *term;
+};
+struct Equ
+{
+	struct Sum numer;
+	struct Sum denom;
+};
+// Read->SoundConf->System for changing sound  
+// Script->SoundConf->System for getting stock values  
+struct Sound
+{
+	int file;
+	int ident;
+	float value;
+	struct Equ newval;
+	struct Equ nvaldly;
+	struct Equ evaldly;
+	struct Equ sound;
 };
 
 #endif

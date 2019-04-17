@@ -26,6 +26,7 @@
 
 static Power<int> ints(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
+static Power<char> chars(__FILE__,__LINE__);
 static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<Command> commands(__FILE__,__LINE__);
 
@@ -47,6 +48,11 @@ static Pool<Command> commands(__FILE__,__LINE__);
 	if (i == LIMIT) POP_ERROR("table extra",LINE); \
 	POP_VALUE(RESULT[i],POP,TYPE,LINE);}
 
+#define POP_STRING(RESULT,LINE) \
+	if (lua_type(state,-1) != LUA_TSTRING) POP_ERROR("bad script",LINE); \
+	temp = lua_tostring(state,-1); data->RESULT = chars.get(strlen(temp)+1); \
+	strcpy(data->RESULT,temp); lua_pop(state,1);
+
 #define POP_SCRIPT(RESULT,LINE) POP_VALUE(RESULT,(Script*)lua_touserdata,LUA_TUSERDATA,LINE)
 #define POP_INT(RESULT,LINE) POP_VALUE(data->RESULT,lua_tointeger,LUA_TNUMBER,LINE)
 #define POP_FLOAT(RESULT,LINE) POP_VALUE(data->RESULT,lua_tonumber,LUA_TNUMBER,LINE)
@@ -62,12 +68,51 @@ int req2polytope(lua_State *state)
 
 int req2write(lua_State *state)
 {
-	Data *data = datas.get(); Script *self;
+	Data *data = datas.get(); Script *self; const char *temp;
 	POP_SCRIPT(self,__LINE__);
 	POP_INT(file,__LINE__);
 	POP_INT(plane,__LINE__);
 	POP_CONF(conf,__LINE__);
 	switch (data->conf) {
+	case (AdditiveConf):
+	case (SubtractiveConf):
+	case (RefineConf):
+	case (TweakConf):
+	case (PerformConf):
+	case (TransformConf):
+	case (CylinderConf):
+	case (ClockConf):
+	case (NormalConf):
+	case (ParallelConf):
+	case (ScaleConf):
+	case (RotateConf):
+	case (TangentConf):
+	case (TranslateConf):
+	case (SessionConf):
+	case (PolytopeConf):
+	case (FacetConf):
+	case (NumericConf):
+	case (InvariantConf):
+	case (SymbolicConf):
+	case (RelativeConf):
+	case (AbsoluteConf):
+	break;
+	case (IncludeConf):
+	POP_STRING(text,__LINE__);
+	break;
+	case (ExcludeConf):
+	break;
+	case (PlaneConf):
+	POP_INT(versor,__LINE__);
+	data->vector = floats.get(3);
+	POP_FLOATS(vector,3,__LINE__);
+	break;
+	case (MatrixConf):
+	case (GlobalConf):
+	POP_INT(tagbits,__LINE__);
+	data->matrix = floats.get(16);
+	POP_FLOATS(matrix,16,__LINE__);
+	break;
 	case (SpaceConf):
 	POP_INT(boundaries,__LINE__);
 	POP_INT(regions,__LINE__);
@@ -85,17 +130,40 @@ int req2write(lua_State *state)
 	data->outside = ints.get(data->outsides);
 	POP_INTS(outside,data->outsides,__LINE__);
 	break;
-	case (PlaneConf):
-	POP_INT(versor,__LINE__);
-	data->vector = floats.get(3);
-	POP_FLOATS(vector,3,__LINE__);
+	case (InflateConf):
+	break;
+	case (PictureConf):
+	POP_STRING(text,__LINE__);
+	break;
+	case (SoundConf):
+	POP_ERROR("unimplemented",__LINE__);
+	break;
+	case (MetricConf):
+	case (MacroConf):
+	POP_INT(tagbits,__LINE__);
+	POP_FLOAT(delay,__LINE__);
+	POP_INT(count,__LINE__);
+	POP_INTS(ident,data->count,__LINE__);
+	POP_STRING(script,__LINE__);
+	break;
+	case (ScriptConf):
+	case (InvokeConf):
+	POP_STRING(text,__LINE__);
+	break;
+	case (CommandConf):
+	case (ConfigureConf):
+	case (TimewheelConf):
+	POP_ERROR("unimplemented",__LINE__);
+	break;
+	case (TestConf):
+	POP_STRING(text,__LINE__);
 	break;
 	default: POP_ERROR("unimplemented",__LINE__);}
 	self->req2write[data->file]->put(data);
 	return 0;
 }
 
-const char *reader (lua_State *L, void *data, size_t *size)
+const char *reader(lua_State *L, void *data, size_t *size)
 {
 	static int done = 0;
 	char *result = (char *)data;
