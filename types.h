@@ -260,11 +260,11 @@ struct Sound
 {
 	int file;
 	int ident;
-	float value;
-	struct Equ equat;
-	struct Equ delay;
-	struct Equ sched;
-	struct Equ sound;
+	float value; // tone envelope phrase or helper
+	struct Equ equat; // new value after delay
+	struct Equ delay; // wavelength
+	struct Equ sched; // sample rate
+	struct Equ sound; // directly audible
 };
 
 #endif
