@@ -36,17 +36,18 @@ static Parse parse(__FILE__,__LINE__);
 Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
 	fpos(0), mlen(0), glen(0), mnum(0), gnum(0), livelock(0),
 	command2rsp(this,"Read<-Data<-Command"), window2rsp(this,"Read<-Data<-Window"),
-	polytope2rsp(this,"Read<-Data<-Polytope"), system2rsp(this,"Read<-Data<-System"),
-	script2rsp(this,"Read<-Data<-Script")
+	polytope2rsp(this,"Read<-Data<-Polytope"), sound2rsp(this,"Read<-Sound<-System"),
+	system2rsp(this,"Read<-Data<-System"), script2rsp(this,"Read<-Data<-Script")
 {
 }
 
 Read::~Read()
 {
-	Command *command; Data *data;
+	Command *command; Sound *sound; Data *data;
 	while (command2rsp.get(command)) parse.put(command);
 	while (window2rsp.get(data)) parse.put(data);
     while (polytope2rsp.get(data)) parse.put(data);
+    while (sound2rsp.get(sound)) parse.put(sound);
     while (system2rsp.get(data)) parse.put(data);
     while (script2rsp.get(data)) parse.put(data);
 }
@@ -64,6 +65,7 @@ void Read::connect(Polytope *ptr)
 
 void Read::connect(System *ptr)
 {
+	req2sound = &ptr->sound2req;
 	req2system = &ptr->read2req;
 }
 
@@ -77,6 +79,7 @@ void Read::init()
 	if (req2command == 0) error("unconnected req2command",0,__FILE__,__LINE__);
 	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
 	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
+	if (req2sound == 0) error("unconnected req2sound",0,__FILE__,__LINE__);
 	if (req2system == 0) error("unconnected req2system",0,__FILE__,__LINE__);
 	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
@@ -87,10 +90,11 @@ void Read::init()
 
 void Read::call()
 {
-	Command *temp; Data *data;
+	Command *temp; Sound *sound; Data *data;
 	while (command2rsp.get(temp)) parse.put(temp);
 	while (window2rsp.get(data)) parse.put(data);
     while (polytope2rsp.get(data)) parse.put(data);
+    while (sound2rsp.get(sound)) parse.put(sound);
     while (system2rsp.get(data)) parse.put(data);
     while (script2rsp.get(data)) parse.put(data);
 	off_t pos = fpos;
@@ -101,11 +105,13 @@ void Read::call()
 	sync(dds,"--global",pos,gpos,glen,gnum,GlobalConf);
 	if (*dds == 0) {parse.cleanup(dds); break;}
 	livelock = 0;
-    Command *command = 0; Data *window = 0; Data *polytope = 0; Data *system = 0; Data *script = 0;
-	parse.get(parse.cleanup(dds),self,command,window,polytope,system,script);
+    Command *command = 0; Data *window = 0; Data *polytope = 0;
+    Sound *sound = 0; Data *system = 0; Data *script = 0;
+	parse.get(parse.cleanup(dds),self,command,window,polytope,sound,system,script);
 	if (command) req2command->put(command);
 	if (window) req2window->put(window);
 	if (polytope) req2polytope->put(polytope);
+	if (sound) req2sound->put(sound);
 	if (system) req2system->put(system);
 	if (script) req2script->put(script);}
 	parse.cleanup(str);

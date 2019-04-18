@@ -40,10 +40,12 @@ public:
 		datas(file,line), floats(file,line), chars(file,line) {}
 	void get(const char *ptr, int file, enum Configure conf, Data *&data);
 	void get(const char *ptr, int file, Command *&command,
-		Data *&window, Data *&polytope, Data *&system, Data *&script);
+		Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&script);
 	void put(Command *command);
+	void put(Sound *sound);
 	void put(Data *data);
 	char *get(const Command *command);
+	char *get(const Sound *sound);
 	char *get(const Data *data);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}

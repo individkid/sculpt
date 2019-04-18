@@ -122,9 +122,9 @@ void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 }
 
 void Parse::get(const char *ptr, int file, Command *&command,
-	Data *&window, Data *&polytope, Data *&system, Data *&script)
+	Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&script)
 {
-	int len, inc; command = 0; window = polytope = system = script = 0;
+	int len, inc; command = 0; system = 0; window = polytope = script = 0;
 
 	len = literal(ptr,"--additive"); if (len) {window = datas.get();
 	window->conf = AdditiveConf; window->file = file; return;}
@@ -217,11 +217,28 @@ void Parse::put(Command *command)
 	command = command->next;}
 }
 
+void Parse::put(Sound *sound)
+{
+	// TODO
+}
+
 void Parse::put(Data *data)
 {
 	if (data->conf == MatrixConf || data->conf == GlobalConf) floats.put(16,data->matrix);
 	if (data->conf == TestConf) cleanup(data->text);
 	datas.put(data);
+}
+
+char *Parse::get(const Command *command)
+{
+	// TODO
+	return 0;
+}
+
+char *Parse::get(const Sound *sound)
+{
+	// TODO
+	return 0;
 }
 
 char *Parse::get(const Data *data)
@@ -295,12 +312,6 @@ char *Parse::get(const Data *data)
 	case (ConfigureConf): /*TODO*/ break;
 	case (TestConf): {const char *str = data->text; return concat(setup("--test "),str);}
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
-	return 0;
-}
-
-char *Parse::get(const Command *command)
-{
-	// TODO
 	return 0;
 }
 

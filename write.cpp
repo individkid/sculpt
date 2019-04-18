@@ -32,7 +32,8 @@ static Parse parse(__FILE__,__LINE__);
 
 Write::Write(int i, const char *n) : Thread(), name(n), pipe(-1),
 	polytope2req(this,"Polytope->Data->Write"), command2req(this,"Script->Command->Write"),
-	script2req(this,"Script->Data->Write"), window2req(this,"Window->Data->Write")
+	script2req(this,"Script->Data->Write"), sound2req(this,"Script->Sound->Write"),
+	window2req(this,"Window->Data->Write")
 {
 }
 
@@ -45,6 +46,7 @@ void Write::connect(Script *ptr)
 {
 	rsp2command = &ptr->command2rsp;
 	rsp2script = &ptr->write2rsp;
+	rsp2sound = &ptr->sound2rsp;
 }
 
 void Write::connect(Window *ptr)
@@ -57,6 +59,7 @@ void Write::init()
 	if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
 	if (rsp2command == 0) error("unconnected rsp2command",0,__FILE__,__LINE__);
 	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
+	if (rsp2sound == 0) error("unconnected rsp2sound",0,__FILE__,__LINE__);
 	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
 	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
 	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
@@ -65,20 +68,22 @@ void Write::init()
 
 void Write::call()
 {
-	Command *command; Data *data;
+	Command *command; Sound *sound; Data *data;
 	while (polytope2req.get(data)) {write(parse.cleanup(parse.get(data))); rsp2polytope->put(data);}
 	while (command2req.get(command)) {write(parse.cleanup(parse.get(command))); rsp2command->put(command);}
 	while (script2req.get(data)) {write(parse.cleanup(parse.get(data))); rsp2script->put(data);}
+	while (sound2req.get(sound)) {write(parse.cleanup(parse.get(sound))); rsp2sound->put(sound);}
 	while (window2req.get(data)) {write(parse.cleanup(parse.get(data))); rsp2window->put(data);}
 }
 
 void Write::done()
 {
 	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
-	Command *command; Data *data;
+	Command *command; Sound *sound; Data *data;
 	while (polytope2req.get(data)) rsp2polytope->put(data);
 	while (command2req.get(command)) rsp2command->put(command);
 	while (script2req.get(data)) rsp2script->put(data);
+	while (sound2req.get(sound)) rsp2sound->put(sound);
 	while (window2req.get(data)) rsp2window->put(data);
 }
 

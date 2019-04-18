@@ -25,14 +25,26 @@ static Power<float> floats(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
 static Sparse<int,int> ints(__FILE__,__LINE__);
 
+void System::processSounds(Message<Sound*> &message)
+{
+	Sound *sound; while (message.get(sound)) {
+		if (!cleanup) {
+			if (&message == &sound2req) {
+				// TODO add stock to state
+			}
+		} else {
+			if (&message == &sound2req) {
+				rsp2sound[sound->file]->put(sound);
+			}
+		}
+	}
+}
+
 void System::processDatas(Message<Data*> &message)
 {
 	Data *data; while (message.get(data)) {
 		if (!cleanup) {
 			if (&message == &read2req) {
-				if (data->conf == SoundConf) {
-					// TODO add stock to state
-				}
 				if (data->conf == MetricConf) {
 					// TODO add macro to state
 				}
@@ -48,9 +60,10 @@ void System::processDatas(Message<Data*> &message)
 					// TODO fill arguments with stock values
 				}
 			}
-		}
-		if (&message == &read2req) {
-			rsp2read[data->file]->put(data);
+		} else {
+			if (&message == &read2req) {
+				rsp2read[data->file]->put(data);
+			}
 		}
 		if (&message == &script2rsp) {
 			floats.put(ints[data->tagbits],data->argument);
@@ -65,7 +78,8 @@ void System::processDatas(Message<Data*> &message)
 }
 
 System::System(int n) : nfile(n), cleanup(0),
-	rsp2read(new Message<Data*>*[n]), read2req(this,"Read->Data->System"),
+	rsp2sound(new Message<Sound*>*[n]), rsp2read(new Message<Data*>*[n]),
+	sound2req(this,"Read->Sound->System"), read2req(this,"Read->Data->System"),
 	script2rsp(this,"System<-Data<-Script"), script2req(this,"Script->Data->System")
 {
 }
@@ -79,6 +93,7 @@ System::~System()
 void System::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    rsp2sound[i] = &ptr->sound2rsp;
     rsp2read[i] = &ptr->system2rsp;
 }
 
@@ -97,6 +112,7 @@ void System::init()
 
 void System::call()
 {
+	processSounds(sound2req);
 	processDatas(read2req);
 	processDatas(script2rsp);
 	processDatas(script2req);
@@ -105,6 +121,8 @@ void System::call()
 void System::done()
 {
 	cleanup = 1;
+	processSounds(sound2req);
 	processDatas(read2req);
 	processDatas(script2req);
+	// TODO cleanup Sound and Data in timewheel
 }

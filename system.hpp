@@ -25,11 +25,14 @@ class System : public Thread
 {
 private:
 	int nfile; int cleanup;
+	Message<Sound*> **rsp2sound;
 	Message<Data*> **rsp2read;
 	Message<Data*> *req2script;
 	Message<Data*> *rsp2script;
+	void processSounds(Message<Sound*> &message);
 	void processDatas(Message<Data*> &message);
 public:
+	Message<Sound*> sound2req;
 	Message<Data*> read2req;
 	Message<Data*> script2rsp;
 	Message<Data*> script2req;

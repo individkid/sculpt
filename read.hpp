@@ -36,12 +36,14 @@ private:
 	Message<Command*> *req2command;
 	Message<Data*> *req2window;
 	Message<Data*> *req2polytope;
+	Message<Sound*> *req2sound;
 	Message<Data*> *req2system;
 	Message<Data*> *req2script;
 public:
 	Message<Command*> command2rsp;
 	Message<Data*> window2rsp;
 	Message<Data*> polytope2rsp;
+	Message<Sound*> sound2rsp;
 	Message<Data*> system2rsp;
 	Message<Data*> script2rsp;
 	Read(int i, const char *n);

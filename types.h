@@ -212,18 +212,16 @@ struct Data
 	// Script->PlaneConf->Polytope for feedback from topology  
 	// Polytope->PlaneConf->Write for appending manipulated or randomized planes  
 	struct {int versor; float *vector;};
-	// Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
+	// Window->MacroConf->Polytope for tagbits associated with click  
+	int click;
 	// Read->MacroConf->Polytope for attaching scripts to planes  
 	// Read->MetricConf->System for allowing system to query state  
-	// Window->MacroConf->Polytope for tagbits associated with click  
+	struct {int tagbits; float delay; char *config;};
 	// Polytope->MacroConf->Script for starting macro from click  
 	// System->MetricConf->Script for getting value from metric  
-	struct {int tagbits;/*from pierce in polytope; ident in system*/
-	float delay;/*only for metric*/
-	int count; /*number of arguments or idents; zero for config to polytope*/
-	union {float *argument;/*values from system; pierce point from polytope*/
-	int *ident;/*config to system*/};
-	char *script;};
+	struct {int count; float *argument; char *script;};
+	// Script->Data->System for query stock values
+	struct {int size; int *ident; int *value;};
 	// Window->TweakConf->Polytope for tweaking planes  
 	// Window->RefineConf->Polytope for adding planes  
 	struct {enum TopologyMode topology; enum FixedMode fixed; float *pierce;};
@@ -234,6 +232,7 @@ struct Data
 	// Read->ConfigureConf->Window for changing configurations  
 	// Read->TimewheelConf->System for starting and changing sound
 	// TODO
+	// Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
 	// Read->(PictureConf,MacroConf)->Polytope for decorating planes  
 	// Read->TestConf->Polytope for testing topology functions
 	char *text;};

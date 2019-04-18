@@ -38,12 +38,14 @@ private:
 	Message<Data*> **req2polytope;
 	Message<Command*> **req2command;
 	Message<Data*> **req2write;
+	Message<Sound*> **req2sound;
 	Message<Data*> *rsp2system;
 	Message<Data*> *req2system;
 	Message<Command*> *req2window;
 	friend int ::req2polytope(lua_State *state);
 	friend int ::req2write(lua_State *state);
 	void processCommands(Message<Command*> &message);
+	void processSounds(Message<Sound*> &message);
 	void processDatas(Message<Data*> &message);
 public:
 	Message<Data*> read2req;
@@ -51,6 +53,7 @@ public:
 	Message<Data*> polytope2req;
 	Message<Command*> command2rsp;
 	Message<Data*> write2rsp;
+	Message<Sound*> sound2rsp;
 	Message<Data*> system2rsp;
 	Message<Data*> system2req;
 	Message<Command*> window2rsp;

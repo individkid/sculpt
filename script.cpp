@@ -29,6 +29,7 @@ static Power<float> floats(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
 static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<Command> commands(__FILE__,__LINE__);
+static Pool<Sound> sounds(__FILE__,__LINE__);
 
 #define POP_ERROR(MESSAGE,LINE) { \
 	message(MESSAGE,LINE,__FILE__,__LINE__); \
@@ -190,6 +191,14 @@ void Script::processCommands(Message<Command*> &message)
 	}
 }
 
+void Script::processSounds(Message<Sound*> &message)
+{
+	Sound *sound; while (message.get(sound)) {
+		// TODO deallocate field lists
+		sounds.put(sound);
+	}
+}
+
 void Script::processDatas(Message<Data*> &message)
 {
 	Data *data; while (message.get(data)) {
@@ -241,13 +250,15 @@ void Script::processDatas(Message<Data*> &message)
 	}
 }
 
-Script::Script(int n) : state(0), nfile(n), cleanup(0), rsp2read(new Message<Data*>*[n]),
-	rsp2polytope(new Message<Data*>*[n]), req2polytope(new Message<Data*>*[n]),
-	req2command(new Message<Command*>*[n]), req2write(new Message<Data*>*[n]),
+Script::Script(int n) : state(0), nfile(n), cleanup(0),
+	rsp2read(new Message<Data*>*[n]), rsp2polytope(new Message<Data*>*[n]),
+	req2polytope(new Message<Data*>*[n]), req2command(new Message<Command*>*[n]),
+	req2write(new Message<Data*>*[n]), req2sound(new Message<Sound*>*[n]),
 	read2req(this,"Read->Data->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
 	polytope2req(this,"Polytope->Data->Script"), command2rsp(this,"Script<-Command<-Write"),
-	write2rsp(this,"Script<-Data<-Write"), system2rsp(this,"Script<-Data<-System"),
-	system2req(this,"System->Data->Script"), window2rsp(this,"Script<-Command<-Window")
+	write2rsp(this,"Script<-Data<-Write"), sound2rsp(this,"Script<-Sound<-Write"),
+	system2rsp(this,"Script<-Data<-System"), system2req(this,"System->Data->Script"),
+	window2rsp(this,"Script<-Command<-Window")
 {
 }
 
@@ -256,6 +267,7 @@ Script::~Script()
 	processDatas(polytope2rsp);
 	processCommands(command2rsp);
 	processDatas(write2rsp);
+	processSounds(sound2rsp);
 	processDatas(system2rsp);
 	processCommands(window2rsp);
 }
@@ -278,6 +290,7 @@ void Script::connect(int i, Write *ptr)
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
     req2command[i] = &ptr->command2req;
     req2write[i] = &ptr->script2req;
+    req2sound[i] = &ptr->sound2req;
 }
 
 void Script::connect(System *ptr)
@@ -300,6 +313,7 @@ void Script::init()
 	for (int i = 0; i < nfile; i++) if (req2polytope[i] == 0) error("unconnected req2polytope",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2command[i] == 0) error("unconnected req2command",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
+	for (int i = 0; i < nfile; i++) if (req2sound[i] == 0) error("unconnected req2sound",i,__FILE__,__LINE__);
 	if (rsp2system == 0) error("unconnected rsp2system",0,__FILE__,__LINE__);
 	if (req2system == 0) error("unconnected req2system",0,__FILE__,__LINE__);
 	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
@@ -312,6 +326,7 @@ void Script::call()
 	processDatas(polytope2req);
 	processCommands(command2rsp);
 	processDatas(write2rsp);
+	processSounds(sound2rsp);
 	processDatas(system2rsp);
 	processDatas(system2req);
 	processCommands(window2rsp);

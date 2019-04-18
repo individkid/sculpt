@@ -30,11 +30,13 @@ private:
 	Message<Data*> *rsp2polytope;
 	Message<Command*> *rsp2command;
 	Message<Data*> *rsp2script;
+	Message<Sound*> *rsp2sound;
 	Message<Data*> *rsp2window;
 public:
 	Message<Data*> polytope2req;
 	Message<Command*> command2req;
 	Message<Data*> script2req;
+	Message<Sound*> sound2req;
 	Message<Data*> window2req;
 	Write(int i, const char *n);
 	void connect(Polytope *ptr);
