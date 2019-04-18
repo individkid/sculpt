@@ -261,9 +261,9 @@ struct Sound
 	int file;
 	int ident;
 	float value;
-	struct Equ newval;
-	struct Equ nvaldly;
-	struct Equ evaldly;
+	struct Equ equat;
+	struct Equ delay;
+	struct Equ sched;
 	struct Equ sound;
 };
 
