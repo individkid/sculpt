@@ -221,7 +221,7 @@ struct Data
 	// System->MetricConf->Script for getting value from metric  
 	struct {int count; float *argument; char *script;};
 	// Script->Data->System for query stock values
-	struct {int size; int *ident; int *value;};
+	struct {int size; int *ident; float *value;};
 	// Window->TweakConf->Polytope for tweaking planes  
 	// Window->RefineConf->Polytope for adding planes  
 	struct {enum TopologyMode topology; enum FixedMode fixed; float *pierce;};
