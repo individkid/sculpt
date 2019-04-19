@@ -212,11 +212,11 @@ struct Data
 	// Script->PlaneConf->Polytope for feedback from topology  
 	// Polytope->PlaneConf->Write for appending manipulated or randomized planes  
 	struct {int versor; float *vector;};
-	// Window->MacroConf->Polytope for tagbits associated with click  
-	int click;
+	// Window->MacroConf->Polytope for tagbits pierce normal associated with click  
+	struct {int click; float *scalars;};
 	// Read->MacroConf->Polytope for attaching scripts to planes  
 	// Read->MetricConf->System for allowing system to query state  
-	struct {int tagbits; float delay; char *config;};
+	struct {union {int tagbits; float delay;}; char *config;};
 	// Polytope->MacroConf->Script for starting macro from click  
 	// System->MetricConf->Script for getting value from metric  
 	struct {int count; float *argument; char *script;};
@@ -239,10 +239,10 @@ struct Data
 };
 struct Term
 {
-	float coef;
-	int factor;
-	int square;
-	int comp;
+	double coef;
+	union {int id; double *ptr;} factor;
+	union {int id; double *ptr;} square;
+	union {int id; double *ptr;} comp;
 };
 struct Sum
 {
@@ -260,7 +260,7 @@ struct Sound
 {
 	int file;
 	int ident;
-	float value; // tone envelope phrase or helper
+	double value; // tone envelope phrase or helper
 	struct Equ equat; // new value after delay
 	struct Equ delay; // wavelength
 	struct Equ sched; // sample rate

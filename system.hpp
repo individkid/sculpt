@@ -17,6 +17,7 @@
 */
 
 #include "message.hpp"
+#include "pqueue.h"
 
 class Read;
 class Script;
@@ -25,6 +26,9 @@ class System : public Thread
 {
 private:
 	int nfile; int cleanup;
+	pqueue_t sample;
+	pqueue_t metric;
+	pqueue_t update;
 	Message<Sound*> **rsp2sound;
 	Message<Data*> **rsp2read;
 	Message<Data*> *req2script;

@@ -19,11 +19,22 @@
 #include "system.hpp"
 #include "read.hpp"
 #include "script.hpp"
+#include "portaudio.h"
 
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
 static Sparse<int,int> ints(__FILE__,__LINE__);
+
+static int callback(
+	const void *inputBuffer, void *outputBuffer,
+    unsigned long framesPerBuffer,
+    const PaStreamCallbackTimeInfo* timeInfo,
+    PaStreamCallbackFlags statusFlags,
+    void *userData)
+{
+	return 0;
+}
 
 void System::processSounds(Message<Sound*> &message)
 {
@@ -82,10 +93,14 @@ System::System(int n) : nfile(n), cleanup(0),
 	sound2req(this,"Read->Sound->System"), read2req(this,"Read->Data->System"),
 	script2rsp(this,"System<-Data<-Script"), script2req(this,"Script->Data->System")
 {
+	PaError err = Pa_Initialize();
+	if (err != paNoError) error("portaudio init failed",Pa_GetErrorText(err),__FILE__,__LINE__);
 }
 
 System::~System()
 {
+	PaError err = Pa_Terminate();
+	if (err != paNoError) error("portaudio term failed",Pa_GetErrorText(err),__FILE__,__LINE__);
 	if (!cleanup) error("done not called",0,__FILE__,__LINE__);
 	processDatas(script2rsp);
 }
