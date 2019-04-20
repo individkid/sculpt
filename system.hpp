@@ -18,21 +18,49 @@
 
 #include "message.hpp"
 #include "pqueue.h"
+#include "portaudio.h"
 
 class Read;
 class Script;
 
+extern "C" int systemFunc(
+	const void *inputBuffer, void *outputBuffer,
+    unsigned long framesPerBuffer,
+    const PaStreamCallbackTimeInfo* timeInfo,
+    PaStreamCallbackFlags statusFlags,
+    void *userData);
+
 class System : public Thread
 {
 private:
-	int nfile; int cleanup;
+	int nfile; int cleanup; int size;
 	pqueue_t sample;
 	pqueue_t metric;
 	pqueue_t update;
+	Sound *stodo;
+	Data *dtodo;
+	float *lwave;
+	float *rwave;
+	int *lcount;
+	int *rcount;
+	PaStream *stream;
+	PaTime wbeat, rbeat;
+	int windex, rindex;
 	Message<Sound*> **rsp2sound;
 	Message<Data*> **rsp2read;
 	Message<Data*> *req2script;
 	Message<Data*> *rsp2script;
+	friend int systemFunc(
+		const void *inputBuffer, void *outputBuffer,
+	    unsigned long framesPerBuffer,
+	    const PaStreamCallbackTimeInfo* timeInfo,
+	    PaStreamCallbackFlags statusFlags,
+	    void *userData);
+	void callback(float *out, PaTime current, int frames);
+	void callforth(Equ &left, Equ &right);
+	void calladd(float value, float *wave, int *count);
+	void callinit(float value, float *wave, int *count);
+	double evaluate(Equ &equation);
 	void processSounds(Message<Sound*> &message);
 	void processDatas(Message<Data*> &message);
 public:

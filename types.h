@@ -27,6 +27,9 @@
 #define INVALID 1.0e37
 #define MMAP 256
 #define BREAK 97
+#define BEAT_PERIOD (1.0/44100.0)
+#define WAVE_SIZE 1024
+#define SAMPLE_RATE 44100
 #ifndef DEBUG
 #define DEBUG 0
 #endif
@@ -231,7 +234,7 @@ struct Data
 	struct {int seqnum; float *matrix;};
 	// Read->ConfigureConf->Window for changing configurations  
 	// Read->TimewheelConf->System for starting and changing sound
-	// TODO
+	struct {int start; int stop;};
 	// Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
 	// Read->(PictureConf,MacroConf)->Polytope for decorating planes  
 	// Read->TestConf->Polytope for testing topology functions
@@ -264,7 +267,8 @@ struct Sound
 	struct Equ equat; // new value after delay
 	struct Equ delay; // wavelength
 	struct Equ sched; // sample rate
-	struct Equ sound; // directly audible
+	struct Equ left; // directly audible left
+	struct Equ right; // directly audible right
 };
 
 #endif

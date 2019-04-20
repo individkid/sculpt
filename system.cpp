@@ -19,21 +19,66 @@
 #include "system.hpp"
 #include "read.hpp"
 #include "script.hpp"
-#include "portaudio.h"
 
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
 static Sparse<int,int> ints(__FILE__,__LINE__);
 
-static int callback(
+extern "C" int systemFunc(
 	const void *inputBuffer, void *outputBuffer,
     unsigned long framesPerBuffer,
     const PaStreamCallbackTimeInfo* timeInfo,
     PaStreamCallbackFlags statusFlags,
     void *userData)
 {
+	System *self = (System*)userData;
+	self->callback((float*)outputBuffer,timeInfo->currentTime,framesPerBuffer);
 	return 0;
+}
+
+void System::callback(float *out, PaTime current, int frames)
+{
+	PaTime size = (current-rbeat)/BEAT_PERIOD;
+	PaTime ratio = size/frames;
+	for (int i = 0; i < frames; i++) {
+	int index = (int)(rindex+i*ratio)%WAVE_SIZE;
+	*out++ = lwave[index];
+	*out++ = rwave[index];}
+}
+
+void System::callforth(Equ &left, Equ &right)
+{
+	PaTime current = Pa_GetStreamTime(stream)+WAVE_SIZE*BEAT_PERIOD/2.0;
+	while (wbeat < current) {
+	float ltemp = lwave[windex];
+	float rtemp = rwave[windex];
+	windex = (windex+1)%WAVE_SIZE;
+	wbeat += BEAT_PERIOD;
+	callinit(ltemp,lwave,lcount);
+	callinit(rtemp,rwave,rcount);}
+	if (left.denom.count) calladd(evaluate(left),lwave,lcount);
+	if (right.denom.count) calladd(evaluate(right),rwave,rcount);
+}
+
+void System::calladd(float value, float *wave, int *count)
+{
+	if (value > 1.0 || value < -1.0) return;
+	wave[windex] = wave[windex]*count[windex]+value;
+	count[windex] += 1;
+	wave[windex] /= count[windex];
+}
+
+void System::callinit(float value, float *wave, int *count)
+{
+	count[windex] = 0;
+	wave[windex] = value;
+}
+
+double System::evaluate(Equ &equation)
+{
+	// TODO
+	return 0.0;
 }
 
 void System::processSounds(Message<Sound*> &message)
@@ -58,6 +103,17 @@ void System::processDatas(Message<Data*> &message)
 			if (&message == &read2req) {
 				if (data->conf == MetricConf) {
 					// TODO add macro to state
+				}
+				if (data->conf == TimewheelConf) {
+					if (data->start) {
+						// TODO map ident to pointer in stodo and dtodo
+						PaError err = Pa_StartStream(stream);
+						if (err != paNoError) error("start stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
+					}
+					if (data->stop) {
+						PaError err = Pa_StopStream(stream);
+						if (err != paNoError) error("stop stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
+					}
 				}
 			}
 			if (&message == &script2rsp) {
@@ -88,18 +144,29 @@ void System::processDatas(Message<Data*> &message)
 	}
 }
 
-System::System(int n) : nfile(n), cleanup(0),
+System::System(int n) : nfile(n), cleanup(0), stodo(0), dtodo(0),
+	lwave(new float[WAVE_SIZE]), rwave(new float[WAVE_SIZE]),
+	lcount(new int[WAVE_SIZE]), rcount(new int[WAVE_SIZE]),
+	wbeat(0.0), rbeat(0.0), windex(0), rindex(0),
 	rsp2sound(new Message<Sound*>*[n]), rsp2read(new Message<Data*>*[n]),
 	sound2req(this,"Read->Sound->System"), read2req(this,"Read->Data->System"),
 	script2rsp(this,"System<-Data<-Script"), script2req(this,"Script->Data->System")
 {
+	for (int i = 0; i < WAVE_SIZE; i++) lwave[i] = 0.0;
+	for (int i = 0; i < WAVE_SIZE; i++) rwave[i] = 0.0;
+	for (int i = 0; i < WAVE_SIZE; i++) lcount[i] = 0;
+	for (int i = 0; i < WAVE_SIZE; i++) rcount[i] = 0;
 	PaError err = Pa_Initialize();
 	if (err != paNoError) error("portaudio init failed",Pa_GetErrorText(err),__FILE__,__LINE__);
+	err = Pa_OpenDefaultStream(&stream,0,2,paFloat32,SAMPLE_RATE,WAVE_SIZE/4,systemFunc,(void*)this);
+	if (err != paNoError) error("portaudo stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
 }
 
 System::~System()
 {
-	PaError err = Pa_Terminate();
+	PaError err = Pa_CloseStream(stream);
+	if (err != paNoError) error("close stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
+	err = Pa_Terminate();
 	if (err != paNoError) error("portaudio term failed",Pa_GetErrorText(err),__FILE__,__LINE__);
 	if (!cleanup) error("done not called",0,__FILE__,__LINE__);
 	processDatas(script2rsp);
