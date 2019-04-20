@@ -37,9 +37,9 @@ extern "C" int systemFunc(
 	return 0;
 }
 
-void System::callback(float *out, PaTime current, int frames)
+void System::callback(float *out, PaTime time, int frames)
 {
-	PaTime size = (current-rbeat)/BEAT_PERIOD;
+	PaTime size = (time-rbeat)/BEAT_PERIOD;
 	PaTime ratio = size/frames;
 	for (int i = 0; i < frames; i++) {
 	int index = (int)(rindex+i*ratio)%WAVE_SIZE;
@@ -49,8 +49,8 @@ void System::callback(float *out, PaTime current, int frames)
 
 void System::callforth(Equ &left, Equ &right)
 {
-	PaTime current = Pa_GetStreamTime(stream)+WAVE_SIZE*BEAT_PERIOD/2.0;
-	while (wbeat < current) {
+	PaTime time = Pa_GetStreamTime(stream)+WAVE_SIZE*BEAT_PERIOD/2.0;
+	while (wbeat < time) {
 	float ltemp = lwave[windex];
 	float rtemp = rwave[windex];
 	windex = (windex+1)%WAVE_SIZE;
