@@ -124,7 +124,6 @@ enum Configure {
 	RegionConf,
 	InflateConf,
 	PictureConf,
-	SoundConf,
 	MetricConf,
 	MacroConf,
 	ScriptConf,
@@ -188,8 +187,7 @@ struct Render
 struct Command
 {
 	struct Command *next;
-	int feedback; int finish;
-	union {int file;/*Read,Polytope*/ int tagbits;/*Script*/};
+	int file; int feedback; int finish;
 	struct Update *update[Fields];
 	struct Render *render;
 	struct Command *redraw;
@@ -215,16 +213,12 @@ struct Data
 	// Script->PlaneConf->Polytope for feedback from topology  
 	// Polytope->PlaneConf->Write for appending manipulated or randomized planes  
 	struct {int versor; float *vector;};
-	// Window->MacroConf->Polytope for tagbits pierce normal associated with click  
-	struct {int click; float *scalars;};
-	// Read->MacroConf->Polytope for attaching scripts to planes  
 	// Read->MetricConf->System for allowing system to query state  
-	struct {union {int tagbits; float delay;}; char *config;};
-	// Polytope->MacroConf->Script for starting macro from click  
+	// Read->MacroConf->Window for attaching scripts to planes  
+	// Script->ScriptConf->System for query stock values
 	// System->MetricConf->Script for getting value from metric  
-	struct {int count; float *argument; char *script;};
-	// Script->Data->System for query stock values
-	struct {int size; int *ident; float *value;};
+	// Window->MacrotConf->Script for starting macro from click  
+	struct {float delay; int count; int *ident; double *value; char *script;};
 	// Window->TweakConf->Polytope for tweaking planes  
 	// Window->RefineConf->Polytope for adding planes  
 	struct {enum TopologyMode topology; enum FixedMode fixed; float *pierce;};

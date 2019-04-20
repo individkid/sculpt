@@ -305,10 +305,8 @@ char *Parse::get(const Data *data)
 		return str;}
 	case (InflateConf): return setup("--inflate");
 	case (PictureConf): {const char *str = data->text; return concat(setup("--picture "),str);}
-	case (SoundConf): /*TODO*/ break;
 	case (MetricConf): /*TODO*/ break;
 	case (ScriptConf): /*TODO*/ break;
-	case (CommandConf): /*TODO*/ break;
 	case (ConfigureConf): /*TODO*/ break;
 	case (TestConf): {const char *str = data->text; return concat(setup("--test "),str);}
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}

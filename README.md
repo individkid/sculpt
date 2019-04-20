@@ -38,42 +38,44 @@ The -- commands are as follows.
 --region two lists of bnames and whether the indicated region is in the polytope  
 --inflate mark inside regions as in, and outside regions as not in the polytope  
 --picture "bname" filename for texture  
+--macro "bname" script, triggered by mouse click  
 --sound "sname" coefficients, variables as references to snames and mnames, equations as quotients of sums of terms of one coefficients and up to three variables, value as equation, value change delay as equation, reschedule delay as equation, sound contribution as equation  
 --metric "mname" script, rate, list of sname, returns value  
---macro "bname" script, triggered by mouse click  
 --script script to run even if not at end of file  
 --invoke script to run if this command is at end of file  
---command send command to window thread  
 --configure change aspect ratio granularity base delay etc  
 --timewheel start stop timewheel, change speaker volume, etc  
+--command send command to window thread  
 --test run tests of functions in the polytope thread  
 
 Threads send structs to each other. Each sent struct is sent back to the sender for deallocation.  
-Read->CommandConf->Window for bringup  
-Read->(MatrixConf,GlobalConf)->Window for applying transformations from other processes  
 Read->(AdditiveConf..AbsoluteConf)->Window for changing modes  
-Read->ConfigureConf->Window for changing configurations  
 Read->PlaneConf->Polytope for adding or changing planes  
-Read->(RegionConf,InflateConf)->Polytope for changing which regions are in the polytope  
+Read->(MatrixConf,GlobalConf)->Window for applying transformations from other processes  
 Read->SpaceConf->Polytope for creating sample of space  
+Read->(RegionConf,InflateConf)->Polytope for changing which regions are in the polytope  
 Read->(PictureConf,MacroConf)->Polytope for decorating planes  
-Read->TestConf->Polytope for testing topology functions  
-Read->(SoundConf,MetricConf)->System for changing sound  
+Read->Sound->System for adding value with change equations  
+Read->MetricConf->System for adding value periodically calculated by script  
+Read->MacroConf->Window for setting up script to run upon click  
 Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
-Window->(MatrixConf,GlobalConf)->Write for recording transformations  
+Read->ConfigureConf->Window for changing configurations  
+Read->TimewheelConf->System for starting stopping and configuring timewheel  
+Read->Command->Window for bringup  
+Read->TestConf->Polytope for testing topology functions  
 Window->TransformConf->Polytope for manipulating planes  
 Window->TweakConf->Polytope for tweaking planes  
 Window->RefineConf->Polytope for adding planes  
 Window->AdditiveConf,SubtractiveConf->Polytope for sculpting polytope  
-Window->MetricConf->Polytope for tagbits associated with click  
+Window->(MatrixConf,GlobalConf)->Write for recording transformations  
+Window->MacroConf->Script for starting macro from click  
 Script->*->Write for side effects  
 Script->PlaneConf,SpaceConf,RegionConf->Polytope for feedback from topology  
-Script->SoundConf->System for getting stock values  
-Script->CommandConf->Window for queries to microcode  
+Script->ScriptConf->System for getting stock values  
+Script->Command->Window for queries to microcode  
 Polytope->PlaneConf->Write for appending manipulated or randomized planes  
 Polytope->RegionConf->Write for changing whether region is in polytope  
-Polytope->CommandConf->Window for changing what is displayed  
-Polytope->MacroConf->Script for starting macro from click  
+Polytope->Command->Window for changing what is displayed  
 System->MetricConf->Script for getting value from metric  
 
 For example, --plane sends a stuct to the Polytope thread that sends a Command to the Window thread to append the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.

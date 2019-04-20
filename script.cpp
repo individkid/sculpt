@@ -110,7 +110,6 @@ int req2write(lua_State *state)
 	break;
 	case (MatrixConf):
 	case (GlobalConf):
-	POP_INT(tagbits,__LINE__);
 	data->matrix = floats.get(16);
 	POP_FLOATS(matrix,16,__LINE__);
 	break;
@@ -136,12 +135,8 @@ int req2write(lua_State *state)
 	case (PictureConf):
 	POP_STRING(text,__LINE__);
 	break;
-	case (SoundConf):
-	POP_ERROR("unimplemented",__LINE__);
-	break;
 	case (MetricConf):
 	case (MacroConf):
-	POP_INT(tagbits,__LINE__);
 	POP_FLOAT(delay,__LINE__);
 	POP_INT(count,__LINE__);
 	POP_INTS(ident,data->count,__LINE__);

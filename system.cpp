@@ -23,7 +23,6 @@
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
-static Sparse<int,int> ints(__FILE__,__LINE__);
 
 extern "C" int systemFunc(
 	const void *inputBuffer, void *outputBuffer,
@@ -120,10 +119,7 @@ void System::processDatas(Message<Data*> &message)
 				// TODO update metric value from script result
 			}
 			if (&message == &script2req) {
-				if (data->conf == SoundConf) {
-					// TODO fill arguments with stock values
-				}
-				if (data->conf == MetricConf) {
+				if (data->conf == ScriptConf) {
 					// TODO fill arguments with stock values
 				}
 			}
@@ -133,8 +129,6 @@ void System::processDatas(Message<Data*> &message)
 			}
 		}
 		if (&message == &script2rsp) {
-			floats.put(ints[data->tagbits],data->argument);
-			ints.remove(data->tagbits);
 			chars.put(strlen(data->script)+1,data->script);
 			datas.put(data);
 		}

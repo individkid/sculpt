@@ -57,7 +57,7 @@ void sendRefine(int file, int plane, float *pierce);
 void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce);
 void sendAbsolute(int file, int plane, enum TopologyMode topology);
 void sendFacet(int file, int plane, float *matrix);
-void sendInvoke(int file, int plane, int tagbits);
+void sendInvoke(int file, int plane);
 void maybeKill(int seq);
 
 int isSuspend();

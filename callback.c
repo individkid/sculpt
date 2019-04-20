@@ -362,7 +362,7 @@ void changeToggle(int toggle)
 
 void triggerAction()
 {
-	if (current.tagbits) sendInvoke(current.file,current.plane,current.tagbits);
+	if (current.tagbits) sendInvoke(current.file,current.plane);
 	switch (state.click) {
 	case (AdditiveMode): sendAdditive(current.file,current.plane); break;
 	case (SubtractiveMode): sendSubtracive(current.file,current.plane); break;

@@ -97,11 +97,12 @@ extern "C" void sendFacet(int file, int plane, float *matrix)
     window->sendPolytope(data);
 }
 
-extern "C" void sendInvoke(int file, int plane, int tagbits)
+extern "C" void sendInvoke(int file, int plane)
 {
-    Data *data = datas.get(); data->tagbits = tagbits;
+    Data *data = datas.get();
     data->file = file; data->plane = plane; data->conf = MacroConf;
     window->sendPolytope(data);
+// TODO lookup script by file/plane and send directly to Script
 }
 
 extern "C" void warpCursor(float *cursor)
