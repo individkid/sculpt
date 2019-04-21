@@ -312,12 +312,13 @@ void Window::processDatas(Message<Data*> &message)
     Data *data; while (message.get(data)) {
         if (&message == &read2req) {
             if (data->conf == MacroConf) {
-            Pair<int,int> pair; pair.s = data->file; pair.t = data->plane;
-            if (macros.lookup(pair)) object[data->file].rsp2read->put(macros[pair]);
-            macros[pair] = data;
-            object[data->file].req2polytope->put(data);} else {
-            changeState(data);
-            object[data->file].rsp2read->put(data);}}
+                Pair<int,int> pair; pair.s = data->file; pair.t = data->plane;
+                if (macros.lookup(pair)) object[data->file].rsp2read->put(macros[pair]);
+                macros[pair] = data;
+                object[data->file].req2polytope->put(data);}
+            else {
+                changeState(data);
+                object[data->file].rsp2read->put(data);}}
         if (&message == &polytope2rsp) {
             if (data->conf != MacroConf) {
             floats.put(16,data->matrix);
