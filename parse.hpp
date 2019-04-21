@@ -34,13 +34,17 @@ private:
 	int get(const char *ptr, Update *&update);
 	int get(const char *ptr, Render *&render);
 	int get(const char *ptr, int file, Command *&command);
+	void script(const char *ptr, int file, enum Configure conf, Data *&data);
+	void text(const char *ptr, int file, enum Configure conf, Data *&data);
+	void get(const char *ptr, int file, Sound *&sound);
+	void configure(const char *ptr, int file, enum Configure conf, Data *&data);
 public:
 	Parse(const char *file, int line) :
 		commands(file,line), updates(file,line), renders(file,line),
 		datas(file,line), floats(file,line), chars(file,line) {}
 	void get(const char *ptr, int file, enum Configure conf, Data *&data);
 	void get(const char *ptr, int file, Command *&command,
-		Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&script);
+		Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&data);
 	void put(Command *command);
 	void put(Sound *sound);
 	void put(Data *data);
@@ -69,6 +73,7 @@ public:
 	int number(const char *str, int &val);
 	int scalar(const char *str, float &val);
 	int literal(const char *str, const char *pat);
+	int text(const char *str);
 };
 
 #endif

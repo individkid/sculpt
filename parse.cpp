@@ -114,6 +114,30 @@ int Parse::get(const char *ptr, int file, Command *&command)
 	return len;
 }
 
+void Parse::script(const char *ptr, int file, enum Configure, Data *&data)
+{
+	// TODO
+}
+
+void Parse::text(const char *ptr, int file, enum Configure conf, Data *&data)
+{
+	int len = text(ptr);
+	data = datas.get(); data->text = strncpy(setup(len+1),ptr,len);
+	data->text[len] = 0; data->conf = conf; data->file = file;
+}
+
+void Parse::get(const char *ptr, int file, Sound *&sound)
+{
+	// TODO
+}
+
+void Parse::configure(const char *ptr, int file, enum Configure conf, Data *&data)
+{
+	data = datas.get();
+	if (literal(ptr," Start")) data->subconf = StartSub;
+	if (literal(ptr," Stop")) data->subconf = StopSub;
+}
+
 void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 {
 	data = datas.get(); data->matrix = floats.get(16);
@@ -122,9 +146,9 @@ void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 }
 
 void Parse::get(const char *ptr, int file, Command *&command,
-	Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&script)
+	Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&data)
 {
-	int len, inc; command = 0; system = 0; window = polytope = script = 0;
+	int len, inc; command = 0; system = 0; window = polytope = data = 0;
 
 	len = literal(ptr,"--additive"); if (len) {window = datas.get();
 	window->conf = AdditiveConf; window->file = file; return;}
@@ -195,6 +219,20 @@ void Parse::get(const char *ptr, int file, Command *&command,
 	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,window); return;}
 
 	len = literal(ptr,"--global"); if (len) {get(ptr+len,file,GlobalConf,window); return;}
+
+	len = literal(ptr,"--macro"); if (len) {script(ptr+len,file,MacroConf,window); return;}
+
+	len = literal(ptr,"--sound"); if (len) {get(ptr+len,file,sound); return;}
+
+	len = literal(ptr,"--metric"); if (len) {script(ptr+len,file,MetricConf,system); return;}
+
+	len = literal(ptr,"--script"); if (len) {text(ptr+len,file,ScriptConf,data); return;}
+
+	len = literal(ptr,"--invoke"); if (len) {text(ptr+len,file,InvokeConf,data); return;}
+
+	len = literal(ptr,"--configure"); if (len) {configure(ptr+len,file,ConfigureConf,window); return;}
+
+	len = literal(ptr,"--timewheel"); if (len) {configure(ptr+len,file,TimewheelConf,system); return;}
 
 	len = literal(ptr,"--command"); if (len) {get(ptr+len,file,command); if (command) return;}
 
@@ -305,9 +343,11 @@ char *Parse::get(const Data *data)
 		return str;}
 	case (InflateConf): return setup("--inflate");
 	case (PictureConf): {const char *str = data->text; return concat(setup("--picture "),str);}
-	case (MetricConf): /*TODO*/ break;
-	case (ScriptConf): /*TODO*/ break;
+	case (MetricConf): {const char *str = data->text; return concat(setup("--metric "),str);}
+	case (ScriptConf): {const char *str = data->text; return concat(setup("--script "),str);}
+	case (InvokeConf): {const char *str = data->text; return concat(setup("--invoke "),str);}
 	case (ConfigureConf): /*TODO*/ break;
+	case (TimewheelConf): /*TODO*/ break;
 	case (TestConf): {const char *str = data->text; return concat(setup("--test "),str);}
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
 	return 0;
@@ -366,4 +406,11 @@ int Parse::literal(const char *str, const char *pat)
 	while (*ptr && isspace(*ptr)) ptr++;}
 	while (*pat && *ptr == *pat) {ptr++; pat++;}
 	return (*pat ? 0 : ptr-str);
+}
+
+int Parse::text(const char *str)
+{
+	const char *ptr = str;
+	while (literal(ptr,"--") == 0) ptr++;
+	return ptr-str;
 }

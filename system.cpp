@@ -104,12 +104,12 @@ void System::processDatas(Message<Data*> &message)
 					// TODO add macro to state
 				}
 				if (data->conf == TimewheelConf) {
-					if (data->start) {
+					if (data->subconf == StartSub) {
 						// TODO map ident to pointer in stodo and dtodo
 						PaError err = Pa_StartStream(stream);
 						if (err != paNoError) error("start stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
 					}
-					if (data->stop) {
+					if (data->subconf == StopSub) {
 						PaError err = Pa_StopStream(stream);
 						if (err != paNoError) error("stop stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
 					}

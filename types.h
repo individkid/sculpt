@@ -133,6 +133,10 @@ enum Configure {
 	TimewheelConf,
 	TestConf,
 	Configures};
+enum Subconf {
+	StartSub,
+	StopSub,
+	Subconfs};
 enum Field {
 	AllocField,
 	WriteField,
@@ -228,9 +232,9 @@ struct Data
 	struct {int seqnum; float *matrix;};
 	// Read->ConfigureConf->Window for changing configurations  
 	// Read->TimewheelConf->System for starting and changing sound
-	struct {int start; int stop;};
+	struct {enum Subconf subconf; float setting;};
 	// Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
-	// Read->(PictureConf,MacroConf)->Polytope for decorating planes  
+	// Read->PictureConf->Polytope for decorating planes  
 	// Read->TestConf->Polytope for testing topology functions
 	char *text;};
 };
