@@ -52,6 +52,7 @@ private:
 	Object *object;
 	Microcode microcode[Programs];
 	Message<Command*> *rsp2script;
+	Message<Data*> *req2script;
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
 	void bindBuffer(Update &update);
@@ -75,6 +76,7 @@ public:
 	Message<Command*> polytope2req;
 	Message<Data*> write2rsp;
 	Message<Command*> script2req;
+	Message<Data*> script2rsp;
 	Window(int n);
 	virtual ~Window();
 	void connect(int i, Read *ptr);

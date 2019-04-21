@@ -330,7 +330,8 @@ void Window::processDatas(Message<Data*> &message)
 Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
     command2req(this,"Read->Command->Window"), read2req(this,"Read->Data->Window"),
     polytope2rsp(this,"Window<-Data<-Polytope"), polytope2req(this,"Polytope->Data->Window"),
-    write2rsp(this,"Window<-Data<-Write"), script2req(this,"Script->Data->Window")
+    write2rsp(this,"Window<-Data<-Write"), script2req(this,"Script->Command->Window"),
+    script2rsp(this,"Window->Data->Script")
 {
     Queues init = {0}; script = command = polytope = init;
 }

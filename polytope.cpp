@@ -25,9 +25,8 @@
 static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<Command> commands(__FILE__,__LINE__);
 
-Polytope::Polytope(int i) : Thread(),
-	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-Data<-Write"),
-	script2rsp(this,"Polytope<-Data<-Script"), script2req(this,"Script->Data->Polytope"),
+Polytope::Polytope(int i) : Thread(), read2req(this,"Read->Data->Polytope"),
+	write2rsp(this,"Polytope<-Data<-Write"), script2req(this,"Script->Data->Polytope"),
 	window2rsp(this,"Polytope<-Data<-Window"), window2req(this,"Window->Data->Polytope")
 {
 }
@@ -36,7 +35,6 @@ Polytope::~Polytope()
 {
 	Command *command; Data *data;
 	while (write2rsp.get(data)) datas.put(data);
-	while (script2rsp.get(data)) datas.put(data);
 	while (window2rsp.get(command)) commands.put(command);
 }
 
@@ -52,7 +50,6 @@ void Polytope::connect(Write *ptr)
 
 void Polytope::connect(Script *ptr)
 {
-	req2script = &ptr->polytope2req;
 	rsp2script = &ptr->polytope2rsp;
 }
 
@@ -67,7 +64,6 @@ void Polytope::init()
 	if (rsp2read == 0) error("unconnected rsp2read",0,__FILE__,__LINE__);
 	if (req2write == 0) error("unconnected req2write",0,__FILE__,__LINE__);
 	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
-	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
 	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
 }

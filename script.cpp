@@ -208,7 +208,7 @@ void Script::processDatas(Message<Data*> &message)
 			if (&message == &polytope2rsp) {
 				// TODO write topology, and execute script
 			}
-			if (&message == &polytope2req) {
+			if (&message == &window2req) {
 				// TODO write pierce plane file, execute script, and read result
 			}
 			if (&message == &system2rsp) {
@@ -219,16 +219,14 @@ void Script::processDatas(Message<Data*> &message)
 			}
 		}
 		if (&message == &read2req) {
-			// TODO deallocate fields
 			rsp2read[data->file]->put(data);
 		}
 		if (&message == &polytope2rsp) {
 			// TODO deallocate fields
 			datas.put(data);
 		}
-		if (&message == &polytope2req) {
-			// TODO deallocate fields
-			rsp2polytope[data->file]->put(data);
+		if (&message == &window2req) {
+			rsp2window->put(data);
 		}
 		if (&message == &write2rsp) {
 			// TODO deallocate fields
@@ -238,22 +236,17 @@ void Script::processDatas(Message<Data*> &message)
 			// TODO deallocate fields
 			datas.put(data);
 		}
-		if (&message == &system2req) {
-			// TODO deallocate fields
-			datas.put(data);
-		}
 	}
 }
 
 Script::Script(int n) : state(0), nfile(n), cleanup(0),
-	rsp2read(new Message<Data*>*[n]), rsp2polytope(new Message<Data*>*[n]),
-	req2polytope(new Message<Data*>*[n]), req2command(new Message<Command*>*[n]),
-	req2write(new Message<Data*>*[n]), req2sound(new Message<Sound*>*[n]),
-	read2req(this,"Read->Data->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
-	polytope2req(this,"Polytope->Data->Script"), command2rsp(this,"Script<-Command<-Write"),
+	rsp2read(new Message<Data*>*[n]), req2polytope(new Message<Data*>*[n]),
+	req2command(new Message<Command*>*[n]), req2write(new Message<Data*>*[n]),
+	req2sound(new Message<Sound*>*[n]), read2req(this,"Read->Data->Script"),
+	polytope2rsp(this,"Script<-Data<-Polytope"), command2rsp(this,"Script<-Command<-Write"),
 	write2rsp(this,"Script<-Data<-Write"), sound2rsp(this,"Script<-Sound<-Write"),
 	system2rsp(this,"Script<-Data<-System"), system2req(this,"System->Data->Script"),
-	window2rsp(this,"Script<-Command<-Window")
+	window2req(this,"Window->Data->Script"), window2rsp(this,"Script<-Command<-Window")
 {
 }
 
@@ -276,7 +269,6 @@ void Script::connect(int i, Read *ptr)
 void Script::connect(int i, Polytope *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-	rsp2polytope[i] = &ptr->script2rsp;
     req2polytope[i] = &ptr->script2req;
 }
 
@@ -296,6 +288,7 @@ void Script::connect(System *ptr)
 
 void Script::connect(Window *ptr)
 {
+	rsp2window = &ptr->script2rsp;
 	req2window = &ptr->script2req;
 }
 
@@ -304,7 +297,6 @@ void Script::init()
 	state = luaL_newstate();
 	lua_pushcfunction(state,::req2polytope);
 	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
-	for (int i = 0; i < nfile; i++) if (rsp2polytope[i] == 0) error("unconnected rsp2polytope",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2polytope[i] == 0) error("unconnected req2polytope",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2command[i] == 0) error("unconnected req2command",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
@@ -318,7 +310,6 @@ void Script::call()
 {
 	processDatas(read2req);
 	processDatas(polytope2rsp);
-	processDatas(polytope2req);
 	processCommands(command2rsp);
 	processDatas(write2rsp);
 	processSounds(sound2rsp);
@@ -331,6 +322,5 @@ void Script::done()
 {
 	cleanup = 1;
 	processDatas(read2req);
-	processDatas(polytope2req);
 	processDatas(system2req);
 }
