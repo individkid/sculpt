@@ -41,6 +41,8 @@ extern Window *window;
 
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
+static Power<char> chars(__FILE__,__LINE__);
+static Sparse<Pair<int,int>,Data*> macros(__FILE__,__LINE__);
 
 extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix)
 {
@@ -99,10 +101,9 @@ extern "C" void sendFacet(int file, int plane, float *matrix)
 
 extern "C" void sendInvoke(int file, int plane)
 {
-    Data *data = datas.get();
-    data->file = file; data->plane = plane; data->conf = MacroConf;
-    window->sendPolytope(data);
-// TODO lookup script by file/plane and send directly to Script
+    Pair<int,int> pair; pair.s = file; pair.t = plane;
+    if (!macros.lookup(pair)) error("invalid tagbits",0,__FILE__,__LINE__);
+    window->sendScript(macros[pair]);
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -325,6 +326,9 @@ void Window::processDatas(Message<Data*> &message)
                 if (data->fixed == AbsoluteMode) datas.put(data);}
             if (data->conf == TransformConf) {floats.put(16,data->matrix); datas.put(data);}
             if (data->conf == MacroConf) datas.put(data);}}
+        if (&message == &script2rsp) {
+            // nothing to do
+        }
 }
 
 Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
@@ -341,6 +345,12 @@ Window::~Window()
     if (window) error("done not called",0,__FILE__,__LINE__);
     processDatas(polytope2rsp);
     processDatas(write2rsp);
+    processDatas(script2rsp);
+    Pair<int,int> pair;
+    while (macros.first(pair)) {
+    Data *data = macros[pair];
+    chars.put(strlen(data->script)+1,data->script);
+    datas.put(data); macros.remove(pair);}
 }
 
 void Window::connect(int i, Read *ptr)
@@ -376,6 +386,11 @@ void Window::sendWrite(Data *data)
 void Window::sendPolytope(Data *data)
 {
     object[data->file].req2polytope->put(data);
+}
+
+void Window::sendScript(Data *data)
+{
+    req2script->put(data);
 }
 
 void Window::warpCursor(float *cursor)
@@ -451,6 +466,7 @@ void Window::call()
     processDatas(read2req);
     processDatas(polytope2rsp);
     processDatas(write2rsp);
+    processDatas(script2rsp);
 }
 
 void Window::wait()

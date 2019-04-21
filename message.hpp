@@ -131,6 +131,19 @@ public:
 	T box;
 };
 
+template<class S, class T>
+class Pair
+{
+public:
+	S s;
+	T t;
+};
+template<class S, class T>
+bool operator==(const Pair<S,T> &l, const Pair<S,T> &r)
+{
+	return (l.s == r.s && l.t == r.t);
+}
+
 template <class T>
 class Pool
 {
@@ -232,6 +245,16 @@ public:
 	void remove(S s)
 	{
 		for (int i = 0; i < size; i++) if (vld[i] && key[i] == s) {vld[i] = 0; return;}
+	}
+	int first(S &s)
+	{
+		for (int i = 0; i < size; i++) if (vld[i]) {s = key[i]; return 1;}
+		return 0;
+	}
+	int lookup(S s)
+	{
+		for (int i = 0; i < size; i++) if (vld[i] && key[i] == s) return 1;
+		return 0;
 	}
 };
 
