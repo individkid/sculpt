@@ -41,7 +41,6 @@ extern Window *window;
 
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
-static Power<char> chars(__FILE__,__LINE__);
 static Sparse<Pair<int,int>,Data*> macros(__FILE__,__LINE__);
 
 extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix)
@@ -312,11 +311,17 @@ void Window::processDatas(Message<Data*> &message)
 {
     Data *data; while (message.get(data)) {
         if (&message == &read2req) {
+            if (data->conf == MacroConf) {
+            Pair<int,int> pair; pair.s = data->file; pair.t = data->plane;
+            if (macros.lookup(pair)) object[data->file].rsp2read->put(macros[pair]);
+            macros[pair] = data;
+            object[data->file].req2polytope->put(data);} else {
             changeState(data);
-            object[data->file].rsp2read->put(data);}
+            object[data->file].rsp2read->put(data);}}
         if (&message == &polytope2rsp) {
+            if (data->conf != MacroConf) {
             floats.put(16,data->matrix);
-            datas.put(data);}
+            datas.put(data);}}
         if (&message == &write2rsp) {
             if (data->conf == AdditiveConf) datas.put(data);
             if (data->conf == SubtractiveConf) datas.put(data);
@@ -346,11 +351,6 @@ Window::~Window()
     processDatas(polytope2rsp);
     processDatas(write2rsp);
     processDatas(script2rsp);
-    Pair<int,int> pair;
-    while (macros.first(pair)) {
-    Data *data = macros[pair];
-    chars.put(strlen(data->script)+1,data->script);
-    datas.put(data); macros.remove(pair);}
 }
 
 void Window::connect(int i, Read *ptr)
@@ -492,4 +492,8 @@ void Window::done()
     processCommands(command2req,command);
     processCommands(polytope2req,polytope);
     processDatas(read2req);
+    Pair<int,int> pair;
+    while (macros.first(pair)) {
+    Data *data = macros[pair];
+    object[data->file].rsp2read->put(data);}
 }
