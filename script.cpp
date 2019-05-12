@@ -239,8 +239,7 @@ void Script::processDatas(Message<Data*> &message)
 	}
 }
 
-Script::Script(int n) : state(0), nfile(n), cleanup(0),
-	rsp2read(new Message<Data*>*[n]), req2polytope(new Message<Data*>*[n]),
+Script::Script(int n) : state(0), nfile(n), cleanup(0), rsp2read(new Message<Data*>*[n]),
 	req2command(new Message<Command*>*[n]), req2write(new Message<Data*>*[n]),
 	req2sound(new Message<Sound*>*[n]), read2req(this,"Read->Data->Script"),
 	polytope2rsp(this,"Script<-Data<-Polytope"), command2rsp(this,"Script<-Command<-Write"),
@@ -266,10 +265,9 @@ void Script::connect(int i, Read *ptr)
     rsp2read[i] = &ptr->script2rsp;
 }
 
-void Script::connect(int i, Polytope *ptr)
+void Script::connect(Polytope *ptr)
 {
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    req2polytope[i] = &ptr->script2req;
+    req2polytope = &ptr->script2req;
 }
 
 void Script::connect(int i, Write *ptr)
@@ -297,7 +295,7 @@ void Script::init()
 	state = luaL_newstate();
 	lua_pushcfunction(state,::req2polytope);
 	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
-	for (int i = 0; i < nfile; i++) if (req2polytope[i] == 0) error("unconnected req2polytope",i,__FILE__,__LINE__);
+	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2command[i] == 0) error("unconnected req2command",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2sound[i] == 0) error("unconnected req2sound",i,__FILE__,__LINE__);

@@ -315,7 +315,7 @@ void Window::processDatas(Message<Data*> &message)
                 Pair<int,int> pair; pair.s = data->file; pair.t = data->plane;
                 if (macros.lookup(pair)) object[data->file].rsp2read->put(macros[pair]);
                 macros[pair] = data;
-                object[data->file].req2polytope->put(data);}
+                req2polytope->put(data);}
             else {
                 changeState(data);
                 object[data->file].rsp2read->put(data);}}
@@ -367,11 +367,9 @@ void Window::connect(int i, Write *ptr)
     object[i].req2write = &ptr->window2req;
 }
 
-void Window::connect(int i, Polytope *ptr)
+void Window::connect(Polytope *ptr)
 {
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].req2polytope = &ptr->window2req;
-    object[i].rsp2polytope = &ptr->window2rsp;
+    req2polytope = &ptr->window2req;
 }
 
 void Window::connect(Script *ptr)
@@ -386,7 +384,7 @@ void Window::sendWrite(Data *data)
 
 void Window::sendPolytope(Data *data)
 {
-    object[data->file].req2polytope->put(data);
+    req2polytope->put(data);
 }
 
 void Window::sendScript(Data *data)
@@ -421,7 +419,7 @@ void Window::init()
     for (int i = 0; i < nfile; i++) if (object[i].rsp2command == 0) error("unconnected rsp2command",i,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].rsp2read == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].rsp2polytope == 0) error("unconnected rsp2polytope",i,__FILE__,__LINE__);
-    for (int i = 0; i < nfile; i++) if (object[i].req2polytope == 0) error("unconnected req2polytope",i,__FILE__,__LINE__);
+    if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
     if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);

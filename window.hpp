@@ -51,6 +51,7 @@ private:
 	Queues script;
 	Object *object;
 	Microcode microcode[Programs];
+	Message<Data*> *req2polytope;
 	Message<Command*> *rsp2script;
 	Message<Data*> *req2script;
 	void allocBuffer(Update &update);
@@ -81,7 +82,7 @@ public:
 	virtual ~Window();
 	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
-	void connect(int i, Polytope *ptr);
+	void connect(Polytope *ptr);
 	void connect(Script *ptr);
 	void sendWrite(Data *data);
 	void sendPolytope(Data *data);

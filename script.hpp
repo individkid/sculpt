@@ -34,7 +34,7 @@ private:
 	lua_State *state;
 	int nfile; int cleanup;
 	Message<Data*> **rsp2read;
-	Message<Data*> **req2polytope;
+	Message<Data*> *req2polytope;
 	Message<Command*> **req2command;
 	Message<Data*> **req2write;
 	Message<Sound*> **req2sound;
@@ -60,7 +60,7 @@ public:
 	Script(int n);
 	virtual ~Script();
 	void connect(int i, Read *ptr);
-	void connect(int i, Polytope *ptr);
+	void connect(Polytope *ptr);
 	void connect(int i, Write *ptr);
 	void connect(System *ptr);
 	void connect(Window *ptr);

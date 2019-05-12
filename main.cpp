@@ -27,42 +27,48 @@
 Window *window = 0;
 int main(int argc, char *argv[])
 {
+	char *path = argv[0];
 	argc--; argv++;
 
 	Read *read[argc]; for (int i = 0; i < argc; i++) read[i] = new Read(i,argv[i]);
-	Polytope *polytope[argc]; for (int i = 0; i < argc; i++) polytope[i] = new Polytope(i);
+	Polytope *polytope = new Polytope(argc,argv[0]);
 	Write *write[argc]; for (int i = 0; i < argc; i++) write[i] = new Write(i,argv[i]);
 	System *system = new System(argc);
 	Script *script = new Script(argc);
 	window = new Window(argc);
 
-	for (int i = 0; i < argc; i++) {read[i]->connect(polytope[i]); polytope[i]->connect(read[i]);}
+	for (int i = 0; i < argc; i++) {read[i]->connect(polytope); polytope->connect(i,read[i]);}
 	for (int i = 0; i < argc; i++) {read[i]->connect(system); system->connect(i,read[i]);}
 	for (int i = 0; i < argc; i++) {read[i]->connect(script); script->connect(i,read[i]);}
 	for (int i = 0; i < argc; i++) {read[i]->connect(window); window->connect(i,read[i]);}
-	for (int i = 0; i < argc; i++) {polytope[i]->connect(write[i]); write[i]->connect(polytope[i]);}
-	for (int i = 0; i < argc; i++) {polytope[i]->connect(script); script->connect(i,polytope[i]);}
-	for (int i = 0; i < argc; i++) {polytope[i]->connect(window); window->connect(i,polytope[i]);}
-	for (int i = 0; i < argc; i++) {polytope[i]->connect(window); window->connect(i,polytope[i]);}
+	for (int i = 0; i < argc; i++) {polytope->connect(i,write[i]); write[i]->connect(polytope);}
+	polytope->connect(script); script->connect(polytope);
+	polytope->connect(window); window->connect(polytope);
 	for (int i = 0; i < argc; i++) {write[i]->connect(script); script->connect(i,write[i]);}
 	for (int i = 0; i < argc; i++) {write[i]->connect(window); window->connect(i,write[i]);}
 	system->connect(script); script->connect(system);
 	script->connect(window); window->connect(script);
 
 	for (int i = 0; i < argc; i++) read[i]->exec();
-	for (int i = 0; i < argc; i++) polytope[i]->exec();
+	polytope->exec();
 	for (int i = 0; i < argc; i++) write[i]->exec();
-	system->exec(); script->exec(); window->exec();
+	system->exec();
+	script->exec();
+	window->exec();
 
 	for (int i = 0; i < argc; i++) read[i]->kill();
-	for (int i = 0; i < argc; i++) polytope[i]->kill();
+	polytope->kill();
 	for (int i = 0; i < argc; i++) write[i]->kill();
-	system->kill(); script->kill(); window->kill();
+	system->kill();
+	script->kill();
+	window->kill();
 
 	for (int i = 0; i < argc; i++) delete read[i];
-	for (int i = 0; i < argc; i++) delete polytope[i];
+	delete polytope;
 	for (int i = 0; i < argc; i++) delete write[i];
-	delete system; delete script; delete window;
+	delete system;
+	delete script;
+	delete window;
 
 	return 0;
 }

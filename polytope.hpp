@@ -23,14 +23,30 @@ class Write;
 class Script;
 class Window;
 
+struct Plane
+{
+	int versor;
+	float vector[3];
+	int tagbits;
+};
+
 class Polytope : public Thread
 {
 private:
-	Message<Data*> *rsp2read;
-	Message<Data*> *req2write;
+	int nfile;
+	int hs2read[2], read2hs[2];
+	int hs2data[2], data2hs[2];
+	int hs2script[2], script2hs[2];
+	int hs2window[2], window2hs[2];
+	int hs2command[2], command2hs[2];
+	int hs2open;
+	int open2hs;
+	Message<Data*> **rsp2read;
+	Message<Data*> **req2write;
 	Message<Data*> *rsp2script;
 	Message<Data*> *rsp2window;
 	Message<Command*> *req2window;
+	void close(int hs2close, int close2hs);
 	void processCommands(Message<Command*> &message);
 	void processDatas(Message<Data*> &message);
 public:
@@ -39,10 +55,10 @@ public:
 	Message<Data*> script2req;
 	Message<Command*> window2rsp;
 	Message<Data*> window2req;
-	Polytope(int i);
+	Polytope(int n, const char *path);
 	virtual ~Polytope();
-	void connect(Read *ptr);
-	void connect(Write *ptr);
+	void connect(int i, Read *ptr);
+	void connect(int i, Write *ptr);
 	void connect(Script *ptr);
 	void connect(Window *ptr);
 private:

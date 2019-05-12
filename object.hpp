@@ -34,7 +34,6 @@ struct Object
 {
 	Message<Command*> *rsp2command;
 	Message<Data*> *rsp2read;
-	Message<Data*> *req2polytope;
 	Message<Command*> *rsp2polytope;
 	Message<Data*> *req2write;
 	Handle handle[Buffers];
