@@ -264,45 +264,38 @@ class Message
 private:
 	const char *str;
 	Thread *thread;
-	Next<T> *head;
-	Next<T> *tail;
-	Next<T> *pool;
+	T *head;
+	T *tail;
 	int wait;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 public:
-	Message(Thread *ptr) : str(0), thread(ptr), head(0), tail(0), pool(0), wait(0)
+	Message(Thread *ptr) : str(0), thread(ptr), head(0), tail(0), wait(0)
 	{
 		if (pthread_mutex_init(&mutex,NULL) != 0) error((str?str:"message invalid mutex"),errno,__FILE__,__LINE__);
 		if (pthread_cond_init(&cond,NULL) != 0) error((str?str:"message invalid cond"),errno,__FILE__,__LINE__);
 	}
-	Message(Thread *ptr, const char *s) : str(s), thread(ptr), head(0), tail(0), pool(0), wait(0)
+	Message(Thread *ptr, const char *s) : str(s), thread(ptr), head(0), tail(0), wait(0)
 	{
 		if (pthread_mutex_init(&mutex,NULL) != 0) error((str?str:"message invalid mutex"),errno,__FILE__,__LINE__);
 		if (pthread_cond_init(&cond,NULL) != 0) error((str?str:"message invalid cond"),errno,__FILE__,__LINE__);
 	}
-	void put(T val)
+	void put(T *val)
 	{
 		if (DEBUG && str) std::cout << "put " << str << std::endl;
-		Next<T> *ptr;
-		if (pool) {ptr = pool; remove(pool,ptr);}
-		else ptr = new Next<T>();
-		ptr->box = val;
 		if (pthread_mutex_lock(&mutex) != 0) error((str?str:"mutex invalid lock"),errno,__FILE__,__LINE__);		
 		while (head && wait) 
 		if (pthread_cond_wait(&cond,&mutex) != 0) error((str?str:"cond invalid wait"),errno,__FILE__,__LINE__);
-		enque(head,tail,ptr);
+		enque(head,tail,val);
 		if (thread) thread->wake();
 		if (pthread_mutex_unlock(&mutex) != 0) error((str?str:"mutex invalid unlock"),errno,__FILE__,__LINE__);
 	}
-	int get(T &val)
+	int get(T *&val)
 	{
 		if (!head) return 0;
 		wait = 1;
 		if (pthread_mutex_lock(&mutex) != 0) error((str?str:"mutex invalid lock"),errno,__FILE__,__LINE__);		
-		Next<T> *ptr = deque(head,tail);
-		val = ptr->box;
-		insert(pool,ptr);
+		val = deque(head,tail);
 		wait = 0;
 		if (pthread_cond_signal(&cond) != 0) error((str?str:"cond invalid signal"),errno,__FILE__,__LINE__);
 		if (pthread_mutex_unlock(&mutex) != 0) error((str?str:"mutex invalid unlock"),errno,__FILE__,__LINE__);

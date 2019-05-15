@@ -199,6 +199,7 @@ struct Command
 };
 struct Data
 {
+	struct Data *next;
 	int file;
 	int plane;
 	enum Configure conf; // Script->*->Write for side effects  
@@ -259,6 +260,7 @@ struct Equ
 // Script->SoundConf->System for getting stock values  
 struct Sound
 {
+	struct Sound *next;
 	int file;
 	int ident;
 	double value; // tone envelope phrase or helper

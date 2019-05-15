@@ -80,7 +80,7 @@ double System::evaluate(Equ &equation)
 	return 0.0;
 }
 
-void System::processSounds(Message<Sound*> &message)
+void System::processSounds(Message<Sound> &message)
 {
 	Sound *sound; while (message.get(sound)) {
 		if (!cleanup) {
@@ -95,7 +95,7 @@ void System::processSounds(Message<Sound*> &message)
 	}
 }
 
-void System::processDatas(Message<Data*> &message)
+void System::processDatas(Message<Data> &message)
 {
 	Data *data; while (message.get(data)) {
 		if (!cleanup) {
@@ -142,7 +142,7 @@ System::System(int n) : nfile(n), cleanup(0), stodo(0), dtodo(0),
 	lwave(new float[WAVE_SIZE]), rwave(new float[WAVE_SIZE]),
 	lcount(new int[WAVE_SIZE]), rcount(new int[WAVE_SIZE]),
 	wbeat(0.0), rbeat(0.0), windex(0), rindex(0),
-	rsp2sound(new Message<Sound*>*[n]), rsp2read(new Message<Data*>*[n]),
+	rsp2sound(new Message<Sound>*[n]), rsp2read(new Message<Data>*[n]),
 	sound2req(this,"Read->Sound->System"), read2req(this,"Read->Data->System"),
 	script2rsp(this,"System<-Data<-Script"), script2req(this,"Script->Data->System")
 {

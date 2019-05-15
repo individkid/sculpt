@@ -46,10 +46,10 @@ private:
 	PaStream *stream;
 	PaTime wbeat, rbeat;
 	int windex, rindex;
-	Message<Sound*> **rsp2sound;
-	Message<Data*> **rsp2read;
-	Message<Data*> *req2script;
-	Message<Data*> *rsp2script;
+	Message<Sound> **rsp2sound;
+	Message<Data> **rsp2read;
+	Message<Data> *req2script;
+	Message<Data> *rsp2script;
 	friend int systemFunc(
 		const void *inputBuffer, void *outputBuffer,
 	    unsigned long framesPerBuffer,
@@ -61,13 +61,13 @@ private:
 	void calladd(float value, float *wave, int *count);
 	void callinit(float value, float *wave, int *count);
 	double evaluate(Equ &equation);
-	void processSounds(Message<Sound*> &message);
-	void processDatas(Message<Data*> &message);
+	void processSounds(Message<Sound> &message);
+	void processDatas(Message<Data> &message);
 public:
-	Message<Sound*> sound2req;
-	Message<Data*> read2req;
-	Message<Data*> script2rsp;
-	Message<Data*> script2req;
+	Message<Sound> sound2req;
+	Message<Data> read2req;
+	Message<Data> script2rsp;
+	Message<Data> script2req;
 	System(int n);
 	virtual ~System();
 	void connect(int i, Read *ptr);

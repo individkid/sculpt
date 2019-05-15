@@ -167,7 +167,7 @@ const char *reader(lua_State *L, void *data, size_t *size)
 	done = 1; *size = strlen(result); return result;
 }
 
-void Script::processCommands(Message<Command*> &message)
+void Script::processCommands(Message<Command> &message)
 {
 	Command *command; while (message.get(command)) {
 		if (!cleanup) {
@@ -186,7 +186,7 @@ void Script::processCommands(Message<Command*> &message)
 	}
 }
 
-void Script::processSounds(Message<Sound*> &message)
+void Script::processSounds(Message<Sound> &message)
 {
 	Sound *sound; while (message.get(sound)) {
 		// TODO deallocate field lists
@@ -194,7 +194,7 @@ void Script::processSounds(Message<Sound*> &message)
 	}
 }
 
-void Script::processDatas(Message<Data*> &message)
+void Script::processDatas(Message<Data> &message)
 {
 	Data *data; while (message.get(data)) {
 		if (!cleanup) {
@@ -239,9 +239,9 @@ void Script::processDatas(Message<Data*> &message)
 	}
 }
 
-Script::Script(int n) : state(0), nfile(n), cleanup(0), rsp2read(new Message<Data*>*[n]),
-	req2command(new Message<Command*>*[n]), req2write(new Message<Data*>*[n]),
-	req2sound(new Message<Sound*>*[n]), read2req(this,"Read->Data->Script"),
+Script::Script(int n) : state(0), nfile(n), cleanup(0), rsp2read(new Message<Data>*[n]),
+	req2command(new Message<Command>*[n]), req2write(new Message<Data>*[n]),
+	req2sound(new Message<Sound>*[n]), read2req(this,"Read->Data->Script"),
 	polytope2rsp(this,"Script<-Data<-Polytope"), command2rsp(this,"Script<-Command<-Write"),
 	write2rsp(this,"Script<-Data<-Write"), sound2rsp(this,"Script<-Sound<-Write"),
 	system2rsp(this,"Script<-Data<-System"), system2req(this,"System->Data->Script"),

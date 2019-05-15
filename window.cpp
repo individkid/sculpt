@@ -291,7 +291,7 @@ void Window::processQueue(Queue &queue, Queues &queues)
     if (&queue == &queues.query) queue.loop = queue.last;
 }
 
-void Window::processCommands(Message<Command*> &message, Queues &queues)
+void Window::processCommands(Message<Command> &message, Queues &queues)
 {
     Command *command; while (message.get(command)) {
         if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
@@ -307,7 +307,7 @@ void Window::processCommands(Message<Command*> &message, Queues &queues)
             if (&message == &script2req) rsp2script->put(command);}}
 }
 
-void Window::processDatas(Message<Data*> &message)
+void Window::processDatas(Message<Data> &message)
 {
     Data *data; while (message.get(data)) {
         if (&message == &read2req) {
@@ -370,6 +370,7 @@ void Window::connect(int i, Write *ptr)
 void Window::connect(Polytope *ptr)
 {
     req2polytope = &ptr->window2req;
+    rsp2polytope = &ptr->window2rsp;
 }
 
 void Window::connect(Script *ptr)
@@ -418,7 +419,7 @@ void Window::init()
 {
     for (int i = 0; i < nfile; i++) if (object[i].rsp2command == 0) error("unconnected rsp2command",i,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].rsp2read == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
-    for (int i = 0; i < nfile; i++) if (object[i].rsp2polytope == 0) error("unconnected rsp2polytope",i,__FILE__,__LINE__);
+    if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
     if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
     if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
