@@ -16,17 +16,35 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <unistd.h>
 #include "stream.hpp"
 
 Opcode Stream::get(int fd, Data *&data, Command *&command)
 {
-	// TODO
-	return Opcodes;
+	Opcode opcode;
+	if (read(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("read failed",errno,__FILE__,__LINE__);
+	switch (opcode) {
+	case (ReadOp): {data = datas.get(); command = 0;
+	if (read(fd,data,sizeof(data)) != sizeof(data)) error("read failed",errno,__FILE__,__LINE__);
+	Symbol texts; texts.text = data->text; char *text = chars.get(texts.count); data->text = text;
+	int size = texts.count*sizeof(*texts.text);
+	if (read(fd,text,size) != size) error("read failed",errno,__FILE__,__LINE__);
+	break;}
+	default: error("unimplemented opcode",opcode,__FILE__,__LINE__);}
+	return opcode;
 }
 
 void Stream::put(int fd, Opcode opcode, Data *data)
 {
-	// TODO
+	if (write(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("write failed",errno,__FILE__,__LINE__);
+	switch (opcode) {
+	case (ReadOp): {
+	char *text = data->text; Symbol texts; texts.count = strlen(text)+1; data->text = texts.text;
+	int size = texts.count*sizeof(*texts.text);
+	if (write(fd,data,sizeof(data)) != sizeof(data)) error("write failed",errno,__FILE__,__LINE__);
+	if (write(fd,text,size) != size) error("write failed",errno,__FILE__,__LINE__);
+	Pools::datas.put(data); break;}
+	default: error("unimplemented opcode",opcode,__FILE__,__LINE__);}
 }
 
 void Stream::put(int fd, Opcode opcode, Command *command)
