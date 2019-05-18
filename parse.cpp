@@ -242,31 +242,6 @@ void Parse::get(const char *ptr, int file, Command *&command,
 	polytope->conf = TestConf; polytope->file = file; return;}
 }
 
-void Parse::put(Command *command)
-{
-	while (command) {
-	for (int i = 0; i < Fields; i++) {
-	Update *update = command->update[i];
-	while (update) {updates.put(update); update = update->next;}}
-	Render *render = command->render;
-	while (render) {renders.put(render); render = render->next;}
-	if (command->redraw) put(command->redraw);
-	if (command->pierce) put(command->pierce);
-	command = command->next;}
-}
-
-void Parse::put(Sound *sound)
-{
-	// TODO
-}
-
-void Parse::put(Data *data)
-{
-	if (data->conf == MatrixConf || data->conf == GlobalConf) floats.put(16,data->matrix);
-	if (data->conf == TestConf) cleanup(data->text);
-	datas.put(data);
-}
-
 char *Parse::get(const Command *command)
 {
 	// TODO

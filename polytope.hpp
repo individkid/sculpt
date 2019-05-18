@@ -23,32 +23,15 @@ class Write;
 class Script;
 class Window;
 
-struct Plane
-{
-	int versor;
-	float vector[3];
-	int tagbits;
-};
-
 class Polytope : public Thread
 {
 private:
-	int nfile;
-	int hs2read[2], read2hs[2];
-	int hs2data[2], data2hs[2];
-	int hs2script[2], script2hs[2];
-	int hs2window[2], window2hs[2];
-	int hs2command[2], command2hs[2];
-	int hs2open, open2hs;
+	int nfile; int p2t[2]; int t2p[2]; int nfd; int iss;
 	Message<Data> **rsp2read;
 	Message<Data> **req2write;
 	Message<Data> *rsp2script;
 	Message<Data> *rsp2window;
 	Message<Command> *req2window;
-	void pclose(int hs2close, int close2hs);
-	int pfds(fd_set *fds);
-	void popen();
-	void pargv(char *argv[]);
 	void processCommands(Message<Command> &message);
 	void processDatas(Message<Data> &message);
 public:

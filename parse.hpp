@@ -19,18 +19,11 @@
 #ifndef PARSE_HPP
 #define PARSE_HPP
 
-#include "types.h"
-#include "message.hpp"
+#include "pools.hpp"
 
-class Parse
+class Parse : public Pools
 {
 private:
-	Pool<Command> commands;
-	Pool<Update> updates;
-	Pool<Render> renders;
-	Pool<Data> datas;
-	Power<float> floats;
-	Power<char> chars;
 	int get(const char *ptr, Update *&update);
 	int get(const char *ptr, Render *&render);
 	int get(const char *ptr, int file, Command *&command);
@@ -39,15 +32,10 @@ private:
 	void get(const char *ptr, int file, Sound *&sound);
 	void configure(const char *ptr, int file, enum Configure conf, Data *&data);
 public:
-	Parse(const char *file, int line) :
-		commands(file,line), updates(file,line), renders(file,line),
-		datas(file,line), floats(file,line), chars(file,line) {}
+	Parse(const char *file, int line) : Pools(file,line) {}
 	void get(const char *ptr, int file, enum Configure conf, Data *&data);
 	void get(const char *ptr, int file, Command *&command,
 		Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&data);
-	void put(Command *command);
-	void put(Sound *sound);
-	void put(Data *data);
 	char *get(const Command *command);
 	char *get(const Sound *sound);
 	char *get(const Data *data);

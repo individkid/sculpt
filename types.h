@@ -143,6 +143,13 @@ enum Field {
 	BindField,
 	ReadField,
 	Fields};
+enum Opcode {
+	ReadOp,
+	WriteOp,
+	ScriptOp,
+	WindowOp,
+	CommandOp,
+	Opcodes};
 struct Format
 {
 	float cursor[2];
@@ -173,8 +180,8 @@ struct Update
 	union {int offset; int width;};
 	union {int size; int height;};
 	union {void *data; char *text; float *scalar; MYuint *query;
-	struct Format *format; struct Feedback *feedback;};
-	void (*function)(struct Update *);
+	struct Format *format; struct Feedback *feedback; int datas;};
+	union {void (*function)(struct Update *); int functions;};
 };
 struct Render
 {
@@ -192,10 +199,10 @@ struct Command
 {
 	struct Command *next;
 	int file; int feedback; int finish;
-	struct Update *update[Fields];
-	struct Render *render;
-	struct Command *redraw;
-	struct Command *pierce;
+	union {struct Update *update[Fields]; int updates[Fields];};
+	union {struct Render *render; int renders;};
+	union {struct Command *redraw; int redraws;};
+	union {struct Command *pierce; int pierces;};
 };
 struct Data
 {
@@ -269,6 +276,28 @@ struct Sound
 	struct Equ sched; // sample rate
 	struct Equ left; // directly audible left
 	struct Equ right; // directly audible right
+};
+
+struct None
+{
+	struct None *next;
+};
+
+union Symbol
+{
+	int count;
+	struct Data *data;
+	struct Command *command;
+	struct Update *update;
+	struct Render *render;
+	struct Format *format;
+	struct Feedback *feedback;
+	struct Sound *sound;
+	struct Term *term;
+	double *dnum;
+	float *fnum;
+	int *inum;
+	char *text;
 };
 
 #endif

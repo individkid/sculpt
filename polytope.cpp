@@ -17,104 +17,45 @@
 */
 
 #include <unistd.h>
-#include <stdio.h>
-#include <signal.h>
 #include <sys/select.h>
+#include <signal.h>
 #include "polytope.hpp"
 #include "read.hpp"
 #include "write.hpp"
 #include "script.hpp"
 #include "window.hpp"
+#include "stream.hpp"
 
-static Pool<Data> datas(__FILE__,__LINE__);
-static Pool<Command> commands(__FILE__,__LINE__);
+static Stream stream(__FILE__,__LINE__);
 
-void Polytope::pclose(int hs2close, int close2hs)
+Polytope::Polytope(int n, const char *path) : Thread(), nfile(n), iss(0),
+	rsp2read(new Message<Data>*[n]), req2write(new Message<Data>*[n]),
+	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-Data<-Write"),
+	script2req(this,"Script->Data->Polytope"), window2rsp(this,"Polytope<-Data<-Window"),
+	window2req(this,"Window->Data->Polytope")
 {
-	if (close(hs2read[hs2close]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(read2hs[close2hs]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(hs2data[hs2close]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(data2hs[close2hs]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(hs2script[hs2close]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(script2hs[close2hs]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(hs2window[hs2close]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(window2hs[close2hs]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(hs2command[hs2close]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-	if (close(command2hs[close2hs]) != 0) error("cannot close pipe",errno,__FILE__,__LINE__);
-}
-
-int Polytope::pfds(fd_set *fds)
-{
-	int nfds = 1; FD_ZERO(fds);
-	FD_SET(hs2read[hs2open],fds); if (hs2read[hs2open]>nfds) nfds = hs2read[hs2open];
-	FD_SET(read2hs[open2hs],fds); if (read2hs[open2hs]>nfds) nfds = read2hs[open2hs];
-	FD_SET(hs2data[hs2open],fds); if (hs2data[hs2open]>nfds) nfds = hs2data[hs2open];
-	FD_SET(data2hs[open2hs],fds); if (data2hs[open2hs]>nfds) nfds = data2hs[open2hs];
-	FD_SET(hs2script[hs2open],fds); if (hs2script[hs2open]>nfds) nfds = hs2script[hs2open];
-	FD_SET(script2hs[open2hs],fds); if (script2hs[open2hs]>nfds) nfds = script2hs[open2hs];
-	FD_SET(hs2window[hs2open],fds); if (hs2window[hs2open]>nfds) nfds = hs2window[hs2open];
-	FD_SET(window2hs[open2hs],fds); if (window2hs[open2hs]>nfds) nfds = window2hs[open2hs];
-	FD_SET(hs2command[hs2open],fds); if (hs2command[hs2open]>nfds) nfds = hs2command[hs2open];
-	FD_SET(command2hs[open2hs],fds); if (command2hs[open2hs]>nfds) nfds = command2hs[open2hs];
-	return nfds;
-}
-
-void Polytope::popen()
-{
-	if (pipe(hs2read) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(read2hs) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(hs2data) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(data2hs) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(hs2script) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(script2hs) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(hs2window) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(window2hs) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(hs2command) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-	if (pipe(command2hs) != 0) error("cannot open pipe",errno,__FILE__,__LINE__);
-}
-
-void Polytope::pargv(char *argv[])
-{
-	if (asprintf(&argv[1],"%d",hs2read[hs2open]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[2],"%d",read2hs[open2hs]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[3],"%d",hs2data[hs2open]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[4],"%d",data2hs[open2hs]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[5],"%d",hs2script[hs2open]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[6],"%d",script2hs[open2hs]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[7],"%d",hs2window[hs2open]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[8],"%d",window2hs[open2hs]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[9],"%d",hs2command[hs2open]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	if (asprintf(&argv[10],"%d",command2hs[open2hs]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-}
-
-Polytope::Polytope(int n, const char *path) : Thread(), nfile(n), rsp2read(new Message<Data>*[n]),
-	req2write(new Message<Data>*[n]), read2req(this,"Read->Data->Polytope"),
-	write2rsp(this,"Polytope<-Data<-Write"), script2req(this,"Script->Data->Polytope"),
-	window2rsp(this,"Polytope<-Data<-Window"), window2req(this,"Window->Data->Polytope")
-{
-	popen();
+	if (pipe(p2t) < 0) error("pipe open failed",errno,__FILE__,__LINE__);
+	if (pipe(t2p) < 0) error("pipe open failed",errno,__FILE__,__LINE__);
 	pid_t pid = fork();
 	if (pid < 0) error("cannot fork process",errno,__FILE__,__LINE__);
-	int hs2close = (pid == 0 ? 0 : 1); // haskell only writes to hs2*
-	int close2hs = (pid == 0 ? 1 : 0); // haskell only reads from *2hs
-	pclose(hs2close,close2hs);
-	hs2open = (pid == 0 ? 1 : 0);
-	open2hs = (pid == 0 ? 0 : 1);
 	if (pid == 0) {
-	char *argv[12];
+	if (close(p2t[0]) < 0) error("close failed",errno,__FILE__,__LINE__); p2t[0] = -1;
+	if (close(t2p[1]) < 0) error("close failed",errno,__FILE__,__LINE__); t2p[1] = -1;
+	char *argv[4];
 	if (asprintf(&argv[0],"%s-hs",path) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
-	pargv(argv);
-	argv[11] = 0;
+	if (asprintf(&argv[1],"%d",t2p[0]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
+	if (asprintf(&argv[2],"%d",p2t[1]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
+	argv[3] = 0;
 	if (execv(argv[0],argv) < 0) error("execv failed",errno,__FILE__,__LINE__);
 	error("execute sculpt-hs failed",errno,__FILE__,__LINE__);}
+	nfd = (p2t[0]>t2p[1]?p2t[0]:t2p[0])+1;
 }
 
 Polytope::~Polytope()
 {
 	Command *command; Data *data;
-	while (write2rsp.get(data)) datas.put(data);
-	while (window2rsp.get(command)) commands.put(command);
-	pclose(hs2open,open2hs);
+	while (write2rsp.get(data)) stream.Pools::put(data);
+	while (window2rsp.get(command)) stream.Pools::put(command);
 }
 
 void Polytope::connect(int i, Read *ptr)
@@ -142,12 +83,13 @@ void Polytope::connect(Window *ptr)
 
 void Polytope::wait()
 {
-	sigset_t unblock; int nfds;
-	fd_set readfds; nfds = pfds(&readfds);
-	fd_set errorfds; nfds = pfds(&errorfds);
+	sigset_t unblock; int fd;
+	fd_set readfds; FD_SET(p2t[0],&readfds);
+	fd_set errorfds; FD_SET(p2t[0],&errorfds);
 	if (pthread_sigmask(SIG_SETMASK,0,&unblock)) error ("cannot get mask",errno,__FILE__,__LINE__);
 	sigdelset(&unblock, SIGUSR1);
-   	if (pselect(nfds, &readfds, 0, &errorfds, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
+   	if (pselect(nfd, &readfds, 0, &errorfds, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
+   	iss = (FD_ISSET(p2t[0],&readfds) || FD_ISSET(p2t[0],&errorfds));
 }
 
 void Polytope::init()
@@ -161,8 +103,24 @@ void Polytope::init()
 
 void Polytope::call()
 {
-    Data *data = 0; while (read2req.get(data)) {
+	Data *data; Command *command;
+    data = 0; while (read2req.get(data)) {
     printf("polytope:%s",data->text); rsp2read[data->file]->put(data);}
+    return;
+	if (iss) {iss = 0;
+	Opcode opcode = stream.get(p2t[0],data,command);
+	switch (opcode) {
+	case (ReadOp): rsp2read[data->file]->put(data); break;
+	case (WriteOp): rsp2read[data->file]->put(data); break;
+	case (ScriptOp): rsp2script->put(data); break;
+	case (WindowOp): rsp2window->put(data); break;
+	case (CommandOp): req2window->put(command); break;
+	default: error("invalid opcode",opcode,__FILE__,__LINE__);}}
+	while (read2req.get(data)) stream.put(t2p[1],ReadOp,data);
+	while (write2rsp.get(data)) stream.put(t2p[1],WriteOp,data);
+	while (script2req.get(data)) stream.put(t2p[1],ScriptOp,data);
+	while (window2rsp.get(command)) stream.put(t2p[1],CommandOp,command);
+	while (window2req.get(data)) stream.put(t2p[1],WindowOp,data);
 }
 
 void Polytope::done()
