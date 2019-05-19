@@ -199,10 +199,10 @@ struct Command
 {
 	struct Command *next;
 	int file; int feedback; int finish;
-	union {struct Update *update[Fields]; int updates[Fields];};
-	union {struct Render *render; int renders;};
-	union {struct Command *redraw; int redraws;};
-	union {struct Command *pierce; int pierces;};
+	struct Update *update[Fields];
+	struct Render *render;
+	struct Command *redraw;
+	struct Command *pierce;
 };
 struct Data
 {
