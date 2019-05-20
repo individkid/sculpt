@@ -150,6 +150,35 @@ enum Opcode {
 	WindowOp,
 	CommandOp,
 	Opcodes};
+enum Identity {
+	OpcodeIdent,
+	IntIdent,
+	FloatIdent,
+	DataIdent,
+	CommandIdent,
+	Identities};
+enum Location {
+	FileLoc,
+	PlaneLoc,
+	ConfLoc,
+	BoundariesLoc,
+	RegionsLoc,
+	PlanesLoc,
+	SidesLoc,
+	SideLoc,
+	InsidesLoc,
+	OutsidesLoc,
+	InsideLoc,
+	OutsideLoc,
+	VersorLoc,
+	VectorLoc,
+	TopologyLoc,
+	FixedLoc,
+	PierceLoc,
+	SeqnumLoc,
+	MatrixLoc,
+	TextLoc,
+	Locations};
 struct Format
 {
 	float cursor[2];

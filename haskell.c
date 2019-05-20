@@ -56,39 +56,16 @@ int enumerate(char *name)
 	return -1;
 }
 
-enum Identity {
-	DataIdent,
-	CommandIdent,
-	Identities};
 int identify(char *name)
 {
+	if (strcmp(name,"Opcode") == 0) return OpcodeIdent;
+	if (strcmp(name,"Int") == 0) return IntIdent;
+	if (strcmp(name,"Float") == 0) return FloatIdent;
 	if (strcmp(name,"Data") == 0) return DataIdent;
 	if (strcmp(name,"Command") == 0) return CommandIdent;
 	return -1;
 }
 
-enum Location {
-	FileLoc,
-	PlaneLoc,
-	ConfLoc,
-	BoundariesLoc,
-	RegionsLoc,
-	PlanesLoc,
-	SidesLoc,
-	SideLoc,
-	InsidesLoc,
-	OutsidesLoc,
-	InsideLoc,
-	OutsideLoc,
-	VersorLoc,
-	VectorLoc,
-	TopologyLoc,
-	FixedLoc,
-	PierceLoc,
-	SeqnumLoc,
-	MatrixLoc,
-	TextLoc,
-	Locations};
 int location(int ident, char *field)
 {
 	switch (ident) {
@@ -117,33 +94,126 @@ int location(int ident, char *field)
 	return -1;
 }
 
-#define DATA_FIELD(FIELD) (((struct Data *)str)->FIELD)
-#define COMMAND_FIELD(FIELD) (((struct Command *)str)->FIELD)
-int integral(char *str, int ident, int loc)
+int structure(int ident)
 {
 	switch (ident) {
-	case (DataIdent): switch (loc) {
-	case (FileLoc): return DATA_FIELD(file);
-	case (PlaneLoc): return DATA_FIELD(plane);
-	case (ConfLoc): return DATA_FIELD(conf);
-	case (BoundariesLoc): return DATA_FIELD(boundaries);
-	case (RegionsLoc): return DATA_FIELD(regions);
-	case (SideLoc): return DATA_FIELD(side);
-	case (InsidesLoc): return DATA_FIELD(insides);
-	case (OutsidesLoc): return DATA_FIELD(outsides);
-	case (VersorLoc): return DATA_FIELD(versor);
-	case (TopologyLoc): return DATA_FIELD(topology);
-	case (FixedLoc): return DATA_FIELD(fixed);
-	case (SeqnumLoc): return DATA_FIELD(seqnum);
-	default: error("invalid location");}
+	case (OpcodeIdent): return sizeof(enum Opcode);
+	case (IntIdent): return sizeof(int);
+	case (FloatIdent): return sizeof(float);
+	case (DataIdent): return sizeof(struct Data);
+	case (CommandIdent): return sizeof(struct Command);
 	default: error("invalid identity");}
-	return -1;
+	return 0;
+}
+
+#define DATA_FIELD(FIELD) (((struct Data *)str)->FIELD)
+#define COMMAND_FIELD(FIELD) (((struct Command *)str)->FIELD)
+int *integral(char *str, int ident, int loc)
+{
+	switch (ident) {
+	case (OpcodeIdent): return 0;
+	case (IntIdent): return ((int *)str) + loc;
+	case (FloatIdent): return 0;
+	case (DataIdent): switch (loc) {
+	case (FileLoc): return &DATA_FIELD(file);
+	case (PlaneLoc): return &DATA_FIELD(plane);
+	case (ConfLoc): return 0;
+	case (BoundariesLoc): return &DATA_FIELD(boundaries);
+	case (RegionsLoc): return &DATA_FIELD(regions);
+	case (SideLoc): return &DATA_FIELD(side);
+	case (InsidesLoc): return &DATA_FIELD(insides);
+	case (OutsidesLoc): return &DATA_FIELD(outsides);
+	case (VersorLoc): return &DATA_FIELD(versor);
+	case (TopologyLoc): return 0;
+	case (FixedLoc): return 0;
+	case (SeqnumLoc): return &DATA_FIELD(seqnum);
+	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
+	default: error("invalid identity");}
+	return 0;
+}
+
+float *scalar(char *str, int ident, int loc)
+{
+	switch (ident) {
+	case (OpcodeIdent): return 0;
+	case (IntIdent): return 0;
+	case (FloatIdent): return ((float *)str) + loc;
+	case (DataIdent): switch (loc) {
+	case (FileLoc): return 0;
+	case (PlaneLoc): return 0;
+	case (ConfLoc): return 0;
+	case (BoundariesLoc): return 0;
+	case (RegionsLoc): return 0;
+	case (SideLoc): return 0;
+	case (InsidesLoc): return 0;
+	case (OutsidesLoc): return 0;
+	case (VersorLoc): return 0;
+	case (TopologyLoc): return 0;
+	case (FixedLoc): return 0;
+	case (SeqnumLoc): return 0;
+	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
+	default: error("invalid identity");}
+	return 0;
+}
+
+char *character(char *str, int ident, int loc)
+{
+	switch (ident) {
+	case (OpcodeIdent): return str + loc;
+	case (IntIdent): return 0;
+	case (FloatIdent): return 0;
+	case (DataIdent): switch (loc) {
+	case (FileLoc): return 0;
+	case (PlaneLoc): return 0;
+	case (ConfLoc): return str + loc;
+	case (BoundariesLoc): return 0;
+	case (RegionsLoc): return 0;
+	case (SideLoc): return 0;
+	case (InsidesLoc): return 0;
+	case (OutsidesLoc): return 0;
+	case (VersorLoc): return 0;
+	case (TopologyLoc): return str + loc;
+	case (FixedLoc): return str + loc;
+	case (SeqnumLoc): return 0;
+	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
+	default: error("invalid identity");}
+	return 0;
+}
+
+void convert(char *str, int ident, int loc)
+{
+	switch (ident) {
+	case (OpcodeIdent): *(int *)str = (enum Opcode)*str; break;
+	case (IntIdent): break;
+	case (FloatIdent): break;
+	case (DataIdent): switch (loc) {
+	case (FileLoc): break;
+	case (PlaneLoc): break;
+	case (ConfLoc): *(int *)str = (enum Configure)*str; break;
+	case (BoundariesLoc): break;
+	case (RegionsLoc): break;
+	case (SideLoc): break;
+	case (InsidesLoc): break;
+	case (OutsidesLoc): break;
+	case (VersorLoc): break;
+	case (TopologyLoc): *(int *)str = (enum TopologyMode)*str; break;
+	case (FixedLoc): *(int *)str = (enum FixedMode)*str; break;
+	case (SeqnumLoc): break;
+	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
+	default: error("invalid identity");}
 }
 
 int replication(char *str, int ident, int loc)
 {
 	union Symbol symbol; symbol.count = -1;
 	switch (ident) {
+	case (OpcodeIdent): return 0;
+	case (IntIdent): return 0;
+	case (FloatIdent): return 0;
 	case (DataIdent): switch (loc) {
 	case (PlanesLoc): symbol.inum = DATA_FIELD(planes); break;
 	case (SidesLoc): symbol.inum = DATA_FIELD(planes); break;
@@ -153,7 +223,8 @@ int replication(char *str, int ident, int loc)
 	case (PierceLoc): symbol.fnum = DATA_FIELD(pierce); break;
 	case (MatrixLoc): symbol.fnum = DATA_FIELD(matrix); break;
 	case (TextLoc): symbol.text = DATA_FIELD(text); break;
- 	default: error("invalid location");}
+ 	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
 	default: error("invalid identity");}
 	return symbol.count;
 }
@@ -170,6 +241,9 @@ int replication(char *str, int ident, int loc)
 int reference(char *str, int ident, int loc, int sub)
 {
 	switch (ident) {
+	case (OpcodeIdent): return 0;
+	case (IntIdent): return 0;
+	case (FloatIdent): return 0;
 	case (DataIdent): switch (loc) {
 	case (PlanesLoc): return DATA_OFFSET0(planes);
 	case (SidesLoc): return DATA_OFFSET1(planes,PlanesLoc,sides);
@@ -180,15 +254,7 @@ int reference(char *str, int ident, int loc, int sub)
 	case (MatrixLoc): return DATA_OFFSET0(matrix);
 	case (TextLoc): return DATA_OFFSET0(text);
  	default: error("invalid location");} break;
-	default: error("invalid identity");}
-	return 0;
-}
-
-int structure(int ident)
-{
-	switch (ident) {
-	case (DataIdent): return sizeof(struct Data);
-	case (CommandIdent): return sizeof(struct Command);
+ 	case (CommandIdent): // TODO
 	default: error("invalid identity");}
 	return 0;
 }
@@ -201,6 +267,9 @@ int structure(int ident)
 int extent(char *str, int ident, int loc)
 {
 	switch (ident) {
+	case (OpcodeIdent): return 0;
+	case (IntIdent): return 0;
+	case (FloatIdent): return 0;
 	case (DataIdent): switch (loc) {
 	case (PlanesLoc): return DATA_EXTENT0(planes,PlanesLoc);
 	case (SidesLoc): return DATA_EXTENT1(planes,PlanesLoc,sides,SidesLoc);
@@ -211,15 +280,9 @@ int extent(char *str, int ident, int loc)
 	case (MatrixLoc): return DATA_EXTENT0(matrix,MatrixLoc);
 	case (TextLoc): return DATA_EXTENT0(text,TextLoc);
  	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
 	default: error("invalid identity");}
 	return 0;
-}
-
-int opcode(int fd)
-{
-	enum Opcode op;
-	if (read(fd,&op,sizeof(op)) != sizeof(op)) return Opcodes;
-	return op;
 }
 
 void input(int fd, int size, char *str)
