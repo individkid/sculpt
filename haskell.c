@@ -158,23 +158,45 @@ char *character(char *str, int ident, int loc)
 	return 0;
 }
 
-void convert(char *str, int ident, int loc)
+void fromchar(char *str, int ident, int loc)
 {
 	union Symbol symbol; symbol.count = -1;
 	switch (ident) {
-	case (OpcodeIdent): *(int *)str = (enum Opcode)*str; break;
+	case (OpcodeIdent): *(enum Opcode *)str = *str; break;
 	case (DataIdent): switch (loc) {
-	case (ConfLoc): *(int *)str = (enum Configure)*str; break;
+	case (ConfLoc): DATA_FIELD(conf) = *(int *)str; break;
 	case (PlanesLoc): symbol.count = *(int *)str; DATA_FIELD(planes) = symbol.inum; break;
 	case (SidesLoc): symbol.count = *(int *)str; DATA_FIELD(sides) = symbol.inum; break;
 	case (InsideLoc): symbol.count = *(int *)str; DATA_FIELD(inside) = symbol.inum; break;
 	case (OutsideLoc): symbol.count = *(int *)str; DATA_FIELD(outside) = symbol.inum; break;
 	case (VectorLoc): symbol.count = *(int *)str; DATA_FIELD(vector) = symbol.fnum; break;
-	case (TopologyLoc): *(int *)str = (enum TopologyMode)*str; break;
-	case (FixedLoc): *(int *)str = (enum FixedMode)*str; break;
+	case (TopologyLoc): DATA_FIELD(topology) = *(int *)str; break;
+	case (FixedLoc): DATA_FIELD(fixed) = *(int *)str; break;
 	case (PierceLoc): symbol.count = *(int *)str; DATA_FIELD(pierce) = symbol.fnum; break;
 	case (MatrixLoc): symbol.count = *(int *)str; DATA_FIELD(matrix) = symbol.fnum; break;
 	case (TextLoc): symbol.count = *(int *)str; DATA_FIELD(text) = symbol.text; break;
+	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
+	default: error("invalid identity");}
+}
+
+void tochar(char *str, int ident, int loc)
+{
+	union Symbol symbol; symbol.count = -1;
+	switch (ident) {
+	case (OpcodeIdent): *str = *(enum Opcode *)str; break;
+	case (DataIdent): switch (loc) {
+	case (ConfLoc): *str = DATA_FIELD(conf); break;
+	case (PlanesLoc): symbol.inum = DATA_FIELD(planes); *str = symbol.count; break;
+	case (SidesLoc): symbol.inum = DATA_FIELD(sides); *str = symbol.count; break;
+	case (InsideLoc): symbol.inum = DATA_FIELD(inside); *str = symbol.count; break;
+	case (OutsideLoc): symbol.inum = DATA_FIELD(outside); *str = symbol.count; break;
+	case (VectorLoc): symbol.fnum = DATA_FIELD(vector); *str = symbol.count; break;
+	case (TopologyLoc): *str = DATA_FIELD(topology); break;
+	case (FixedLoc): *str = DATA_FIELD(fixed); break;
+	case (PierceLoc): symbol.fnum = DATA_FIELD(pierce); *str = symbol.count; break;
+	case (MatrixLoc): symbol.fnum = DATA_FIELD(matrix); *str = symbol.count; break;
+	case (TextLoc): symbol.text = DATA_FIELD(text); *str = symbol.count; break;
 	default: error("invalid location");} break;
  	case (CommandIdent): // TODO
 	default: error("invalid identity");}
