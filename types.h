@@ -323,10 +323,10 @@ union Symbol
 	struct Feedback *feedback;
 	struct Sound *sound;
 	struct Term *term;
-	double *dnum;
-	float *fnum;
-	int *inum;
-	char *text;
+	double *dptr;
+	float *fptr;
+	int *iptr;
+	char *cptr;
 };
 
 #endif

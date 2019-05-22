@@ -49,15 +49,15 @@ void Stream::get(int fd, Data *&data)
 
 void Stream::get(int fd, char *&text)
 {
-	Symbol texts; texts.text = text; text = chars.get(texts.count);
-	int size = texts.count*sizeof(*texts.text);
+	Symbol texts; texts.cptr = text; text = chars.get(texts.count);
+	int size = texts.count*sizeof(*texts.cptr);
 	if (read(fd,text,size) != size) error("read failed",errno,__FILE__,__LINE__);
 }
 
 int Stream::put(char *&text)
 {
-	Symbol texts; texts.count = strlen(text)+1; text = texts.text;
-	return texts.count*sizeof(*texts.text);
+	Symbol texts; texts.count = strlen(text)+1; text = texts.cptr;
+	return texts.count*sizeof(*texts.cptr);
 }
 
 void Stream::put(int fd, int size, char *&text)

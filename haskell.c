@@ -56,7 +56,7 @@ int enumerate(char *name)
 	return -1;
 }
 
-int identify(char *name)
+int identity(char *name)
 {
 	if (strcmp(name,"Opcode") == 0) return OpcodeIdent;
 	if (strcmp(name,"Int") == 0) return IntIdent;
@@ -108,7 +108,7 @@ int structure(int ident)
 
 #define DATA_FIELD(FIELD) (((struct Data *)str)->FIELD)
 #define COMMAND_FIELD(FIELD) (((struct Command *)str)->FIELD)
-int *integral(char *str, int ident, int loc)
+int *integer(char *str, int ident, int loc)
 {
 	switch (ident) {
 	case (IntIdent): return ((int *)str) + loc;
@@ -136,89 +136,79 @@ float *scalar(char *str, int ident, int loc)
 	return 0;
 }
 
-char *character(char *str, int ident, int loc)
+char *text(char *str, int ident, int loc)
 {
 	switch (ident) {
-	case (OpcodeIdent): return str+loc;
 	case (DataIdent): switch (loc) {
-	case (ConfLoc): return str+loc;
-	case (PlanesLoc): return str+loc;
-	case (SidesLoc): return str+loc;
-	case (InsideLoc): return str+loc;
-	case (OutsideLoc): return str+loc;
-	case (VectorLoc): return str+loc;
-	case (TopologyLoc): return str+loc;
-	case (FixedLoc): return str+loc;
-	case (PierceLoc): return str+loc;
-	case (MatrixLoc): return str+loc;
-	case (TextLoc): return str+loc;
+	case (TextLoc): return DATA_FIELD(text);
 	default: error("invalid location");} break;
  	case (CommandIdent): // TODO
 	default: error("invalid identity");}
 	return 0;
 }
 
-void fromchar(char *str, int ident, int loc)
+int fromenum(char *str, int ident, int loc)
 {
-	union Symbol symbol; symbol.count = -1;
 	switch (ident) {
-	case (OpcodeIdent): *(enum Opcode *)str = *str; break;
+	case (OpcodeIdent): return *(enum Opcode *)str;
 	case (DataIdent): switch (loc) {
-	case (ConfLoc): DATA_FIELD(conf) = *(int *)str; break;
-	case (PlanesLoc): symbol.count = *(int *)str; DATA_FIELD(planes) = symbol.inum; break;
-	case (SidesLoc): symbol.count = *(int *)str; DATA_FIELD(sides) = symbol.inum; break;
-	case (InsideLoc): symbol.count = *(int *)str; DATA_FIELD(inside) = symbol.inum; break;
-	case (OutsideLoc): symbol.count = *(int *)str; DATA_FIELD(outside) = symbol.inum; break;
-	case (VectorLoc): symbol.count = *(int *)str; DATA_FIELD(vector) = symbol.fnum; break;
-	case (TopologyLoc): DATA_FIELD(topology) = *(int *)str; break;
-	case (FixedLoc): DATA_FIELD(fixed) = *(int *)str; break;
-	case (PierceLoc): symbol.count = *(int *)str; DATA_FIELD(pierce) = symbol.fnum; break;
-	case (MatrixLoc): symbol.count = *(int *)str; DATA_FIELD(matrix) = symbol.fnum; break;
-	case (TextLoc): symbol.count = *(int *)str; DATA_FIELD(text) = symbol.text; break;
+	case (ConfLoc): return DATA_FIELD(conf);
+	case (TopologyLoc): return DATA_FIELD(topology);
+	case (FixedLoc): return DATA_FIELD(fixed);
 	default: error("invalid location");} break;
  	case (CommandIdent): // TODO
 	default: error("invalid identity");}
+	return -1;
 }
 
-void tochar(char *str, int ident, int loc)
+int fromcount(char *str, int ident, int loc)
 {
 	union Symbol symbol; symbol.count = -1;
 	switch (ident) {
-	case (OpcodeIdent): *str = *(enum Opcode *)str; break;
 	case (DataIdent): switch (loc) {
-	case (ConfLoc): *str = DATA_FIELD(conf); break;
-	case (PlanesLoc): symbol.inum = DATA_FIELD(planes); *str = symbol.count; break;
-	case (SidesLoc): symbol.inum = DATA_FIELD(sides); *str = symbol.count; break;
-	case (InsideLoc): symbol.inum = DATA_FIELD(inside); *str = symbol.count; break;
-	case (OutsideLoc): symbol.inum = DATA_FIELD(outside); *str = symbol.count; break;
-	case (VectorLoc): symbol.fnum = DATA_FIELD(vector); *str = symbol.count; break;
-	case (TopologyLoc): *str = DATA_FIELD(topology); break;
-	case (FixedLoc): *str = DATA_FIELD(fixed); break;
-	case (PierceLoc): symbol.fnum = DATA_FIELD(pierce); *str = symbol.count; break;
-	case (MatrixLoc): symbol.fnum = DATA_FIELD(matrix); *str = symbol.count; break;
-	case (TextLoc): symbol.text = DATA_FIELD(text); *str = symbol.count; break;
+	case (PlanesLoc): symbol.iptr = DATA_FIELD(planes); break;
+	case (SidesLoc): symbol.iptr = DATA_FIELD(sides); break;
+	case (InsideLoc): symbol.iptr = DATA_FIELD(inside); break;
+	case (OutsideLoc): symbol.iptr = DATA_FIELD(outside); break;
+	case (VectorLoc): symbol.fptr = DATA_FIELD(vector); break;
+	case (PierceLoc): symbol.fptr = DATA_FIELD(pierce); break;
+	case (MatrixLoc): symbol.fptr = DATA_FIELD(matrix); break;
+	case (TextLoc): symbol.cptr = DATA_FIELD(text); break;
 	default: error("invalid location");} break;
- 	case (CommandIdent): // TODO
-	default: error("invalid identity");}
-}
-
-int replication(char *str, int ident, int loc)
-{
-	union Symbol symbol; symbol.count = -1;
-	switch (ident) {
-	case (DataIdent): switch (loc) {
-	case (PlanesLoc): symbol.inum = DATA_FIELD(planes); break;
-	case (SidesLoc): symbol.inum = DATA_FIELD(sides); break;
-	case (InsideLoc): symbol.inum = DATA_FIELD(inside); break;
-	case (OutsideLoc): symbol.inum = DATA_FIELD(outside); break;
-	case (VectorLoc): symbol.fnum = DATA_FIELD(vector); break;
-	case (PierceLoc): symbol.fnum = DATA_FIELD(pierce); break;
-	case (MatrixLoc): symbol.fnum = DATA_FIELD(matrix); break;
-	case (TextLoc): symbol.text = DATA_FIELD(text); break;
- 	default: error("invalid location");} break;
  	case (CommandIdent): // TODO
 	default: error("invalid identity");}
 	return symbol.count;
+}
+
+void toenum(char *str, int ident, int loc, int val)
+{
+	switch (ident) {
+	case (OpcodeIdent): *(enum Opcode *)str = val; break;
+	case (DataIdent): switch (loc) {
+	case (ConfLoc): DATA_FIELD(conf) = val; break;
+	case (TopologyLoc): DATA_FIELD(topology) = val; break;
+	case (FixedLoc): DATA_FIELD(fixed) = val; break;
+	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
+	default: error("invalid identity");}
+}
+
+void tocount(char *str, int ident, int loc, int val)
+{
+	union Symbol symbol; symbol.count = val;
+	switch (ident) {
+	case (DataIdent): switch (loc) {
+	case (PlanesLoc): DATA_FIELD(planes) = symbol.iptr; break;
+	case (SidesLoc): DATA_FIELD(sides) = symbol.iptr; break;
+	case (InsideLoc): DATA_FIELD(inside) = symbol.iptr; break;
+	case (OutsideLoc): DATA_FIELD(outside) = symbol.iptr; break;
+	case (VectorLoc): DATA_FIELD(vector) = symbol.fptr; break;
+	case (PierceLoc): DATA_FIELD(pierce) = symbol.fptr; break;
+	case (MatrixLoc): DATA_FIELD(matrix) = symbol.fptr; break;
+	case (TextLoc): DATA_FIELD(text) = symbol.cptr; break;
+	default: error("invalid location");} break;
+ 	case (CommandIdent): // TODO
+	default: error("invalid identity");}
 }
 
 #define DATA_SIZEOF(FIELD) (sizeof(*DATA_FIELD(FIELD)))
@@ -227,7 +217,7 @@ int replication(char *str, int ident, int loc)
 	DATA_SIZEOF(FIELD0)*sub)
 #define DATA_OFFSET1(FIELD0,LOC0,FIELD1) (\
 	sizeof(struct Data)+\
-	DATA_SIZEOF(FIELD0)*replication(str,ident,LOC0)+\
+	DATA_SIZEOF(FIELD0)*fromcount(str,ident,LOC0)+\
 	DATA_SIZEOF(FIELD1)*sub)
 #define COMMAND_SIZEOF(FIELD) (sizeof(*COMMAND_FIELD(FIELD)))
 int reference(char *str, int ident, int loc, int sub)
@@ -249,10 +239,10 @@ int reference(char *str, int ident, int loc, int sub)
 }
 
 #define DATA_EXTENT0(FIELD0,LOC0) (\
-	DATA_SIZEOF(FIELD0)*replication(str,ident,LOC0))
+	DATA_SIZEOF(FIELD0)*fromcount(str,ident,LOC0))
 #define DATA_EXTENT1(FIELD0,LOC0,FIELD1,LOC1) (\
-	DATA_SIZEOF(FIELD0)*replication(str,ident,LOC0)+\
-	DATA_SIZEOF(FIELD1)*replication(str,ident,LOC1))
+	DATA_SIZEOF(FIELD0)*fromcount(str,ident,LOC0)+\
+	DATA_SIZEOF(FIELD1)*fromcount(str,ident,LOC1))
 int extent(char *str, int ident, int loc)
 {
 	switch (ident) {
