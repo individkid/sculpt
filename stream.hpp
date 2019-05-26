@@ -33,8 +33,8 @@ private:
 public:
 	Stream(const char *file, int line) : Pools(file,line) {}
 	Opcode get(int fd, Data *&data, Command *&command);
-	void put(int fd, Opcode opcode, Data *data);
 	void put(int fd, Opcode opcode, Command *command);
+	void put(int fd, Opcode opcode, Data *data);
 };
 
 #endif

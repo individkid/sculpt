@@ -1,6 +1,7 @@
-#! /usr/bin/lldb -f ./a.out -s
+#! /usr/bin/lldb -f ./sculpt -s
 breakpoint set -b main
 run test.--
 breakpoint set -b malloc_error_break
 process handle -n false -p true -s false SIGUSR1
+process handle -n true -p false -s true INT
 continue

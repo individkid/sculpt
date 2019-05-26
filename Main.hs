@@ -7,6 +7,8 @@ import Foreign.C
 import Foreign.Ptr
 import System.Environment
 
+foreign import ccall enumerate :: Ptr CChar -> IO CInt
+foreign import ccall rdPointer :: CInt -> IO (Ptr ())
 foreign import ccall rdOpcode :: CInt -> IO CInt
 foreign import ccall rdConfigure :: CInt -> IO CInt
 foreign import ccall rdTopologyMode :: CInt -> IO CInt
@@ -19,6 +21,7 @@ foreign import ccall rdChars :: CInt -> CInt -> Ptr CChar -> IO ()
 foreign import ccall rdInts :: CInt -> CInt -> Ptr CInt -> IO ()
 foreign import ccall rdFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
 foreign import ccall rdDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
+foreign import ccall wrPointer :: CInt -> Ptr () -> IO ()
 foreign import ccall wrOpcode :: CInt -> CInt -> IO ()
 foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
 foreign import ccall wrTopologyMode :: CInt -> CInt -> IO ()
@@ -34,7 +37,32 @@ foreign import ccall wrDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
 foreign import ccall exOpcode :: CInt -> CInt -> IO ()
 foreign import ccall hello :: CString -> IO CString
 
+toInt :: Integral a => IO a -> IO Int
+toInt = fmap (fromInteger . toInteger)
+
+toCInt :: Integral a => a -> CInt
+toCInt a = fromInteger (toInteger a)
+
 main = do
-   args <- getArgs
-   print (map (\x -> ((read x)::Int)) args)
-   (newCString "hello") >>= hello >>= peekCString >>= print
+   [rdfd,wrfd] <- fmap (map read) getArgs
+   readOp <- (newCString "ReadOp") >>= enumerate
+   fileOp <- (newCString "FileOp") >>= enumerate
+   planeOp <- (newCString "PlaneOp") >>= enumerate
+   confOp <- (newCString "ConfOp") >>= enumerate
+   textOp <- (newCString "TextOp") >>= enumerate
+   exOpcode rdfd readOp
+   ptr <- rdPointer rdfd
+   exOpcode rdfd fileOp
+   file <- toInt (rdInt rdfd)
+   exOpcode rdfd planeOp
+   plane <- toInt (rdInt rdfd)
+   exOpcode rdfd confOp
+   conf <- toInt (rdConfigure rdfd)
+   exOpcode rdfd textOp
+   count <- toInt (rdInt rdfd)
+   str <- newCString (replicate count '\0')
+   rdChars rdfd (toCInt count) str
+   (peekCString str) >>= print
+   wrOpcode wrfd readOp
+   wrPointer wrfd ptr
+   main

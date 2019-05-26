@@ -18,6 +18,7 @@
 
 #include "types.h"
 
+void *rdPointer(int fd);
 int rdOpcode(int fd);
 int rdConfigure(int fd);
 int rdTopologyMode(int fd);
@@ -30,6 +31,7 @@ void rdChars(int fd, int count, char *chars);
 void rdInts(int fd, int count, int *ints);
 void rdFloats(int fd, int count, float *floats);
 void rdDoubles(int fd, int count, double *doubles);
+void wrPointer(int fd, void *val);
 void wrOpcode(int fd, int val);
 void wrConfigure(int fd, int val);
 void wrTopologyMode(int fd, int val);

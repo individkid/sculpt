@@ -24,7 +24,6 @@ extern "C" {
 
 void Stream::get(int fd, Command *&command)
 {
-	command = Pools::commands.get();
 	// TODO
 }
 
@@ -63,23 +62,32 @@ void Stream::put(int fd, char *text)
 	int count = strlen(text)+1;
 	wrInt(fd,count);
 	wrChars(fd,count,text);
-	Pools::chars.put(count,text);
 }
 
 Opcode Stream::get(int fd, Data *&data, Command *&command)
 {
 	Opcode opcode = (Opcode)rdOpcode(fd);
 	switch (opcode) {
-	case (ReadOp): case (WriteOp): case (ScriptOp): case (WindowOp):
-	get(fd,data); command = 0; break;
+	// TODO for responses with data read into the struct pointed to by rdPointer
+	case (ReadOp): case (ScriptOp): data = (struct Data *)rdPointer(fd); command = 0; break;
+	case (WriteOp): case (WindowOp): get(fd,data); command = 0; break;
 	case (CommandOp): data = 0; get(fd,command); break;
 	default: error("unimplemented opcode",opcode,__FILE__,__LINE__);}
 	return opcode;
 }
 
+void Stream::put(int fd, Opcode opcode, Command *command)
+{
+	// TODO
+}
+
 void Stream::put(int fd, Opcode opcode, Data *data)
 {
-	wrOpcode(fd,opcode);
+	int rsp; switch (opcode) {
+	case (ReadOp): case (ScriptOp): rsp = 0; break;
+	case (WriteOp): case (WindowOp): rsp = 1; break;
+	default: error("unimplemented opcode",opcode,__FILE__,__LINE__);}
+	wrOpcode(fd,opcode); wrPointer(fd,(rsp?0:data));
 	wrOpcode(fd,FileOp); wrInt(fd,data->file);
 	wrOpcode(fd,PlaneOp); wrInt(fd,data->plane);
 	wrOpcode(fd,ConfOp); wrConfigure(fd,data->conf);
@@ -87,10 +95,9 @@ void Stream::put(int fd, Opcode opcode, Data *data)
 	// 	TODO
 	case (TestConf): wrOpcode(fd,TextOp); put(fd,data->text); break;
 	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
-	Pools::datas.put(data);
-}
-
-void Stream::put(int fd, Opcode opcode, Command *command)
-{
+	if (rsp) {switch (data->conf) {
 	// TODO
+	case (TestConf): Pools::chars.put(strlen(data->text)+1,data->text); break;
+	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
+	Pools::datas.put(data);}
 }

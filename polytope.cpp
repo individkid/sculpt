@@ -90,8 +90,9 @@ void Polytope::wait()
 	fd_set errorfds; FD_SET(p2t[0],&errorfds);
 	if (pthread_sigmask(SIG_SETMASK,0,&unblock)) error ("cannot get mask",errno,__FILE__,__LINE__);
 	sigdelset(&unblock, SIGUSR1);
-   	if (pselect(nfd, &readfds, 0, &errorfds, 0, &unblock) < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
-   	iss = (FD_ISSET(p2t[0],&readfds) || FD_ISSET(p2t[0],&errorfds));
+	int ret = pselect(nfd, &readfds, 0, &errorfds, 0, &unblock);
+   	if (ret < 0 && errno != EINTR) error("pselect",errno,__FILE__,__LINE__);
+   	iss = (ret > 0);
 }
 
 void Polytope::init()
@@ -106,9 +107,6 @@ void Polytope::init()
 void Polytope::call()
 {
 	Data *data; Command *command;
-    data = 0; while (read2req.get(data)) {
-    printf("polytope:%s",data->text); rsp2read[data->file]->put(data);}
-    return;
 	if (iss) {iss = 0;
 	Opcode opcode = stream.get(p2t[0],data,command);
 	switch (opcode) {
