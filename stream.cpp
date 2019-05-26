@@ -18,14 +18,14 @@
 
 #include <unistd.h>
 #include "stream.hpp"
+extern "C" {
+#include "haskell.h"
+}
 
 void Stream::get(int fd, Command *&command)
 {
 	command = Pools::commands.get();
-	if (read(fd,command,sizeof(*command)) != sizeof(*command)) error("read failed",errno,__FILE__,__LINE__);
-	for (int i = 0; i < Fields; i++) get(fd,command->update[i]); get(fd,command->render);
-	if (command->redraw) get(fd,command->redraw);
-	if (command->pierce) get(fd,command->pierce);
+	// TODO
 }
 
 void Stream::get(int fd, Update *&update)
@@ -40,35 +40,35 @@ void Stream::get(int fd, Render *&render)
 
 void Stream::get(int fd, Data *&data)
 {
-	data = datas.get();
-	if (read(fd,data,sizeof(data)) != sizeof(data)) error("read failed",errno,__FILE__,__LINE__);
+	data = Pools::datas.get();
+	exOpcode(fd,FileOp); data->file = rdInt(fd);
+	exOpcode(fd,PlaneOp); data->plane = rdInt(fd);
+	exOpcode(fd,ConfOp); data->conf = (Configure)rdConfigure(fd);
 	switch (data->conf) {
-	case (TestConf): get(fd,data->text); break;
+	// TODO
+	case (TestConf): exOpcode(fd,TextOp); get(fd,data->text); break;
 	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
 }
 
 void Stream::get(int fd, char *&text)
 {
-	Symbol texts; texts.cptr = text; text = chars.get(texts.count);
-	int size = texts.count*sizeof(*texts.cptr);
-	if (read(fd,text,size) != size) error("read failed",errno,__FILE__,__LINE__);
+	int count = rdInt(fd);
+	text = Pools::chars.get(count);
+	rdChars(fd,count,text);
+	if (text[count-1]) error("invalid text",0,__FILE__,__LINE__);
 }
 
-int Stream::put(char *&text)
+void Stream::put(int fd, char *text)
 {
-	Symbol texts; texts.count = strlen(text)+1; text = texts.cptr;
-	return texts.count*sizeof(*texts.cptr);
-}
-
-void Stream::put(int fd, int size, char *&text)
-{
-	if (write(fd,text,size) != size) error("write failed",errno,__FILE__,__LINE__);
+	int count = strlen(text)+1;
+	wrInt(fd,count);
+	wrChars(fd,count,text);
+	Pools::chars.put(count,text);
 }
 
 Opcode Stream::get(int fd, Data *&data, Command *&command)
 {
-	Opcode opcode;
-	if (read(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("read failed",errno,__FILE__,__LINE__);
+	Opcode opcode = (Opcode)rdOpcode(fd);
 	switch (opcode) {
 	case (ReadOp): case (WriteOp): case (ScriptOp): case (WindowOp):
 	get(fd,data); command = 0; break;
@@ -79,15 +79,14 @@ Opcode Stream::get(int fd, Data *&data, Command *&command)
 
 void Stream::put(int fd, Opcode opcode, Data *data)
 {
-	int size0;
-	if (write(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("write failed",errno,__FILE__,__LINE__);
+	wrOpcode(fd,opcode);
+	wrOpcode(fd,FileOp); wrInt(fd,data->file);
+	wrOpcode(fd,PlaneOp); wrInt(fd,data->plane);
+	wrOpcode(fd,ConfOp); wrConfigure(fd,data->conf);
 	switch (data->conf) {
-	case (TestConf): size0 = put(data->text); break;
-	default: error("unimplemented opcode",data->conf,__FILE__,__LINE__);}
-	if (write(fd,data,sizeof(data)) != sizeof(data)) error("write failed",errno,__FILE__,__LINE__);
-	switch (data->conf) {
-	case (TestConf): put(fd,size0,data->text); break;
-	default: error("unimplemented opcode",data->conf,__FILE__,__LINE__);}
+	// 	TODO
+	case (TestConf): wrOpcode(fd,TextOp); put(fd,data->text); break;
+	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
 	Pools::datas.put(data);
 }
 

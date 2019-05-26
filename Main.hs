@@ -7,21 +7,31 @@ import Foreign.C
 import Foreign.Ptr
 import System.Environment
 
-foreign import ccall enumerate :: CString -> IO CInt
-foreign import ccall identity :: CString -> IO CInt
-foreign import ccall location :: CInt -> CString -> IO CInt
-foreign import ccall structure :: CInt -> IO CInt
-foreign import ccall integer :: CString -> CInt -> CInt -> IO (Ptr CInt)
-foreign import ccall scalar :: CString -> CInt -> CInt -> IO (Ptr CFloat)
-foreign import ccall text :: CString -> CInt -> CInt -> IO (Ptr CChar)
-foreign import ccall fromenum :: CString -> CInt -> CInt -> IO CInt
-foreign import ccall fromcount :: CString -> CInt -> CInt -> IO CInt
-foreign import ccall toenum :: CString -> CInt -> CInt -> CInt -> IO ()
-foreign import ccall tocount :: CString -> CInt -> CInt -> CInt -> IO ()
-foreign import ccall reference :: CString -> CInt -> CInt -> CInt -> IO CInt
-foreign import ccall extent :: CString -> CInt -> CInt -> IO CInt
-foreign import ccall input :: CInt -> CInt -> CString -> IO ()
-foreign import ccall output :: CInt -> CInt -> CString -> IO ()
+foreign import ccall rdOpcode :: CInt -> IO CInt
+foreign import ccall rdConfigure :: CInt -> IO CInt
+foreign import ccall rdTopologyMode :: CInt -> IO CInt
+foreign import ccall rdFixedMode :: CInt -> IO CInt
+foreign import ccall rdSubconf :: CInt -> IO CInt
+foreign import ccall rdInt :: CInt -> IO CInt
+foreign import ccall rdFloat :: CInt -> IO CFloat
+foreign import ccall rdDouble :: CInt -> IO CDouble
+foreign import ccall rdChars :: CInt -> CInt -> Ptr CChar -> IO ()
+foreign import ccall rdInts :: CInt -> CInt -> Ptr CInt -> IO ()
+foreign import ccall rdFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
+foreign import ccall rdDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
+foreign import ccall wrOpcode :: CInt -> CInt -> IO ()
+foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
+foreign import ccall wrTopologyMode :: CInt -> CInt -> IO ()
+foreign import ccall wrFixedMode :: CInt -> CInt -> IO ()
+foreign import ccall wrSubconf :: CInt -> CInt -> IO ()
+foreign import ccall wrInt :: CInt -> CInt -> IO ()
+foreign import ccall wrFloat :: CInt -> CFloat -> IO ()
+foreign import ccall wrDouble :: CInt -> CDouble -> IO ()
+foreign import ccall wrChars :: CInt -> CInt -> Ptr CChar -> IO ()
+foreign import ccall wrInts :: CInt -> CInt -> Ptr CInt -> IO ()
+foreign import ccall wrFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
+foreign import ccall wrDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
+foreign import ccall exOpcode :: CInt -> CInt -> IO ()
 foreign import ccall hello :: CString -> IO CString
 
 main = do
