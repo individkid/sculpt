@@ -20,14 +20,21 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/errno.h>
 #include "haskell.h"
 
-static const int debug = 0;
+static int debug = 0;
 
-void error(const char *str)
+void error(const char *str, int wrt, const char *file, int line)
 {
-    fprintf(stderr,"Haskell error: %s\n",str);
+	if (debug < 0) exit(0);
+    fprintf(stderr,"error: %s; wrt %d; file %s; line %d\n",str,wrt,file,line);
     exit(-1);
+}
+
+void setDebug(int val)
+{
+	debug = val;
 }
 
 const char *enamerate(enum Opcode opcode)
@@ -65,7 +72,7 @@ const char *enamerate(enum Opcode opcode)
 	case (SubconfOp): return "SubconfOp";
 	case (SettingOp): return "SettingOp";
 	case (TextOp): return "TextOp";
-	default: error("unknown opcode");}
+	default: error("unknown opcode",opcode,__FILE__,__LINE__);}
 	return 0;
 }
 
@@ -103,193 +110,193 @@ int enumerate(char *name)
 	if (strcmp(name,"SubconfOp") == 0) return SubconfOp;
 	if (strcmp(name,"SettingOp") == 0) return SettingOp;
 	if (strcmp(name,"TextOp") == 0) return TextOp;
-	error("unknown opcode");
+	error("unknown opcode",0,__FILE__,__LINE__);
 	return -1;
 }
 
 void *rdPointer(int fd)
 {
 	void *ptr;
-	if (read(fd,&ptr,sizeof(ptr)) != sizeof(ptr)) error("read failed");
-	if (debug) printf("rdPointer: %d %p\n",getpid(),ptr);
+	if (read(fd,&ptr,sizeof(ptr)) != sizeof(ptr)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdPointer: %d %p\n",getpid(),ptr);
 	return ptr;
 }
 
 int rdOpcode(int fd)
 {
 	enum Opcode opcode;
-	if (read(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("read failed");
-	if (debug) printf("rdOpcode: %d %s\n",getpid(),enamerate(opcode));
+	if (read(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdOpcode: %d %s\n",getpid(),enamerate(opcode));
 	return opcode;
 }
 
 int rdConfigure(int fd)
 {
 	enum Configure conf;
-	if (read(fd,&conf,sizeof(conf)) != sizeof(conf)) error("read failed");
-	if (debug) printf("rdConfigure: %d %d\n",getpid(),conf);
+	if (read(fd,&conf,sizeof(conf)) != sizeof(conf)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdConfigure: %d %d\n",getpid(),conf);
 	return conf;
 }
 
 int rdTopologyMode(int fd)
 {
 	enum TopologyMode topology;
-	if (read(fd,&topology,sizeof(topology)) != sizeof(topology)) error("read failed");
-	if (debug) printf("rdTopologyMode: %d %d\n",getpid(),topology);
+	if (read(fd,&topology,sizeof(topology)) != sizeof(topology)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdTopologyMode: %d %d\n",getpid(),topology);
 	return topology;
 }
 
 int rdFixedMode(int fd)
 {
 	enum FixedMode fixed;
-	if (read(fd,&fixed,sizeof(fixed)) != sizeof(fixed)) error("read failed");
-	if (debug) printf("rdFixedMode: %d %d\n",getpid(),fixed);
+	if (read(fd,&fixed,sizeof(fixed)) != sizeof(fixed)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdFixedMode: %d %d\n",getpid(),fixed);
 	return fixed;
 }
 
 int rdSubconf(int fd)
 {
 	enum Subconf subconf;
-	if (read(fd,&subconf,sizeof(subconf)) != sizeof(subconf)) error("read failed");
-	if (debug) printf("rdSubconf: %d %d\n",getpid(),subconf);
+	if (read(fd,&subconf,sizeof(subconf)) != sizeof(subconf)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdSubconf: %d %d\n",getpid(),subconf);
 	return subconf;
 }
 
 int rdInt(int fd)
 {
 	int val;
-	if (read(fd,&val,sizeof(val)) != sizeof(val)) error("read failed");
-	if (debug) printf("rdInt: %d %d\n",getpid(),val);
+	if (read(fd,&val,sizeof(val)) != sizeof(val)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdInt: %d %d\n",getpid(),val);
 	return val;
 }
 
 float rdFloat(int fd)
 {
 	float val;
-	if (read(fd,&val,sizeof(val)) != sizeof(val)) error("read failed");
-	if (debug) printf("rdFloat: %d %f\n",getpid(),val);
+	if (read(fd,&val,sizeof(val)) != sizeof(val)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdFloat: %d %f\n",getpid(),val);
 	return val;
 }
 
 double rdDouble(int fd)
 {
 	double val;
-	if (read(fd,&val,sizeof(val)) != sizeof(val)) error("read failed");
-	if (debug) printf("rdDouble: %d %f\n",getpid(),val);
+	if (read(fd,&val,sizeof(val)) != sizeof(val)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdDouble: %d %f\n",getpid(),val);
 	return val;
 }
 
 void rdChars(int fd, int count, char *chars)
 {
-	if (read(fd,chars,count*sizeof(*chars)) != count*sizeof(*chars)) error("read failed");
-	if (debug) printf("rdChars %d %d\n",getpid(),count);
+	if (read(fd,chars,count*sizeof(*chars)) != count*sizeof(*chars)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdChars %d %d\n",getpid(),count);
 }
 
 void rdInts(int fd, int count, int *ints)
 {
-	if (read(fd,ints,count*sizeof(*ints)) != count*sizeof(*ints)) error("read failed");
-	if (debug) printf("rdInts %d %d\n",getpid(),count);
+	if (read(fd,ints,count*sizeof(*ints)) != count*sizeof(*ints)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdInts %d %d\n",getpid(),count);
 }
 
 void rdFloats(int fd, int count, float *floats)
 {
-	if (read(fd,floats,count*sizeof(*floats)) != count*sizeof(*floats)) error("read failed");
-	if (debug) printf("rdFloats %d %d\n",getpid(),count);
+	if (read(fd,floats,count*sizeof(*floats)) != count*sizeof(*floats)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdFloats %d %d\n",getpid(),count);
 }
 
 void rdDoubles(int fd, int count, double *doubles)
 {
-	if (read(fd,doubles,count*sizeof(*doubles)) != count*sizeof(*doubles)) error("read failed");
-	if (debug) printf("rdDoubles %d %d\n",getpid(),count);
+	if (read(fd,doubles,count*sizeof(*doubles)) != count*sizeof(*doubles)) error("read failed",errno,__FILE__,__LINE__);
+	if (debug > 0) printf("rdDoubles %d %d\n",getpid(),count);
 }
 
 void wrPointer(int fd, void *ptr)
 {
-	if (debug) printf("wrPointer %d %p\n",getpid(),ptr);
-	if (write(fd,&ptr,sizeof(ptr)) != sizeof(ptr)) error("write failed");
+	if (debug > 0) printf("wrPointer %d %p\n",getpid(),ptr);
+	if (write(fd,&ptr,sizeof(ptr)) != sizeof(ptr)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrOpcode(int fd, int val)
 {
 	enum Opcode opcode = val;
-	if (debug) printf("wrOpcode: %d %s\n",getpid(),enamerate(opcode));
-	if (write(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("write failed");
+	if (debug > 0) printf("wrOpcode: %d %s\n",getpid(),enamerate(opcode));
+	if (write(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrConfigure(int fd, int val)
 {
 	enum Configure conf = val;
-	if (debug) printf("wrConfigure %d %d\n",getpid(),val);
-	if (write(fd,&conf,sizeof(conf)) != sizeof(conf)) error("write failed");
+	if (debug > 0) printf("wrConfigure %d %d\n",getpid(),val);
+	if (write(fd,&conf,sizeof(conf)) != sizeof(conf)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrTopologyMode(int fd, int val)
 {
-	if (debug) printf("wrTopologyMode %d %d\n",getpid(),val);
+	if (debug > 0) printf("wrTopologyMode %d %d\n",getpid(),val);
 	enum TopologyMode topology = val;
-	if (write(fd,&topology,sizeof(topology)) != sizeof(topology)) error("write failed");
+	if (write(fd,&topology,sizeof(topology)) != sizeof(topology)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrFixedMode(int fd, int val)
 {
-	if (debug) printf("wrFixedMode %d %d\n",getpid(),val);
+	if (debug > 0) printf("wrFixedMode %d %d\n",getpid(),val);
 	enum FixedMode fixed = val;
-	if (write(fd,&fixed,sizeof(fixed)) != sizeof(fixed)) error("write failed");
+	if (write(fd,&fixed,sizeof(fixed)) != sizeof(fixed)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrSubconf(int fd, int val)
 {
-	if (debug) printf("wrSubconf %d %d\n",getpid(),val);
+	if (debug > 0) printf("wrSubconf %d %d\n",getpid(),val);
 	enum Subconf subconf = val;
-	if (write(fd,&subconf,sizeof(subconf)) != sizeof(subconf)) error("write failed");
+	if (write(fd,&subconf,sizeof(subconf)) != sizeof(subconf)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrInt(int fd, int val)
 {
-	if (debug) printf("wrInt %d %d\n",getpid(),val);
-	if (write(fd,&val,sizeof(val)) != sizeof(val)) error("write failed");
+	if (debug > 0) printf("wrInt %d %d\n",getpid(),val);
+	if (write(fd,&val,sizeof(val)) != sizeof(val)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrFloat(int fd, float val)
 {
-	if (debug) printf("wrFloat %d %f\n",getpid(),val);
-	if (write(fd,&val,sizeof(val)) != sizeof(val)) error("write failed");
+	if (debug > 0) printf("wrFloat %d %f\n",getpid(),val);
+	if (write(fd,&val,sizeof(val)) != sizeof(val)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrDouble(int fd, double val)
 {
-	if (debug) printf("wrDouble %d %f\n",getpid(),val);
-	if (write(fd,&val,sizeof(val)) != sizeof(val)) error("write failed");
+	if (debug > 0) printf("wrDouble %d %f\n",getpid(),val);
+	if (write(fd,&val,sizeof(val)) != sizeof(val)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrChars(int fd, int count, char *chars)
 {
-	if (debug) printf("wrChars %d %p\n",getpid(),chars);
-	if (write(fd,chars,count*sizeof(*chars)) != count*sizeof(*chars)) error("write failed");
+	if (debug > 0) printf("wrChars %d %p\n",getpid(),chars);
+	if (write(fd,chars,count*sizeof(*chars)) != count*sizeof(*chars)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrInts(int fd, int count, int *ints)
 {
-	if (debug) printf("wrInts %d %p\n",getpid(),ints);
-	if (write(fd,ints,count*sizeof(*ints)) != count*sizeof(*ints)) error("write failed");
+	if (debug > 0) printf("wrInts %d %p\n",getpid(),ints);
+	if (write(fd,ints,count*sizeof(*ints)) != count*sizeof(*ints)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrFloats(int fd, int count, float *floats)
 {
-	if (debug) printf("wrFloats %d %p\n",getpid(),floats);
-	if (write(fd,floats,count*sizeof(*floats)) != count*sizeof(*floats)) error("write failed");
+	if (debug > 0) printf("wrFloats %d %p\n",getpid(),floats);
+	if (write(fd,floats,count*sizeof(*floats)) != count*sizeof(*floats)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrDoubles(int fd, int count, double *doubles)
 {
-	if (debug) printf("wrDoubles %d %p\n",getpid(),doubles);
-	if (write(fd,doubles,count*sizeof(*doubles)) != count*sizeof(*doubles)) error("write failed");
+	if (debug > 0) printf("wrDoubles %d %p\n",getpid(),doubles);
+	if (write(fd,doubles,count*sizeof(*doubles)) != count*sizeof(*doubles)) error("write failed",errno,__FILE__,__LINE__);
 }
 
 void exOpcode(int fd, int opcode)
 {
-	if (debug) printf("exOpcode %d %s\n",getpid(),enamerate(opcode));
-	if (rdOpcode(fd) != opcode) error("unexpected opcode");
+	if (debug > 0) printf("exOpcode %d %s\n",getpid(),enamerate(opcode));
+	if (rdOpcode(fd) != opcode) error("unexpected opcode",errno,__FILE__,__LINE__);
 }
 
 char *hello(char *hello)

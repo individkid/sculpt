@@ -7,6 +7,7 @@ import Foreign.C
 import Foreign.Ptr
 import System.Environment
 
+foreign import ccall setDebug :: CInt -> IO ()
 foreign import ccall enumerate :: Ptr CChar -> IO CInt
 foreign import ccall rdPointer :: CInt -> IO (Ptr ())
 foreign import ccall rdOpcode :: CInt -> IO CInt
@@ -44,6 +45,7 @@ toCInt :: Integral a => a -> CInt
 toCInt a = fromInteger (toInteger a)
 
 main = do
+   setDebug (toCInt (negate 1))
    [rdfd,wrfd] <- fmap (map read) getArgs
    readOp <- (newCString "ReadOp") >>= enumerate
    fileOp <- (newCString "FileOp") >>= enumerate
