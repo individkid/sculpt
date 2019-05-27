@@ -2,12 +2,13 @@
 
 module Main where
 
-import Prelude
 import Foreign.C
 import Foreign.Ptr
 import System.Environment
+import AffTopo.Naive
 
 foreign import ccall setDebug :: CInt -> IO ()
+foreign import ccall clearDebug :: CInt -> IO ()
 foreign import ccall enumerate :: Ptr CChar -> IO CInt
 foreign import ccall rdPointer :: CInt -> IO (Ptr ())
 foreign import ccall rdOpcode :: CInt -> IO CInt
@@ -38,15 +39,20 @@ foreign import ccall wrDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
 foreign import ccall exOpcode :: CInt -> CInt -> IO ()
 foreign import ccall hello :: CString -> IO CString
 
+main = do
+   print (holes 5 [2,3,4])
+   setDebug (toCInt 0x10000)
+   [rdfd,wrfd] <- fmap (map read) getArgs
+   testLoop rdfd wrfd
+
 toInt :: Integral a => IO a -> IO Int
 toInt = fmap (fromInteger . toInteger)
 
 toCInt :: Integral a => a -> CInt
 toCInt a = fromInteger (toInteger a)
 
-main = do
-   setDebug (toCInt (negate 1))
-   [rdfd,wrfd] <- fmap (map read) getArgs
+testLoop :: CInt -> CInt -> IO ()
+testLoop rdfd wrfd = do
    readOp <- (newCString "ReadOp") >>= enumerate
    fileOp <- (newCString "FileOp") >>= enumerate
    planeOp <- (newCString "PlaneOp") >>= enumerate
@@ -67,4 +73,4 @@ main = do
    (peekCString str) >>= print
    wrOpcode wrfd readOp
    wrPointer wrfd ptr
-   main
+   testLoop rdfd wrfd
