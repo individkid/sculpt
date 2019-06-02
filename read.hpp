@@ -16,23 +16,16 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "message.hpp"
+#include "file.hpp"
 
 class Window;
 class Polytope;
 class System;
 class Script;
 
-class Read : public Thread
+class Read : public File
 {
 private:
-	const char *name;
-	int file;
-	int pipe;
-	int self;
-	off_t fpos, mpos, gpos;
-	int mlen, glen, mnum, gnum;
-	int livelock;
 	Message<Command> *req2command;
 	Message<Data> *req2window;
 	Message<Data> *req2polytope;
@@ -46,8 +39,7 @@ public:
 	Message<Sound> sound2rsp;
 	Message<Data> system2rsp;
 	Message<Data> script2rsp;
-	Read(int i, const char *n);
-	virtual ~Read();
+public:
 	void connect(Window *ptr);
 	void connect(Polytope *ptr);
 	void connect(System *ptr);
@@ -57,18 +49,9 @@ private:
 	virtual void call();
 	virtual void wait();
 	virtual void done();
-	char *read();
-	char *split(char *&str);
-	void sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum Configure conf);
-	int trywrlck();
-	int race();
-	void unwrlck();
-	int intr();
-	int check();
-	int read(char *&str);
-	int sync(const char *str, const char *pat, off_t pos, int len, int &num);
-	void write(const char *str);
-	void backoff();
-	int getrdlck();
-	void unrdlck();
+public:
+	Read(int i, const char *n);
+	virtual ~Read();
+public:
+	int self;
 };

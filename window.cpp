@@ -37,6 +37,124 @@ extern "C" {
 #include "callback.h"
 }
 
+void Window::connect(int i, Read *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    object[i].rsp2command = &ptr->command2rsp;
+    object[i].rsp2read = &ptr->window2rsp;
+}
+
+void Window::connect(int i, Write *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    object[i].req2write = &ptr->window2req;
+}
+
+void Window::connect(Polytope *ptr)
+{
+    req2polytope = &ptr->window2req;
+    rsp2polytope = &ptr->window2rsp;
+}
+
+void Window::connect(Script *ptr)
+{
+    req2script = &ptr->window2req;
+}
+
+void Window::init()
+{
+    for (int i = 0; i < nfile; i++) if (object[i].rsp2command == 0) error("unconnected rsp2command",i,__FILE__,__LINE__);
+    for (int i = 0; i < nfile; i++) if (object[i].rsp2read == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+    for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
+    if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
+    if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
+    if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
+    if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
+    if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
+    if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
+    if (sizeof(float)%4 != 0) error("sizeof float",sizeof(float)%4,__FILE__,__LINE__);
+    globalInit(nfile);
+    glfwInit();
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwSetErrorCallback(displayError);
+    window = glfwCreateWindow(1024, 768, "SideGeo", NULL, NULL);
+    if (!window) error("Failed to open GLFW window",0,__FILE__,__LINE__);
+    glfwSetKeyCallback(window, displayKey);
+    glfwSetCursorPosCallback(window, displayCursor);
+    glfwSetScrollCallback(window, displayScroll);
+    glfwSetMouseButtonCallback(window, displayClick);
+    glfwMakeContextCurrent(window);
+    if (gl3wInit()) error("Failed to initialize OpenGL",0,__FILE__,__LINE__);
+    if (!gl3wIsSupported(3, 3)) error("OpenGL 3.3 not supported",0,__FILE__,__LINE__);
+    if (DEBUG & WINDOW_DEBUG) std::cout << "OpenGL " << glGetString(GL_VERSION) << " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glfwSwapBuffers(window);
+    for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) microcode[p].initProgram(p);
+    for (int f = 0; f < nfile; f++) object[f].initFile(f==0);
+    glfwSetTime(0.0);
+}
+
+void Window::call()
+{
+    processQueues(read);
+    processQueues(polytope);
+    processCommands(command2req,read);
+    processCommands(polytope2req,polytope);
+    processDatas(read2req);
+    processDatas(polytope2rsp);
+    processDatas(write2rsp);
+    processDatas(script2rsp);
+}
+
+void Window::wait()
+{
+    double time = glfwGetTime();
+    if (time < DELAY) glfwWaitEventsTimeout(DELAY-time);
+    else glfwSetTime(0.0);
+}
+
+void Window::wake()
+{
+    if (window) glfwPostEmptyEvent();
+}
+
+void Window::done()
+{
+    processQueues(read);
+    processQueues(polytope);
+    processCommands(command2req,read);
+    processCommands(polytope2req,polytope);
+    processDatas(read2req);
+    processMacros();
+    glfwTerminate(); window = 0;
+}
+
+Window::Window(int n) : Thread(1), object(new Object[n]),
+    req2polytope(0), rsp2polytope(0), req2script(0),
+    command2req(this,"Read->Command->Window"), read2req(this,"Read->Data->Window"),
+    polytope2rsp(this,"Window<-Data<-Polytope"), polytope2req(this,"Polytope->Data->Window"),
+    write2rsp(this,"Window<-Data<-Write"), script2rsp(this,"Window->Data->Script"),
+    window(0), finish(0), nfile(n)
+{
+    Object obj = {0}; for (int i = 0; i < n; i++) object[i] = obj;
+    Queues que = {0}; read = polytope = que;
+}
+
+Window::~Window()
+{
+    if (window) error("done not called",0,__FILE__,__LINE__);
+    processDatas(polytope2rsp);
+    processDatas(write2rsp);
+    processDatas(script2rsp);
+}
+
 extern Window *window;
 
 static Pool<Data> datas(__FILE__,__LINE__);
@@ -117,6 +235,43 @@ extern "C" int decodeClick(int button, int action, int mods)
     if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && (mods & GLFW_MOD_CONTROL) != 0) return 1;
     if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) return 1;
     return -1;
+}
+
+void Window::sendWrite(Data *data)
+{
+    object[data->file].req2write->put(data);
+}
+
+void Window::sendPolytope(Data *data)
+{
+    req2polytope->put(data);
+}
+
+void Window::sendScript(Data *data)
+{
+    req2script->put(data);
+}
+
+void Window::warpCursor(float *cursor)
+{
+#ifdef __linux__
+    // double xpos, ypos;
+    // glfwGetCursorPos(window,&xpos,&ypos);
+    // XWarpPointer(screenHandle,None,None,0,0,0,0,cursor[0]-xpos,cursor[1]-ypos);
+#endif
+#ifdef __APPLE__
+    int xloc, yloc;
+    glfwGetWindowPos(window,&xloc,&yloc);
+    struct CGPoint point; point.x = xloc+cursor[0]; point.y = yloc+cursor[1];
+    CGWarpMouseCursorPosition(point);
+#endif
+}
+
+void Window::maybeKill(int seq)
+{
+    if (seq == 0) finish = 0;
+    if (seq == 1 && finish == 0) finish = 1;
+    if (seq == 2 && finish == 1) kill();
 }
 
 void Window::allocBuffer(Update &update)
@@ -277,9 +432,8 @@ void Window::processQueue(Queue &queue, Queues &queues)
         if (!command->finish) {
             remove(queue.first,queue.last,command);
             if (&queue == &queues.query) {
-                if (&queues == &this->command) object[command->file].rsp2command->put(command);
-                if (&queues == &polytope) object[command->file].rsp2polytope->put(command);
-                if (&queues == &script) rsp2script->put(command);}
+                if (&queues == &read) object[command->file].rsp2command->put(command);
+                if (&queues == &polytope) rsp2polytope->put(command);}
             else enque(queue.first,queue.last,command);}
         if (command->finish && &queue != &queues.query) break;
         if (command == queue.loop && window) break;
@@ -294,13 +448,10 @@ void Window::processCommands(Message<Command> &message, Queues &queues)
         if (!command->finish) startCommand(*command);
         if (command->finish) finishCommand(*command,queues);
         if (command->finish) {
-            if (&message == &command2req) enque(this->command.query.first,this->command.query.last,command);
-            if (&message == &polytope2req) enque(polytope.query.first,polytope.query.last,command);
-            if (&message == &script2req) enque(script.query.first,script.query.last,command);}
+            if (&message == &command2req) enque(read.query.first,read.query.last,command);
+            if (&message == &polytope2req) enque(polytope.query.first,polytope.query.last,command);}
         else {
-            if (&message == &command2req) object[command->file].rsp2command->put(command);
-            if (&message == &polytope2req) object[command->file].rsp2polytope->put(command);
-            if (&message == &script2req) rsp2script->put(command);}}
+            if (&message == &command2req) object[command->file].rsp2command->put(command);}}
 }
 
 void Window::processDatas(Message<Data> &message)
@@ -336,161 +487,8 @@ void Window::processDatas(Message<Data> &message)
         }
 }
 
-Window::Window(int n) : Thread(1), window(0), finish(0), nfile(n), object(new Object[n]),
-    command2req(this,"Read->Command->Window"), read2req(this,"Read->Data->Window"),
-    polytope2rsp(this,"Window<-Data<-Polytope"), polytope2req(this,"Polytope->Data->Window"),
-    write2rsp(this,"Window<-Data<-Write"), script2req(this,"Script->Command->Window"),
-    script2rsp(this,"Window->Data->Script")
+void Window::processMacros()
 {
-    Queues init = {0}; script = command = polytope = init;
-}
-
-Window::~Window()
-{
-    if (window) error("done not called",0,__FILE__,__LINE__);
-    processDatas(polytope2rsp);
-    processDatas(write2rsp);
-    processDatas(script2rsp);
-}
-
-void Window::connect(int i, Read *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].rsp2command = &ptr->command2rsp;
-    object[i].rsp2read = &ptr->window2rsp;
-}
-
-void Window::connect(int i, Write *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].req2write = &ptr->window2req;
-}
-
-void Window::connect(Polytope *ptr)
-{
-    req2polytope = &ptr->window2req;
-    rsp2polytope = &ptr->window2rsp;
-}
-
-void Window::connect(Script *ptr)
-{
-    rsp2script = &ptr->window2rsp;
-}
-
-void Window::sendWrite(Data *data)
-{
-    object[data->file].req2write->put(data);
-}
-
-void Window::sendPolytope(Data *data)
-{
-    req2polytope->put(data);
-}
-
-void Window::sendScript(Data *data)
-{
-    req2script->put(data);
-}
-
-void Window::warpCursor(float *cursor)
-{
-#ifdef __linux__
-    // double xpos, ypos;
-    // glfwGetCursorPos(window,&xpos,&ypos);
-    // XWarpPointer(screenHandle,None,None,0,0,0,0,cursor[0]-xpos,cursor[1]-ypos);
-#endif
-#ifdef __APPLE__
-    int xloc, yloc;
-    glfwGetWindowPos(window,&xloc,&yloc);
-    struct CGPoint point; point.x = xloc+cursor[0]; point.y = yloc+cursor[1];
-    CGWarpMouseCursorPosition(point);
-#endif
-}
-
-void Window::maybeKill(int seq)
-{
-    if (seq == 0) finish = 0;
-    if (seq == 1 && finish == 0) finish = 1;
-    if (seq == 2 && finish == 1) kill();
-}
-
-void Window::init()
-{
-    for (int i = 0; i < nfile; i++) if (object[i].rsp2command == 0) error("unconnected rsp2command",i,__FILE__,__LINE__);
-    for (int i = 0; i < nfile; i++) if (object[i].rsp2read == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
-    if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
-    if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
-    for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
-    if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
-    if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
-    if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
-    if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
-    if (sizeof(float)%4 != 0) error("sizeof float",sizeof(float)%4,__FILE__,__LINE__);
-    globalInit(nfile);
-    glfwInit();
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwSetErrorCallback(displayError);
-    window = glfwCreateWindow(1024, 768, "SideGeo", NULL, NULL);
-    if (!window) error("Failed to open GLFW window",0,__FILE__,__LINE__);
-    glfwSetKeyCallback(window, displayKey);
-    glfwSetCursorPosCallback(window, displayCursor);
-    glfwSetScrollCallback(window, displayScroll);
-    glfwSetMouseButtonCallback(window, displayClick);
-    glfwMakeContextCurrent(window);
-    if (gl3wInit()) error("Failed to initialize OpenGL",0,__FILE__,__LINE__);
-    if (!gl3wIsSupported(3, 3)) error("OpenGL 3.3 not supported",0,__FILE__,__LINE__);
-    if (DEBUG & WINDOW_DEBUG) std::cout << "OpenGL " << glGetString(GL_VERSION) << " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glfwSwapBuffers(window);
-    for (Program p = (Program)0; p < Programs; p = (Program)((int)p+1)) microcode[p].initProgram(p);
-    for (int f = 0; f < nfile; f++) object[f].initFile(f==0);
-    glfwSetTime(0.0);
-}
-
-void Window::call()
-{
-    processQueues(script);
-    processQueues(command);
-    processQueues(polytope);
-    processCommands(script2req,script);
-    processCommands(command2req,command);
-    processCommands(polytope2req,polytope);
-    processDatas(read2req);
-    processDatas(polytope2rsp);
-    processDatas(write2rsp);
-    processDatas(script2rsp);
-}
-
-void Window::wait()
-{
-    double time = glfwGetTime();
-    if (time < DELAY) glfwWaitEventsTimeout(DELAY-time);
-    else glfwSetTime(0.0);
-}
-
-void Window::wake()
-{
-    if (window) glfwPostEmptyEvent();
-}
-
-void Window::done()
-{
-    glfwTerminate();
-    window = 0;
-    processQueues(script);
-    processQueues(command);
-    processQueues(polytope);
-    processCommands(script2req,script);
-    processCommands(command2req,command);
-    processCommands(polytope2req,polytope);
-    processDatas(read2req);
     Pair<int,int> pair;
     while (macros.first(pair)) {
     Data *data = macros[pair];

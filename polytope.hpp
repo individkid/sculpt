@@ -26,30 +26,33 @@ class Window;
 class Polytope : public Thread
 {
 private:
-	int nfile; int p2t[2]; int t2p[2]; int nfd; int iss;
 	Message<Data> **rsp2read;
 	Message<Data> **req2write;
 	Message<Data> *rsp2script;
-	Message<Data> *rsp2window;
 	Message<Command> *req2window;
-	void processCommands(Message<Command> &message);
-	void processDatas(Message<Data> &message);
+	Message<Data> *rsp2window;
 public:
 	Message<Data> read2req;
 	Message<Data> write2rsp;
 	Message<Data> script2req;
 	Message<Command> window2rsp;
 	Message<Data> window2req;
-	Polytope(int n, const char *path);
-	virtual ~Polytope();
+public:
 	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
 	void connect(Script *ptr);
 	void connect(Window *ptr);
-protected:
-	virtual void wait();
 private:
+	virtual void wait();
 	virtual void init();
 	virtual void call();
 	virtual void done();
+public:
+	Polytope(int n, const char *path);
+	virtual ~Polytope();
+private:
+	int nfile; int p2t[2]; int t2p[2]; int nfd; int iss;
+private:
+	void processCommands(Message<Command> &message);
+	void processDatas(Message<Data> &message);
 };

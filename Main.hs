@@ -78,7 +78,6 @@ data Opcode = Opcode {
    outsidesOp :: CInt,
    insideOp :: CInt,
    outsideOp :: CInt,
-   matrixOp :: CInt,
    modeOp :: CInt,
    topologyOp :: CInt,
    fixedOp :: CInt,
@@ -168,7 +167,6 @@ main = do
    outsidesOp = outsidesOpV,
    insideOp = insideOpV,
    outsideOp = outsideOpV,
-   matrixOp = matrixOpV,
    modeOp = modeOpV,
    topologyOp = topologyOpV,
    fixedOp = fixedOpV,
@@ -213,7 +211,6 @@ mainIter rdfd wrfd op co src
    wrOpcode wrfd src
    wrPointer wrfd ptr
    | otherwise = undefined
-mainIter _ _ _ _ _ = undefined
 
 dataIter :: CInt -> CInt -> Opcode -> Configure -> CInt -> IO ()
 dataIter rdfd wrfd op co conf
@@ -224,4 +221,3 @@ dataIter rdfd wrfd op co conf
    rdChars rdfd (toCInt count) str
    (peekCString str) >>= print
    | otherwise = undefined
-dataIter _ _ _ _ _ = undefined

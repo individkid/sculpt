@@ -33,25 +33,6 @@
 
 static Parse parse(__FILE__,__LINE__);
 
-Read::Read(int s, const char *n) : Thread(), name(n), file(-1), pipe(-1), self(s),
-	fpos(0), mlen(0), glen(0), mnum(0), gnum(0), livelock(0),
-	command2rsp(this,"Read<-Data<-Command"), window2rsp(this,"Read<-Data<-Window"),
-	polytope2rsp(this,"Read<-Data<-Polytope"), sound2rsp(this,"Read<-Sound<-System"),
-	system2rsp(this,"Read<-Data<-System"), script2rsp(this,"Read<-Data<-Script")
-{
-}
-
-Read::~Read()
-{
-	Command *command; Sound *sound; Data *data;
-	while (command2rsp.get(command)) parse.put(command);
-	while (window2rsp.get(data)) parse.put(data);
-    while (polytope2rsp.get(data)) parse.put(data);
-    while (sound2rsp.get(sound)) parse.put(sound);
-    while (system2rsp.get(data)) parse.put(data);
-    while (script2rsp.get(data)) parse.put(data);
-}
-
 void Read::connect(Window *ptr)
 {
 	req2command = &ptr->command2req;
@@ -76,224 +57,61 @@ void Read::connect(Script *ptr)
 
 void Read::init()
 {
+	File::init();
 	if (req2command == 0) error("unconnected req2command",0,__FILE__,__LINE__);
 	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
 	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
 	if (req2sound == 0) error("unconnected req2sound",0,__FILE__,__LINE__);
 	if (req2system == 0) error("unconnected req2system",0,__FILE__,__LINE__);
 	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
-	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
-	if ((file = open(name,O_RDWR)) < 0) error("cannot open",name,__FILE__,__LINE__);
-	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
-	if ((pipe = open(pname,O_RDONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);
 }
 
 void Read::call()
 {
-	Command *temp; Sound *sound; Data *data;
-	while (command2rsp.get(temp)) parse.put(temp);
-	while (window2rsp.get(data)) parse.put(data);
-    while (polytope2rsp.get(data)) parse.put(data);
+    Command *command; Data *window; Data *polytope;
+    Sound *sound; Data *system; Data *script;
+	while (command2rsp.get(command)) parse.put(command);
+	while (window2rsp.get(window)) parse.put(window);
+    while (polytope2rsp.get(polytope)) parse.put(polytope);
     while (sound2rsp.get(sound)) parse.put(sound);
-    while (system2rsp.get(data)) parse.put(data);
-    while (script2rsp.get(data)) parse.put(data);
-	off_t pos = fpos;
-	char *str = read();
-	while (1) {
-	char *dds = split(str);
-	sync(dds,"--matrix",pos,mpos,mlen,mnum,MatrixConf);
-	sync(dds,"--global",pos,gpos,glen,gnum,GlobalConf);
-	if (*dds == 0) {parse.cleanup(dds); break;}
-	livelock = 0;
-    Command *command = 0; Data *window = 0; Data *polytope = 0;
-    Sound *sound = 0; Data *system = 0; Data *script = 0;
-	parse.get(parse.cleanup(dds),self,command,window,polytope,sound,system,script);
+    while (system2rsp.get(system)) parse.put(system);
+    while (script2rsp.get(script)) parse.put(script);
+	char *str = File::read((Pools*)&parse);
+	parse.get(str,self,command,window,polytope,sound,system,script);
 	if (command) req2command->put(command);
 	if (window) req2window->put(window);
 	if (polytope) req2polytope->put(polytope);
 	if (sound) req2sound->put(sound);
 	if (system) req2system->put(system);
-	if (script) req2script->put(script);}
+	if (script) req2script->put(script);
 	parse.cleanup(str);
 }
 
 void Read::wait()
 {
-	if (trywrlck()) {
-	if (race()) {unwrlck(); return;}
-	char *str = parse.setup("");
-	if (intr()) {parse.cleanup(str); unwrlck(); return;}
-	while (check()) if (!read(str)) {parse.cleanup(str); unwrlck(); Thread::wait(); return;}
-	if (sync(str,"--matrix",mpos,mlen,mnum)) {parse.cleanup(str); unwrlck(); return;}
-	if (sync(str,"--global",gpos,glen,gnum)) {parse.cleanup(str); unwrlck(); return;}
-	write(str); parse.cleanup(str); unwrlck(); return;}
-	if (livelock) backoff(); livelock = 1;
-	if (getrdlck()) unrdlck();
+	File::wait();
 }
 
 void Read::done()
 {
-	if (close(file) < 0) error("close failed",errno,__FILE__,__LINE__);
-	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
+	File::done();
 }
 
-// read to end of file
-char *Read::read()
+Read::Read(int s, const char *n) : File(n),
+	command2rsp(this,"Read<-Data<-Command"), window2rsp(this,"Read<-Data<-Window"),
+	polytope2rsp(this,"Read<-Data<-Polytope"), sound2rsp(this,"Read<-Sound<-System"),
+	system2rsp(this,"Read<-Data<-System"), script2rsp(this,"Read<-Data<-Script"),
+	self(s)
 {
-	char *str = parse.setup(""); int num; char chr;
-	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	while ((num = ::read(file, &chr, 1)) == 1) {
-	str = parse.concat(str,chr); fpos++;}
-	if (num < 0 && errno != EINTR) error("read error",errno,__FILE__,__LINE__);
-	return str;
 }
 
-// split string on double dash
-char *Read::split(char *&str)
+Read::~Read()
 {
-	int len = 0; if (str[len] == '-' && str[len+1] == '-') len += 2;
-	while (str[len] && !(str[len] == '-' && str[len+1] == '-')) len++;
-	const char *tmp = str;
-	char *sub = parse.prefix(tmp,len);
-	str = parse.postfix(str,len);
-	return sub;
-}
-
-void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, enum Configure conf)
-{
-	// update sync struct location if read from pipe
-	int ddl = parse.literal(str,pat);
-	if (ddl) {sav = pos+ddl; len = strlen(str)-ddl;}
-	// send sync struct from middle of file
-	if (len == 0) return;
-	char *sstr = parse.setup(len); struct flock lock; int res = -1;
-	lock.l_start = sav; lock.l_len = len; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
-	while (res) {res = fcntl(file,F_SETLKW,&lock);
-	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);}
-	if (lseek(file,sav,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	if (::read(file,sstr,len) != len) error("read fail",errno,__FILE__,__LINE__);
-	lock.l_type = F_UNLCK;
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
-	Data *data; sstr[len] = 0; parse.get(sstr,self,conf,data);
-	livelock = 0;
-	parse.cleanup(sstr); req2window->put(data);
-}
-
-// nonblocking try to get write lock at end of file to infinity
-int Read::trywrlck()
-{
-	int num; struct flock lock;
-	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
-	num = fcntl(file,F_SETLK,&lock); lock.l_type = F_UNLCK;
-	if (num < 0 && errno != EAGAIN) error("fcntl failed",errno,__FILE__,__LINE__);
-	return (num == 0);
-}
-
-// check if already read to end of file
-int Read::race()
-{
-	struct stat size;
-	if (fstat(file, &size) < 0) error("fstat failed",errno,__FILE__,__LINE__);
-	return (size.st_size > fpos);
-}
-
-// release infinite lock at end of file
-void Read::unwrlck()
-{
-	struct flock lock;
-	lock.l_start = fpos; lock.l_len = INFINITE; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
-}
-
-// block until read from pipe would not block
-int Read::intr()
-{
-	fd_set fds; sigset_t sm; FD_ZERO(&fds); FD_SET(pipe,&fds);
-	if (pthread_sigmask(SIG_SETMASK,0,&sm)) error ("cannot get mask",errno,__FILE__,__LINE__);
-	sigdelset(&sm, SIGUSR1);
-	int num = pselect(pipe+1,&fds,0,&fds,0,&sm);
-	if (num < 0 && errno == EINTR) return 1;
-	return 0;
-}
-
-// check if read from pipe would block
-int Read::check()
-{
-	fd_set fds; struct timespec tv;
-	FD_ZERO(&fds); FD_SET(pipe,&fds); tv.tv_sec = 0; tv.tv_nsec = 0;
-	int num = pselect(pipe+1,&fds,0,&fds,&tv,0);
-	if (num < 0) error("pselect failed",errno,__FILE__,__LINE__);
-	return (num != 0);
-}
-
-// read from pipe and append to string
-int Read::read(char *&str)
-{
-	char chr; int num = ::read(pipe, &chr, 1);
-	if (num < 0) error("read failed",errno,__FILE__,__LINE__);
-	if (num == 0) return 0;
-	str = parse.concat(str,chr);
-	return 1;
-}
-
-int Read::sync(const char *str, const char *pat, off_t pos, int len)
-{
-	// extend sync string to expected length
-	int pre = parse.literal(str,pat);
-	if (pre == 0 && len == 0) return 0;
-	char *dstr = parse.setup(str+pre);
-	int dlen = strlen(dstr);
-	if (dlen > len) {parse.cleanup(dstr); return 0;}
-	while (dlen < len) {dstr = parse.concat(dstr," "); dlen++;}
-	int val; int flen = parse.number(dstr,val); num = val+1;
-	char *nstr = parse.string(num);
-	int nlen = strlen(nstr);
-	while (nlen < flen) {nstr = parse.concat(" ",nstr); nlen++;}
-	for (int i = 0; i < nlen; i++) dstr[i] = nstr[i]; parse.cleanup(nstr);
-	// write sync string to middle of file
-	struct flock lock; lock.l_start = pos; lock.l_len = len; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
-	int res = -1;
-	while (res) {res = fcntl(file,F_SETLKW,&lock);
-	if (res < 0 && errno != EINTR) error("flock failed",errno,__FILE__,__LINE__);}
-	if (lseek(file,pos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	if (::write(file,nstr,nlen) != len) error("write fail",errno,__FILE__,__LINE__);
-	lock.l_type = F_UNLCK;
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
-	parse.cleanup(nstr);
-	return 1;
-}
-
-// write string to end of file
-void Read::write(const char *str)
-{
-	int len = strlen(str);
-	if (lseek(file,fpos,SEEK_SET) < 0) error("lseek failed",errno,__FILE__,__LINE__);
-	int num = ::write(file,str,len);
-	if (num != len) error("write failed",errno,__FILE__,__LINE__);
-}
-
-// pause shortly to break livelock
-void Read::backoff()
-{
-	struct timespec tv; tv.tv_sec = 0; tv.tv_nsec = BREAK;
-	int num = pselect(0,0,0,0,&tv,0);
-	if (num < 0) error("pselect failed",errno,__FILE__,__LINE__);
-}
-
-// wait for readlock or return nonzero if interrupted by signal
-int Read::getrdlck()
-{
-	struct flock lock;
-	lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
-	int num = fcntl(file,F_SETLKW,&lock);
-	if (num < 0 && errno != EINTR) error("fcntl failed",errno,__FILE__,__LINE__);
-	return (num == 0);
-}
-
-// release readlock
-void Read::unrdlck()
-{
-	struct flock lock;
-	lock.l_start = fpos; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
-	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
+	Command *command; Sound *sound; Data *data;
+	while (command2rsp.get(command)) parse.put(command);
+	while (window2rsp.get(data)) parse.put(data);
+    while (polytope2rsp.get(data)) parse.put(data);
+    while (sound2rsp.get(sound)) parse.put(sound);
+    while (system2rsp.get(data)) parse.put(data);
+    while (script2rsp.get(data)) parse.put(data);
 }

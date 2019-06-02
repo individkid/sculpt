@@ -36,9 +36,6 @@ public:
 	void get(const char *ptr, int file, enum Configure conf, Data *&data);
 	void get(const char *ptr, int file, Command *&command,
 		Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&data);
-	char *get(const Command *command);
-	char *get(const Sound *sound);
-	char *get(const Data *data);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(const char *left, char *right) {return ::concat(chars,left,right);}
@@ -56,8 +53,6 @@ public:
 	char *setup(char chr) {return ::setup(chars,chr);}
 	char *setup(int len) {char *str = chars.get(len+1); for (int i = 0; i < len+1; i++) str[i] = 0; return str;}
 	const char *cleanup(char *str) {return ::cleanup(chars,str);}
-	char *string(int val);
-	char *string(float val);
 	int number(const char *str, int &val);
 	int scalar(const char *str, float &val);
 	int literal(const char *str, const char *pat);

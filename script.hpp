@@ -25,40 +25,21 @@ class System;
 class Write;
 struct lua_State;
 
-extern "C" int req2polytope(lua_State *state);
-extern "C" int req2write(lua_State *state);
-
 class Script : public Thread
 {
 private:
-	lua_State *state;
-	int nfile; int cleanup;
 	Message<Data> **rsp2read;
 	Message<Data> *req2polytope;
-	Message<Command> **req2command;
 	Message<Data> **req2write;
-	Message<Sound> **req2sound;
 	Message<Data> *rsp2system;
-	Message<Data> *req2system;
 	Message<Data> *rsp2window;
-	Message<Command> *req2window;
-	friend int ::req2polytope(lua_State *state);
-	friend int ::req2write(lua_State *state);
-	void processCommands(Message<Command> &message);
-	void processSounds(Message<Sound> &message);
-	void processDatas(Message<Data> &message);
 public:
 	Message<Data> read2req;
 	Message<Data> polytope2rsp;
-	Message<Command> command2rsp;
 	Message<Data> write2rsp;
-	Message<Sound> sound2rsp;
-	Message<Data> system2rsp;
 	Message<Data> system2req;
 	Message<Data> window2req;
-	Message<Command> window2rsp;
-	Script(int n);
-	virtual ~Script();
+public:
 	void connect(int i, Read *ptr);
 	void connect(Polytope *ptr);
 	void connect(int i, Write *ptr);
@@ -68,4 +49,12 @@ private:
 	virtual void init();
 	virtual void call();
 	virtual void done();
+public:
+	Script(int n);
+	virtual ~Script();
+private:
+	lua_State *state;
+	int nfile; int cleanup;
+private:
+	void processDatas(Message<Data> &message);
 };

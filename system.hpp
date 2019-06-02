@@ -33,6 +33,24 @@ extern "C" int systemFunc(
 class System : public Thread
 {
 private:
+	Message<Sound> **rsp2sound;
+	Message<Data> **rsp2read;
+	Message<Data> *req2script;
+public:
+	Message<Sound> sound2req;
+	Message<Data> read2req;
+	Message<Data> script2rsp;
+public:
+	void connect(int i, Read *ptr);
+	void connect(Script *ptr);
+private:
+	virtual void init();
+	virtual void call();
+	virtual void done();
+public:
+	System(int n);
+	virtual ~System();
+private:
 	int nfile; int cleanup; int size;
 	pqueue_t sample;
 	pqueue_t metric;
@@ -46,10 +64,7 @@ private:
 	PaStream *stream;
 	PaTime wbeat, rbeat;
 	int windex, rindex;
-	Message<Sound> **rsp2sound;
-	Message<Data> **rsp2read;
-	Message<Data> *req2script;
-	Message<Data> *rsp2script;
+private:
 	friend int systemFunc(
 		const void *inputBuffer, void *outputBuffer,
 	    unsigned long framesPerBuffer,
@@ -63,17 +78,4 @@ private:
 	double evaluate(Equ &equation);
 	void processSounds(Message<Sound> &message);
 	void processDatas(Message<Data> &message);
-public:
-	Message<Sound> sound2req;
-	Message<Data> read2req;
-	Message<Data> script2rsp;
-	Message<Data> script2req;
-	System(int n);
-	virtual ~System();
-	void connect(int i, Read *ptr);
-	void connect(Script *ptr);
-private:
-	virtual void init();
-	virtual void call();
-	virtual void done();
 };

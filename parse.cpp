@@ -17,7 +17,6 @@
 */
 
 #include <string.h>
-#include <math.h>
 
 #include "parse.hpp"
 extern "C" {
@@ -151,70 +150,70 @@ void Parse::get(const char *ptr, int file, Command *&command,
 	int len, inc; command = 0; system = 0; window = polytope = data = 0;
 
 	len = literal(ptr,"--additive"); if (len) {window = datas.get();
-	window->conf = AdditiveConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = AdditiveMode; window->file = file; return;}
 
 	len = literal(ptr,"--subractive"); if (len) {window = datas.get();
-	window->conf = SubtractiveConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = SubtractiveMode; window->file = file; return;}
 
 	len = literal(ptr,"--refine"); if (len) {window = datas.get();
-	window->conf = RefineConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = RefineMode; window->file = file; return;}
 
 	len = literal(ptr,"--tweak"); if (len) {window = datas.get();
-	window->conf = TweakConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = TweakMode; window->file = file; return;}
 
 	len = literal(ptr,"--perform"); if (len) {window = datas.get();
-	window->conf = PerformConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = PerformMode; window->file = file; return;}
 
 	len = literal(ptr,"--transform"); if (len) {window = datas.get();
-	window->conf = TransformConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = TransformMode; window->file = file; return;}
 
 	len = literal(ptr,"--cylinder"); if (len) {window = datas.get();
-	window->conf = CylinderConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = CylinderMode; window->file = file; return;}
 
 	len = literal(ptr,"--clock"); if (len) {window = datas.get();
-	window->conf = ClockConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = ClockMode; window->file = file; return;}
 
 	len = literal(ptr,"--normal"); if (len) {window = datas.get();
-	window->conf = NormalConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = NormalMode; window->file = file; return;}
 
 	len = literal(ptr,"--parallel"); if (len) {window = datas.get();
-	window->conf = ParallelConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = ParallelMode; window->file = file; return;}
 
 	len = literal(ptr,"--scale"); if (len) {window = datas.get();
-	window->conf = ScaleConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = ScaleMode; window->file = file; return;}
 
 	len = literal(ptr,"--rotate"); if (len) {window = datas.get();
-	window->conf = RotateConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = MouseUlpt; window->mouse = RotateMode; window->file = file; return;}
 
 	len = literal(ptr,"--tanget"); if (len) {window = datas.get();
-	window->conf = TangentConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = MouseUlpt; window->mouse = TangentMode; window->file = file; return;}
 
 	len = literal(ptr,"--translate"); if (len) {window = datas.get();
-	window->conf = TranslateConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = MouseUlpt; window->mouse = TranslateMode; window->file = file; return;}
 
 	len = literal(ptr,"--session"); if (len) {window = datas.get();
-	window->conf = SessionConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TargetUlpt; window->target = SessionMode; window->file = file; return;}
 
 	len = literal(ptr,"--polytope"); if (len) {window = datas.get();
-	window->conf = PolytopeConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TargetUlpt; window->target = PolytopeMode; window->file = file; return;}
 
 	len = literal(ptr,"--facet"); if (len) {window = datas.get();
-	window->conf = FacetConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TargetUlpt; window->target = FacetMode; window->file = file; return;}
 
 	len = literal(ptr,"--numeric"); if (len) {window = datas.get();
-	window->conf = NumericConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = NumericMode; window->file = file; return;}
 
 	len = literal(ptr,"--invariant"); if (len) {window = datas.get();
-	window->conf = InvariantConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = InvariantMode; window->file = file; return;}
 
 	len = literal(ptr,"--symbolic"); if (len) {window = datas.get();
-	window->conf = SymbolicConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = SymbolicMode; window->file = file; return;}
 
 	len = literal(ptr,"--relative"); if (len) {window = datas.get();
-	window->conf = RelativeConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fix = RelativeMode; window->file = file; return;}
 
 	len = literal(ptr,"--absolute"); if (len) {window = datas.get();
-	window->conf = AbsoluteConf; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fix = AbsoluteMode; window->file = file; return;}
 
 	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,window); return;}
 
@@ -240,123 +239,6 @@ void Parse::get(const char *ptr, int file, Command *&command,
 	inc = 0; while (ptr[len+inc]) if (ptr[len+inc] == '-' && ptr[len+inc+1] == '-') break; else inc++;
 	polytope->text = prefix(ptr+len,inc+1); polytope->text[inc] = 0; len += inc;
 	polytope->conf = TestConf; polytope->file = file; return;}
-}
-
-char *Parse::get(const Command *command)
-{
-	// TODO
-	return 0;
-}
-
-char *Parse::get(const Sound *sound)
-{
-	// TODO
-	return 0;
-}
-
-char *Parse::get(const Data *data)
-{
-	switch (data->conf) {
-	case (AdditiveConf): return setup("--additive");
-	case (SubtractiveConf): return setup("--subtractive");
-	case (RefineConf): return setup("--refine");
-	case (TweakConf): return setup("--tweak");
-	case (PerformConf): return setup("--perform");
-	case (TransformConf): return setup("--transform");
-	case (CylinderConf): return setup("--cylinder");
-	case (ClockConf): return setup("--clock");
-	case (NormalConf): return setup("--normal");
-	case (ParallelConf): return setup("--parallel");
-	case (ScaleConf): return setup("--scale");
-	case (RotateConf): return setup("--rotate");
-	case (TangentConf): return setup("--tangent");
-	case (TranslateConf): return setup("--translate");
-	case (SessionConf): return setup("--session");
-	case (PolytopeConf): return setup("--polytope");
-	case (FacetConf): return setup("--facet");
-	case (NumericConf): return setup("--numeric");
-	case (InvariantConf): return setup("--invariant");
-	case (SymbolicConf): return setup("--symbolic");
-	case (RelativeConf): return setup("--relative");
-	case (AbsoluteConf): return setup("--absolute");
-	case (IncludeConf): {const char *str = data->text; return concat(setup("--include "),str);}
-	case (ExcludeConf): return setup("--exclude");
-	case (PlaneConf): {char *str = setup("--plane #");
-		str = concat(str,string(data->plane));
-		str = concat(str,string(data->versor));
-		for (int i = 0; i < 3; i++) {
-			str = concat(str," "); str = concat(str,string(data->vector[i]));}
-		return str;}
-	case (MatrixConf): {char *str = setup("--matrix ");
-		str = concat(str,string(data->seqnum));
-		for (int i = 0; i < 16; i++) {
-			str = concat(str," "); str = concat(str,string(data->vector[i]));}
-		int len = strlen(str);
-		while (len < MMAP) {str = concat(str," "); len++;}
-		return str;}
-	case (GlobalConf): {char *str = setup("--global ");
-		str = concat(str,string(data->seqnum));
-		for (int i = 0; i < 16; i++) {
-			str = concat(str," "); str = concat(str,string(data->vector[i]));}
-		int len = strlen(str);
-		while (len < MMAP) {str = concat(str," "); len++;}
-		return str;}
-	case (SpaceConf): {char *str = setup("--space");
-		for (int i = 0; i < data->boundaries; i++) {
-			str = concat(str," #"); str = concat(str,string(data->planes[i]));
-			for (int j = 0; j < data->regions; j++) {
-				str = concat(str," "); str = concat(str,string(data->sides[i*data->regions+j]));}}
-		return str;}
-	case (RegionConf): {char *str = setup("--region ");
-		str = concat(str,string(data->side));
-		str = concat(str," "); str = concat(str,string(data->insides));
-		for (int i = 0; i < data->insides; i++) {
-			str = concat(str," #"); str = concat(str,string(data->inside[i]));}
-		str = concat(str," "); str = concat(str,string(data->outsides));
-		for (int i = 0; i < data->outsides; i++) {
-			str = concat(str, " #"); str = concat(str,string(data->outside[i]));}
-		return str;}
-	case (InflateConf): return setup("--inflate");
-	case (PictureConf): {const char *str = data->text; return concat(setup("--picture "),str);}
-	case (MetricConf): {const char *str = data->text; return concat(setup("--metric "),str);}
-	case (ScriptConf): {const char *str = data->text; return concat(setup("--script "),str);}
-	case (InvokeConf): {const char *str = data->text; return concat(setup("--invoke "),str);}
-	case (ConfigureConf): /*TODO*/ break;
-	case (TimewheelConf): /*TODO*/ break;
-	case (TestConf): {const char *str = data->text; return concat(setup("--test "),str);}
-	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
-	return 0;
-}
-
-char *Parse::string(int val)
-{
-	int len = 0; int tmp = val; int rem = 0; char *str;
-	if (val < 0) tmp = -tmp;
-	while (tmp) {rem = tmp % 10; tmp = tmp / 10; len++;}
-	if (val == 0) len++;
-	if (val < 0) {len++; tmp = -tmp;}
-	str = chars.get(len+1); len = 0; tmp = val;
-	if (val < 0) tmp = -tmp;
-	while (tmp) {rem = tmp % 10; tmp = tmp / 10; str[len++] = '0' + rem;}
-	if (val == 0) str[len++] = '0';
-	if (val < 0) {str[len++] = '-'; tmp = -tmp;}
-	for (int i = 0; i < len/2; i++) {char chr = str[i]; str[i] = str[len-1-i]; str[len-1-i] = chr;}
-	str[len] = 0; return str;
-}
-
-char *Parse::string(float val)
-{
-	float tmp, mag; int exp; int len = 2; int rem = 0; char *str;
-	tmp = frexp(val,&exp);
-	if (val > 0) mag = tmp; else {mag = -tmp; len++;}
-	if (mag <= 1.0/INVALID) len++;
-	while (mag > 1.0/INVALID) {mag = mag * 10.0; rem = (int)mag; mag = mag - (float)rem; len++;}
-	str = chars.get(len); len = 2;
-	if (val > 0) mag = tmp; else {mag = -tmp; str[len++] = '-';}
-	str[len++] = '0'; str[len++] = '.';
-	if (mag <= 1.0/INVALID) str[len++] = '0';
-	while (mag > 1.0/INVALID) {mag = mag * 10.0; rem = (int)mag; mag = mag - (float)rem; str[len++] = '0'+rem;}
-	return concat(string(exp),concat("E",str));
 }
 
 int Parse::number(const char *str, int &val)

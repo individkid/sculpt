@@ -250,7 +250,6 @@ struct Data
 	struct {enum ClickMode mode; enum TopologyMode topology; enum FixedMode fixed;
 	union {float *pierce; float *manip;};};
 	// Read->PlaneConf->Polytope->Command->Window
-	// Polytope->PlaneConf->Write
 	struct {int versor; float *vector;};
 	// Read->MetricConf->System->Script
 	struct {float delay; int count; int *ident; double *value; char *script;};

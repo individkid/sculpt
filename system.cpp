@@ -20,6 +20,68 @@
 #include "read.hpp"
 #include "script.hpp"
 
+void System::connect(int i, Read *ptr)
+{
+    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
+    rsp2sound[i] = &ptr->sound2rsp;
+    rsp2read[i] = &ptr->system2rsp;
+}
+
+void System::connect(Script *ptr)
+{
+	req2script = &ptr->system2req;
+}
+
+void System::init()
+{
+	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
+}
+
+void System::call()
+{
+	processSounds(sound2req);
+	processDatas(read2req);
+	processDatas(script2rsp);
+}
+
+void System::done()
+{
+	cleanup = 1;
+	processSounds(sound2req);
+	processDatas(read2req);
+	// TODO cleanup Sound and Data in timewheel
+}
+
+System::System(int n) :
+	rsp2sound(new Message<Sound>*[n]), rsp2read(new Message<Data>*[n]),
+	sound2req(this,"Read->Sound->System"), read2req(this,"Read->Data->System"),
+	script2rsp(this,"System<-Data<-Script"),
+	nfile(n), cleanup(0), stodo(0), dtodo(0),
+	lwave(new float[WAVE_SIZE]), rwave(new float[WAVE_SIZE]),
+	lcount(new int[WAVE_SIZE]), rcount(new int[WAVE_SIZE]),
+	wbeat(0.0), rbeat(0.0), windex(0), rindex(0)
+{
+	for (int i = 0; i < WAVE_SIZE; i++) lwave[i] = 0.0;
+	for (int i = 0; i < WAVE_SIZE; i++) rwave[i] = 0.0;
+	for (int i = 0; i < WAVE_SIZE; i++) lcount[i] = 0;
+	for (int i = 0; i < WAVE_SIZE; i++) rcount[i] = 0;
+	PaError err = Pa_Initialize();
+	if (err != paNoError) error("portaudio init failed",Pa_GetErrorText(err),__FILE__,__LINE__);
+	err = Pa_OpenDefaultStream(&stream,0,2,paFloat32,SAMPLE_RATE,WAVE_SIZE/4,systemFunc,(void*)this);
+	if (err != paNoError) error("portaudo stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
+}
+
+System::~System()
+{
+	if (!cleanup) error("done not called",0,__FILE__,__LINE__);
+	processDatas(script2rsp);
+	PaError err = Pa_CloseStream(stream);
+	if (err != paNoError) error("close stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
+	err = Pa_Terminate();
+	if (err != paNoError) error("portaudio term failed",Pa_GetErrorText(err),__FILE__,__LINE__);
+}
+
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
@@ -118,11 +180,6 @@ void System::processDatas(Message<Data> &message)
 			if (&message == &script2rsp) {
 				// TODO update metric value from script result
 			}
-			if (&message == &script2req) {
-				if (data->conf == ScriptConf) {
-					// TODO fill arguments with stock values
-				}
-			}
 		} else {
 			if (&message == &read2req) {
 				rsp2read[data->file]->put(data);
@@ -132,73 +189,5 @@ void System::processDatas(Message<Data> &message)
 			chars.put(strlen(data->script)+1,data->script);
 			datas.put(data);
 		}
-		if (&message == &script2req) {
-			rsp2script->put(data);
-		}
 	}
-}
-
-System::System(int n) : nfile(n), cleanup(0), stodo(0), dtodo(0),
-	lwave(new float[WAVE_SIZE]), rwave(new float[WAVE_SIZE]),
-	lcount(new int[WAVE_SIZE]), rcount(new int[WAVE_SIZE]),
-	wbeat(0.0), rbeat(0.0), windex(0), rindex(0),
-	rsp2sound(new Message<Sound>*[n]), rsp2read(new Message<Data>*[n]),
-	sound2req(this,"Read->Sound->System"), read2req(this,"Read->Data->System"),
-	script2rsp(this,"System<-Data<-Script"), script2req(this,"Script->Data->System")
-{
-	for (int i = 0; i < WAVE_SIZE; i++) lwave[i] = 0.0;
-	for (int i = 0; i < WAVE_SIZE; i++) rwave[i] = 0.0;
-	for (int i = 0; i < WAVE_SIZE; i++) lcount[i] = 0;
-	for (int i = 0; i < WAVE_SIZE; i++) rcount[i] = 0;
-	PaError err = Pa_Initialize();
-	if (err != paNoError) error("portaudio init failed",Pa_GetErrorText(err),__FILE__,__LINE__);
-	err = Pa_OpenDefaultStream(&stream,0,2,paFloat32,SAMPLE_RATE,WAVE_SIZE/4,systemFunc,(void*)this);
-	if (err != paNoError) error("portaudo stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
-}
-
-System::~System()
-{
-	PaError err = Pa_CloseStream(stream);
-	if (err != paNoError) error("close stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
-	err = Pa_Terminate();
-	if (err != paNoError) error("portaudio term failed",Pa_GetErrorText(err),__FILE__,__LINE__);
-	if (!cleanup) error("done not called",0,__FILE__,__LINE__);
-	processDatas(script2rsp);
-}
-
-void System::connect(int i, Read *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    rsp2sound[i] = &ptr->sound2rsp;
-    rsp2read[i] = &ptr->system2rsp;
-}
-
-void System::connect(Script *ptr)
-{
-	rsp2script = &ptr->system2rsp;
-	req2script = &ptr->system2req;
-}
-
-void System::init()
-{
-	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
-	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
-	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
-}
-
-void System::call()
-{
-	processSounds(sound2req);
-	processDatas(read2req);
-	processDatas(script2rsp);
-	processDatas(script2req);
-}
-
-void System::done()
-{
-	cleanup = 1;
-	processSounds(sound2req);
-	processDatas(read2req);
-	processDatas(script2req);
-	// TODO cleanup Sound and Data in timewheel
 }

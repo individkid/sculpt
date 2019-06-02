@@ -43,17 +43,45 @@ struct Queues
 class Window : public Thread
 {
 private:
-	GLFWwindow *window;
-	int finish;
-	int nfile;
-	Queues command;
-	Queues polytope;
-	Queues script;
 	Object *object;
-	Microcode microcode[Programs];
 	Message<Data> *req2polytope;
 	Message<Command> *rsp2polytope;
 	Message<Data> *req2script;
+public:
+	Message<Command> command2req;
+	Message<Data> read2req;
+	Message<Data> polytope2rsp;
+	Message<Command> polytope2req;
+	Message<Data> write2rsp;
+	Message<Data> script2rsp;
+public:
+	void connect(int i, Read *ptr);
+	void connect(int i, Write *ptr);
+	void connect(Polytope *ptr);
+	void connect(Script *ptr);
+private:
+	virtual void init();
+	virtual void call();
+	virtual void wait();
+	virtual void wake();
+	virtual void done();
+public:
+	Window(int n);
+	virtual ~Window();
+public:
+	void sendWrite(Data *data);
+	void sendPolytope(Data *data);
+	void sendScript(Data *data);
+	void warpCursor(float *cursor);
+	void maybeKill(int seq);
+private:
+	GLFWwindow *window;
+	int finish;
+	int nfile;
+	Microcode microcode[Programs];
+	Queues read;
+	Queues polytope;
+private:
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
 	void bindBuffer(Update &update);
@@ -70,28 +98,5 @@ private:
 	void processQueue(Queue &queue, Queues &queues);
 	void processCommands(Message<Command> &message, Queues &queues);
 	void processDatas(Message<Data> &message);
-public:
-	Message<Command> command2req;
-	Message<Data> read2req;
-	Message<Data> polytope2rsp;
-	Message<Command> polytope2req;
-	Message<Data> write2rsp;
-	Message<Data> script2rsp;
-	Window(int n);
-	virtual ~Window();
-	void connect(int i, Read *ptr);
-	void connect(int i, Write *ptr);
-	void connect(Polytope *ptr);
-	void connect(Script *ptr);
-	void sendWrite(Data *data);
-	void sendPolytope(Data *data);
-	void sendScript(Data *data);
-	void warpCursor(float *cursor);
-	void maybeKill(int seq);
-private:
-	virtual void init();
-	virtual void call();
-	virtual void wait();
-	virtual void wake();
-	virtual void done();
+	void processMacros();
 };
