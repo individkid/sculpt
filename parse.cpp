@@ -147,72 +147,94 @@ void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 void Parse::get(const char *ptr, int file, Command *&command,
 	Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&data)
 {
-	int len, inc; command = 0; system = 0; window = polytope = data = 0;
+	int len, len1, len2, inc; command = 0; system = 0; window = polytope = data = 0;
 
-	len = literal(ptr,"--additive"); if (len) {window = datas.get();
+	len = literal(ptr,"--additive"); len1 = literal(ptr+len,"click"); len2 = literal(ptr+len+len1,"");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = AdditiveMode; window->file = file; return;}
 
-	len = literal(ptr,"--subractive"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"click"); len2 = literal(ptr+len+len1,"subractive");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = SubtractiveMode; window->file = file; return;}
 
-	len = literal(ptr,"--refine"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"click"); len2 = literal(ptr+len+len1,"refine");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = RefineMode; window->file = file; return;}
 
-	len = literal(ptr,"--tweak"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"click"); len2 = literal(ptr+len+len1,"tweak");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = TweakMode; window->file = file; return;}
 
-	len = literal(ptr,"--perform"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"click"); len2 = literal(ptr+len+len1,"perform");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = PerformMode; window->file = file; return;}
 
-	len = literal(ptr,"--transform"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"click"); len2 = literal(ptr+len+len1,"transform");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = ClickUlpt; window->click = TransformMode; window->file = file; return;}
 
-	len = literal(ptr,"--cylinder"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"roller"); len2 = literal(ptr+len+len1,"cylinder");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = CylinderMode; window->file = file; return;}
 
-	len = literal(ptr,"--clock"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"roller"); len2 = literal(ptr+len+len1,"clock");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = ClockMode; window->file = file; return;}
 
-	len = literal(ptr,"--normal"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"roller"); len2 = literal(ptr+len+len1,"normal");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = NormalMode; window->file = file; return;}
 
-	len = literal(ptr,"--parallel"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"roller"); len2 = literal(ptr+len+len1,"parallel");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = ParallelMode; window->file = file; return;}
 
-	len = literal(ptr,"--scale"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"roller"); len2 = literal(ptr+len+len1,"scale");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = RollerUlpt; window->roller = ScaleMode; window->file = file; return;}
 
-	len = literal(ptr,"--rotate"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"mouse"); len2 = literal(ptr+len+len1,"rotate");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = MouseUlpt; window->mouse = RotateMode; window->file = file; return;}
 
-	len = literal(ptr,"--tanget"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"mouse"); len2 = literal(ptr+len+len1,"tanget");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = MouseUlpt; window->mouse = TangentMode; window->file = file; return;}
 
-	len = literal(ptr,"--translate"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"mouse"); len2 = literal(ptr+len+len1,"translate");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = MouseUlpt; window->mouse = TranslateMode; window->file = file; return;}
 
-	len = literal(ptr,"--session"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"target"); len2 = literal(ptr+len+len1,"session");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = TargetUlpt; window->target = SessionMode; window->file = file; return;}
 
-	len = literal(ptr,"--polytope"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"target"); len2 = literal(ptr+len+len1,"polytope");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = TargetUlpt; window->target = PolytopeMode; window->file = file; return;}
 
-	len = literal(ptr,"--facet"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"target"); len2 = literal(ptr+len+len1,"facet");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = TargetUlpt; window->target = FacetMode; window->file = file; return;}
 
-	len = literal(ptr,"--numeric"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"polytope"); len2 = literal(ptr+len+len1,"numeric");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = NumericMode; window->file = file; return;}
 
-	len = literal(ptr,"--invariant"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"polytope"); len2 = literal(ptr+len+len1,"invariant");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = InvariantMode; window->file = file; return;}
 
-	len = literal(ptr,"--symbolic"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"polytope"); len2 = literal(ptr+len+len1,"symbolic");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = SymbolicMode; window->file = file; return;}
 
-	len = literal(ptr,"--relative"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"fixed"); len2 = literal(ptr+len+len1,"relative");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fix = RelativeMode; window->file = file; return;}
 
-	len = literal(ptr,"--absolute"); if (len) {window = datas.get();
+	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"fixed"); len2 = literal(ptr+len+len1,"absolute");
+	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fix = AbsoluteMode; window->file = file; return;}
 
 	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,window); return;}
