@@ -24,7 +24,6 @@ import System.Environment
 import AffTopo.Naive
 
 foreign import ccall setDebug :: CInt -> IO ()
-foreign import ccall clearDebug :: CInt -> IO ()
 foreign import ccall enumerate :: Ptr CChar -> IO CInt
 foreign import ccall rdPointer :: CInt -> IO (Ptr ())
 foreign import ccall rdOpcode :: CInt -> IO CInt
@@ -58,11 +57,18 @@ foreign import ccall hello :: CString -> IO CString
 data Opcode = Opcode {
    readOp :: CInt,
    writeOp :: CInt,
-   scriptOp :: CInt,
+   pointerOp :: CInt,
    windowOp :: CInt,
    fileOp :: CInt,
    planeOp :: CInt,
    confOp :: CInt,
+   sculptOp :: CInt,
+   clickOp :: CInt,
+   mouseOp :: CInt,
+   rollerOp :: CInt,
+   targetOp :: CInt,
+   topoOp :: CInt,
+   fixOp :: CInt,
    boundariesOp :: CInt,
    regionsOp :: CInt,
    planesOp :: CInt,
@@ -72,18 +78,19 @@ data Opcode = Opcode {
    outsidesOp :: CInt,
    insideOp :: CInt,
    outsideOp :: CInt,
+   matrixOp :: CInt,
+   modeOp :: CInt,
+   topologyOp :: CInt,
+   fixedOp :: CInt,
+   pierceOp :: CInt,
+   matrixOp :: CInt,
    versorOp :: CInt,
    vectorOp :: CInt,
    delayOp :: CInt,
    countOp :: CInt,
    identOp :: CInt,
    valueOp :: CInt,
-   -- scriptOp :: CInt,
-   topologyOp :: CInt,
-   fixedOp :: CInt,
-   pierceOp :: CInt,
-   seqnumOp :: CInt,
-   matrixOp :: CInt,
+   scriptOp :: CInt,
    subconfOp :: CInt,
    settingOp :: CInt,
    textOp :: CInt,
@@ -94,15 +101,22 @@ data Configure = Configure {
 
 main = do
    print (holes 5 [2,3,4])
-   setDebug (toCInt 0x10000)
+   setDebug (toCInt 1)
    [rdfd,wrfd] <- fmap (map read) getArgs
    readOpV <- (newCString "ReadOp") >>= enumerate
    writeOpV <- (newCString "WriteOp") >>= enumerate
-   scriptOpV <- (newCString "ScriptOp") >>= enumerate
+   pointerOpV <- (newCString "PointerOp") >>= enumerate
    windowOpV <- (newCString "WindowOp") >>= enumerate
    fileOpV <- (newCString "FileOp") >>= enumerate
    planeOpV <- (newCString "PlaneOp") >>= enumerate
    confOpV <- (newCString "ConfOp") >>= enumerate
+   sculptOpV <- (newCString "SculptOp") >>= enumerate
+   clickOpV <- (newCString "ClickOp") >>= enumerate
+   mouseOpV <- (newCString "MouseOp") >>= enumerate
+   rollerOpV <- (newCString "RollerOp") >>= enumerate
+   targetOpV <- (newCString "TargetOp") >>= enumerate
+   topoOpV <- (newCString "TopoOp") >>= enumerate
+   fixOpV <- (newCString "FixOp") >>= enumerate
    boundariesOpV <- (newCString "BoundariesOp") >>= enumerate
    regionsOpV <- (newCString "RegionsOp") >>= enumerate
    planesOpV <- (newCString "PlanesOp") >>= enumerate
@@ -112,18 +126,19 @@ main = do
    outsidesOpV <- (newCString "OutsidesOp") >>= enumerate
    insideOpV <- (newCString "InsideOp") >>= enumerate
    outsideOpV <- (newCString "OutsideOp") >>= enumerate
+   matrixOpV <- (newCString "MatrixOp") >>= enumerate
+   modeOpV <- (newCString "ModeOp") >>= enumerate
+   topologyOpV <- (newCString "TopologyOp") >>= enumerate
+   fixedOpV <- (newCString "FixedOp") >>= enumerate
+   pierceOpV <- (newCString "PierceOp") >>= enumerate
+   matrixOpV <- (newCString "MatrixOp") >>= enumerate
    versorOpV <- (newCString "VersorOp") >>= enumerate
    vectorOpV <- (newCString "VectorOp") >>= enumerate
    delayOpV <- (newCString "DelayOp") >>= enumerate
    countOpV <- (newCString "CountOp") >>= enumerate
    identOpV <- (newCString "IdentOp") >>= enumerate
    valueOpV <- (newCString "ValueOp") >>= enumerate
-   -- scriptOpV <- (newCString "ScriptOp") >>= enumerate
-   topologyOpV <- (newCString "TopologyOp") >>= enumerate
-   fixedOpV <- (newCString "FixedOp") >>= enumerate
-   pierceOpV <- (newCString "PierceOp") >>= enumerate
-   seqnumOpV <- (newCString "SeqnumOp") >>= enumerate
-   matrixOpV <- (newCString "MatrixOp") >>= enumerate
+   scriptOpV <- (newCString "ScriptOp") >>= enumerate
    subconfOpV <- (newCString "SubconfOp") >>= enumerate
    settingOpV <- (newCString "SettingOp") >>= enumerate
    textOpV <- (newCString "TextOp") >>= enumerate
@@ -132,11 +147,18 @@ main = do
    mainLoop rdfd wrfd Opcode {
    readOp = readOpV,
    writeOp = writeOpV,
-   scriptOp = scriptOpV,
+   pointerOp = pointerOpV,
    windowOp = windowOpV,
    fileOp = fileOpV,
    planeOp = planeOpV,
    confOp = confOpV,
+   sculptOp = sculptOpV,
+   clickOp = clickOpV,
+   mouseOp = mouseOpV,
+   rollerOp = rollerOpV,
+   targetOp = targetOpV,
+   topoOp = topoOpV,
+   fixOp = fixOpV,
    boundariesOp = boundariesOpV,
    regionsOp = regionsOpV,
    planesOp = planesOpV,
@@ -146,18 +168,19 @@ main = do
    outsidesOp = outsidesOpV,
    insideOp = insideOpV,
    outsideOp = outsideOpV,
+   matrixOp = matrixOpV,
+   modeOp = modeOpV,
+   topologyOp = topologyOpV,
+   fixedOp = fixedOpV,
+   pierceOp = pierceOpV,
+   matrixOp = matrixOpV,
    versorOp = versorOpV,
    vectorOp = vectorOpV,
    delayOp = delayOpV,
    countOp = countOpV,
    identOp = identOpV,
    valueOp = valueOpV,
-   -- scriptOp = scriptOpV,
-   topologyOp = topologyOpV,
-   fixedOp = fixedOpV,
-   pierceOp = pierceOpV,
-   seqnumOp = seqnumOpV,
-   matrixOp = matrixOpV,
+   scriptOp = scriptOpV,
    subconfOp = subconfOpV,
    settingOp = settingOpV,
    textOp = textOpV,
@@ -189,6 +212,7 @@ mainIter rdfd wrfd op co src
    dataIter rdfd wrfd op co conf
    wrOpcode wrfd src
    wrPointer wrfd ptr
+   | otherwise = undefined
 mainIter _ _ _ _ _ = undefined
 
 dataIter :: CInt -> CInt -> Opcode -> Configure -> CInt -> IO ()
@@ -199,4 +223,5 @@ dataIter rdfd wrfd op co conf
    str <- newCString (replicate count '\0')
    rdChars rdfd (toCInt count) str
    (peekCString str) >>= print
+   | otherwise = undefined
 dataIter _ _ _ _ _ = undefined

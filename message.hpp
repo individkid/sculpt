@@ -282,7 +282,7 @@ public:
 	}
 	void put(T *val)
 	{
-		if (DEBUG && str) std::cout << "put " << str << std::endl;
+		if ((DEBUG & MESSAGE_DEBUG) && str) std::cout << "put " << str << std::endl;
 		if (pthread_mutex_lock(&mutex) != 0) error((str?str:"mutex invalid lock"),errno,__FILE__,__LINE__);		
 		while (head && wait) 
 		if (pthread_cond_wait(&cond,&mutex) != 0) error((str?str:"cond invalid wait"),errno,__FILE__,__LINE__);
@@ -299,7 +299,7 @@ public:
 		wait = 0;
 		if (pthread_cond_signal(&cond) != 0) error((str?str:"cond invalid signal"),errno,__FILE__,__LINE__);
 		if (pthread_mutex_unlock(&mutex) != 0) error((str?str:"mutex invalid unlock"),errno,__FILE__,__LINE__);
-		if (DEBUG && str) std::cout << "get " << str << std::endl;
+		if ((DEBUG & MESSAGE_DEBUG) && str) std::cout << "get " << str << std::endl;
 		return 1;
 	}
 };

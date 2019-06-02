@@ -1,83 +1,60 @@
 # sculpt
 
-The only arguments are filenames, usually with a .-- extension. Each given file contains commands, each started with a --. Double dash commands that expect arguments are ignored if subsequent text does not satisfy. If a -- occurs before all expected arguments are satisfied, the incomplete command is ignored. Each instance of the program opens one OpenGL window. The program reads commands appended to the given files. Commands can manipulate the orientation and topology of planes. Planes from a file are considered a polytope. User manipulation of the mouse can cause commands in the polytope's file to be modified or appended.
+The only arguments are filenames, usually with a .-- extension. Each given file contains commands, each started with a --. Double dash commands that expect arguments are ignored if subsequent text does not satisfy. If a -- occurs before all expected arguments are satisfied, the incomplete command is ignored. Each instance of the program opens one OpenGL window. The program reads commands appended to the given files. Commands can manipulate the orientation and topology of planes. Planes from a file are considered a polytope. User manipulation of the mouse can cause commands in the polytope's file to be modified or appended.  
 
-Each file starts a polytope thread containing the topology, positions, and decorations of the planes in the file. Per file io threads read to eof, sending text to the polytope thread, which sends buffer data to the window thread. The io thread waits on readlock, or if it gets a writelock, waits on read from the .fifo postfixed named pipe. Mouse action can send messages from the window thread to the selected file's polytope thread. Thus, the polytope threads wait for either string or action messages. Action messages can cause the polytope thread to change or append to the named pipe. Mouse motion can cause transformation data to be sent to the io thread.
+Each command line file, and files opened by a Lua thread, have a thread that synchronizes reads and writes of the file with other processes. Initially, -- commands are read until eof. Then a writelock at eof to infinity is attempted, or a readlock on one byte at eof is waited for. The writelocker waits on read from a named pipe. Processes append to the file by writing to the named pipe. After appending to file from named pipe, the writelock is released, the readlocks are released, and all processes read to eof and negotiate for locks again.  
 
-Before sending data to the io thread, the window thread saves what it sends. When the writelocker reads transformation data from the pipe, it changes the data through mmap, if possible, rather than appending a new command. Releasing the writelock without appending a command causes the io threads in other processes to read the memory mapped data in the file, and send the data to the window thread. The window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
+Some commands, in particular --matrix, --global, and --plane, have dynamic fields. A write to the named pipe can cause a change to a field in the middle of the file instead of appending to the file. The writelocker must obtain a writelock to change the middle of the file, and readlocks protect reads from the middle of the file. To notify processes waiting for readlock at eof that a field in the middle of the file has changed, the writelocker appends --seek with a file location, and releases the writelock. After reading --seek, and reading the indicated field in the middle of the file, processes wait for writelock on the --seek command. Once writelock on the --seek is acquired, the --seek is truncated from the file, writelock is released, and locking at the new eof are negotiated.  
 
-The -- commands are as follows.  
---additive change click mode to fill in region over clicked facet  
---subractive change click mode to hollow out region under clicked facet  
---refine change click mode to add random plane through point on clicked facet  
---tweak change click mode to randomize target  
---perform change click mode to do nothing  
---transform change click mode to transform clicked target  
---cylinder change roller mode to rotate around rotate line  
---clock change roller mode to rotate around normal to picture plane through pierce point  
---normal change roller mode to rotate around normal to clicked facet through pierce point  
---parallel change roller mode to translate parallel to the normal to the pierced facet  
---scale change roller mode to scale with clicked point fixed  
---rotate change mouse mode to tip target from pierce point to cursor point  
---tanget change mouse mode to translate parallel to clicked facet  
---translate change mouse mode to translate parallel to picture plane  
---session change transform target to all observed facets  
---polytope change transform target to all facets in file of clicked facet  
---facet change transform target to clicked facet  
---numeric hold no topology invariant upon tweak  
---invariant hold polytope invariant upon tweak  
---symbolic hold space invariant upon tweak  
---relative hold pierce point fixed upon tweak  
---absolute hold no point fixed upon tweak  
---include share boundaries with given file  
---exclude stop sharing boundaries with last included file  
---plane "bname" versor and table leg lengths  
---matrix floats for per-file transformation  
---global floats for per-session transformation  
---space list of optional bnames and lists of sidednesses  
---region two lists of bnames and whether the indicated region is in the polytope  
---inflate mark inside regions as in, and outside regions as not in the polytope  
---picture "bname" filename for texture  
---macro "bname" script, triggered by mouse click  
---sound "sname" coefficients, variables as references to snames and mnames, equations as quotients of sums of terms of one coefficients and up to three variables, value as equation, value change delay as equation, reschedule delay as equation, sound contribution as equation  
---metric "mname" script, rate, list of sname, returns value  
---script script to run even if not at end of file  
---invoke script to run if this command is at end of file  
---configure change aspect ratio granularity base delay etc  
---timewheel start stop timewheel, change speaker volume, etc  
---command send command to window thread  
---test run tests of functions in the polytope thread  
+Before sending data to the io thread, the window thread saves what it sends. When fields from the middle of the file are sent, the window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
 
-Threads send structs to each other. Each sent struct is sent back to the sender for deallocation.  
-Read->(AdditiveConf..AbsoluteConf)->Window for changing modes  
-Read->PlaneConf->Polytope for adding or changing planes  
-Read->(MatrixConf,GlobalConf)->Window for applying transformations from other processes  
-Read->SpaceConf->Polytope for creating sample of space  
-Read->(RegionConf,InflateConf)->Polytope for changing which regions are in the polytope  
-Read->(PictureConf,MacroConf)->Polytope for decorating planes  
-Read->Sound->System for adding value with change equations  
-Read->MetricConf->System for adding value periodically calculated by script  
-Read->MacroConf->Window for setting up script to run upon click  
-Read->(ScriptConf,InvokeConf)->Script for setting up scripts  
-Read->ConfigureConf->Window for changing configurations  
-Read->TimewheelConf->System for starting stopping and configuring timewheel  
-Read->Command->Window for bringup  
-Read->TestConf->Polytope for testing topology functions  
-Window->TransformConf->Polytope for manipulating planes  
-Window->TweakConf->Polytope for tweaking planes  
-Window->RefineConf->Polytope for adding planes  
-Window->AdditiveConf,SubtractiveConf->Polytope for sculpting polytope  
-Window->(MatrixConf,GlobalConf)->Write for recording transformations  
-Window->MacroConf->Script for starting macro from click  
-Script->*->Write for side effects  
-Script->PlaneConf,SpaceConf,RegionConf->Polytope for feedback from topology  
-Script->ScriptConf->System for getting stock values  
-Script->Command->Window for queries to microcode  
-Polytope->PlaneConf->Write for appending manipulated or randomized planes  
-Polytope->RegionConf->Write for changing whether region is in polytope  
-Polytope->Command->Window for changing what is displayed  
-System->MetricConf->Script for getting value from metric  
-
-For example, --plane sends a stuct to the Polytope thread that sends a Command to the Window thread to append the plane to the Versor and Plane buffers for the file. Then the Command triggers microcode that classifies the plane, and intersects it with previously added planes. The response of the Command allows the Polytope thread to send another Command that updates Frame, Point, and related buffers, and triggers the display microcode.
-
-For another example, --space sends a stuct to the Polytope thread that sends a Command, one boundary at a time, threat points from the Small space, to microcode to reinterpret those as planes, run microcode to classify each reinterpreted plane into a Large subspace. Then the Polytope thread reads the region's corners from the Large subspace, finds the average or throw, back-interprets that, and does the --plane operations on that.
+The -- commands and messages between threads are as follows. Note that only messages from the thread that reads files from the command line has side effects.  
+-—seek --(resend command from given file location)  
+-—include --(read from given file)  
+-—exclude --(read from including file)  
+--sculpt click additive --(add region over clicked faced) Read->SculptConf->Window  
+--sculpt click subtractive --(remove region under clicked faced) Read->SculptConf->Window  
+--sculpt click refine --(add random plane through clicked point on facet) Read->SculptConf->Window  
+--sculpt click tweak --(randomize clicked facet plane) Read->SculptConf->Window  
+--sculpt click perform --(trigger script of clicked facet) Read->SculptConf->Window  
+--sculpt click transform --(click starts transformation) Read->SculptConf->Window  
+--sculpt click suspend --(stop transformation by mouse motion) Read->SculptConf->Window  
+--sculpt click pierce --(click changes fixed pierce point) Read->SculptConf->Window  
+--sculpt mouse rotate --(rotate about fixed pierce point) Read->SculptConf->Window  
+--sculpt mouse tangent --(translate parallel to fixed facet) Read->SculptConf->Window  
+--sculpt mouse translate --(translate parallel to picture plane) Read->SculptConf->Window  
+--sculpt roller cylinder --(rotate with rotated fixed axis) Read->SculptConf->Window  
+--sculpt roller clock --(rotate with fixed normal to picture plane) Read->SculptConf->Window  
+--sculpt roller normal --(rotate with fixed normal to facet) Read->SculptConf->Window  
+--sculpt roller parallel --(translate with fixed normal to facet) Read->SculptConf->Window  
+--sculpt roller scale --(scale with fixed pierce point) Read->SculptConf->Window  
+--sculpt target session --(transform display) Read->SculptConf->Window  
+--sculpt target polytope --(transform clicked polytope) Read->SculptConf->Window  
+--sculpt target facet --(transform clicked facet) Read->SculptConf->Window  
+--sculpt topology numeric --(tweak holds nothing invariant) Read->SculptConf->Window  
+--sculpt topology invariant --(tweak holds polytope invariant) Read->SculptConf->Window  
+--sculpt topology symbolic --(tweak holds space invariant) Read->SculptConf->Window  
+--sculpt fixed relative --(tweak holds pierce point fixed) Read->SculptConf->Window  
+--sculpt fixed absolute --(tweak holds nothing fixed) Read->SculptConf->Window  
+-—configure --(change constants like focal length) Read->ConfigureConf->Window  
+-—command --(send microcode buffers and triggers) Read->Command->Window  
+--query --(send request for topology feature to display) Read->Query->Polytope  
+-—matrix --(change transformation of polytope) Read->MatrixConf->Window  
+-—global --(change transformation of display) Read->GlobalConf->Window  
+-—region --(change whether region in polytope) Read->RegionConf->Polytope->Command->Window  
+-—inflate --(change polytope regions to all inside) Read->InflateConf->Polytope->Command->Window  
+-—space --(add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
+-—plane --(add and classify plane from vector) Read->PlaneConf->Polytope->Command->Window  
+-—picture --(decorate plane with texture from file) Read->PictureConf->Polytope->Command->Window  
+-—test --(read and augment test results in file) Read->TestConf->Polytope  
+-—timewheel --(start and stop stock and flow system) Read->TimewheelConf->System  
+-—sound --(add stock and flows to system) Read->Sound->System  
+-—script --(send script to execute) Read->ScriptConf->Script  
+-—invoke --(if at eof, send script to execute) Read->InvokeConf->Script  
+-—macro --(send script to execute upon click) Read->MacroConf->Window->Script  
+-—hotkey --(send script to execute upon keypress) Read->HotkeyConf->Window->Script  
+-—metric --(send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
+--(send window transformation change to other processes) Window->GlobalConf->Write  
+--(send polytope transformation change to other processes) Window->MatrixConf->Write  
+--(send facet transformation for plane to other processses) Window->ManipConf->Polytope->PlaneConf->Write  
+--(request topology information) Script->Query->Polytope  

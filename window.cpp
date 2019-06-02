@@ -51,24 +51,19 @@ extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix
     window->sendWrite(data);
 }
 
-extern "C" void sendAdditive(int file, int plane)
+extern "C" void sendSculpt(int file, int plane, enum ClickMode click)
 {
     Data *data = datas.get();
-    data->file = file; data->plane = plane; data->conf = AdditiveConf;
-    window->sendPolytope(data);
-}
-
-extern "C" void sendSubtracive(int file, int plane)
-{
-    Data *data = datas.get();
-    data->file = file; data->plane = plane; data->conf = SubtractiveConf;
+    data->file = file; data->plane = plane; data->conf = ManipConf;
+    data->mode = click;
     window->sendPolytope(data);
 }
 
 extern "C" void sendRefine(int file, int plane, float *pierce)
 {
     Data *data = datas.get(); data->pierce = floats.get(3);
-    data->file = file; data->plane = plane; data->conf = RefineConf;
+    data->file = file; data->plane = plane; data->conf = ManipConf;
+    data->mode = RefineMode;
     for (int i = 0; i < 3; i++) data->pierce[i] = pierce[i];
     window->sendPolytope(data);
 }
@@ -76,25 +71,26 @@ extern "C" void sendRefine(int file, int plane, float *pierce)
 extern "C" void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce)
 {
     Data *data = datas.get(); data->pierce = floats.get(3);
-    data->file = file; data->plane = plane; data->conf = TweakConf;
-    data->topology = topology; data->fixed = RelativeMode;
+    data->file = file; data->plane = plane; data->conf = ManipConf;
+    data->mode = TweakMode; data->topology = topology; data->fixed = RelativeMode;
     for (int i = 0; i < 3; i++) data->pierce[i] = pierce[i];
     window->sendPolytope(data);
 }
 
 extern "C" void sendAbsolute(int file, int plane, enum TopologyMode topology)
 {
-    Data *data = datas.get();
-    data->file = file; data->plane = plane; data->conf = TweakConf;
-    data->topology = topology; data->fixed = AbsoluteMode;
+    Data *data = datas.get(); data->pierce = floats.get(3);
+    data->file = file; data->plane = plane; data->conf = ManipConf;
+    data->mode = TweakMode; data->topology = topology; data->fixed = AbsoluteMode;
     window->sendPolytope(data);
 }
 
 extern "C" void sendFacet(int file, int plane, float *matrix)
 {
-    Data *data = datas.get(); data->matrix = floats.get(16);
-    data->file = file; data->plane = plane; data->conf = TransformConf;
-    for (int i = 0; i < 16; i++) data->matrix[i] = matrix[i];
+    Data *data = datas.get(); data->manip = floats.get(16);
+    data->file = file; data->plane = plane; data->conf = ManipConf;
+    data->mode = TransformMode;
+    for (int i = 0; i < 16; i++) data->manip[i] = matrix[i];
     window->sendPolytope(data);
 }
 
@@ -324,13 +320,16 @@ void Window::processDatas(Message<Data> &message)
             floats.put(16,data->matrix);
             datas.put(data);}}
         if (&message == &write2rsp) {
-            if (data->conf == AdditiveConf) datas.put(data);
-            if (data->conf == SubtractiveConf) datas.put(data);
-            if (data->conf == RefineConf) {floats.put(3,data->pierce); datas.put(data);}
-            if (data->conf == TweakConf) {
-                if (data->fixed == RelativeMode) {floats.put(3,data->pierce); datas.put(data);}
+            if (data->conf == ManipConf && data->mode == AdditiveMode) datas.put(data);
+            if (data->conf == ManipConf && data->mode == SubtractiveMode) datas.put(data);
+            if (data->conf == ManipConf && data->mode == RefineMode) {
+                floats.put(3,data->pierce); datas.put(data);}
+            if (data->conf == ManipConf && data->mode == TweakMode) {
+                if (data->fixed == RelativeMode) {
+                    floats.put(3,data->pierce); datas.put(data);}
                 if (data->fixed == AbsoluteMode) datas.put(data);}
-            if (data->conf == TransformConf) {floats.put(16,data->matrix); datas.put(data);}
+            if (data->conf == ManipConf && data->mode == TransformMode) {
+                floats.put(16,data->matrix); datas.put(data);}
             if (data->conf == MacroConf) datas.put(data);}}
         if (&message == &script2rsp) {
             // nothing to do
@@ -444,7 +443,7 @@ void Window::init()
     glfwMakeContextCurrent(window);
     if (gl3wInit()) error("Failed to initialize OpenGL",0,__FILE__,__LINE__);
     if (!gl3wIsSupported(3, 3)) error("OpenGL 3.3 not supported",0,__FILE__,__LINE__);
-    if (DEBUG) std::cout << "OpenGL " << glGetString(GL_VERSION) << " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    if (DEBUG & WINDOW_DEBUG) std::cout << "OpenGL " << glGetString(GL_VERSION) << " GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glClearColor(0.2f, 0.3f, 0.2f, 1.0f);

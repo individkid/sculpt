@@ -159,12 +159,12 @@ char *Read::split(char *&str)
 	return sub;
 }
 
-void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, int &num, enum Configure conf)
+void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &len, enum Configure conf)
 {
 	// update sync struct location if read from pipe
 	int ddl = parse.literal(str,pat);
 	if (ddl) {sav = pos+ddl; len = strlen(str)-ddl;}
-	// send sync struct from middle of file if it has the wrong sequence number
+	// send sync struct from middle of file
 	if (len == 0) return;
 	char *sstr = parse.setup(len); struct flock lock; int res = -1;
 	lock.l_start = sav; lock.l_len = len; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
@@ -175,9 +175,8 @@ void Read::sync(const char *str, const char *pat, off_t pos, off_t &sav, int &le
 	lock.l_type = F_UNLCK;
 	if (fcntl(file,F_SETLK,&lock) < 0) error("fcntl failed",errno,__FILE__,__LINE__);
 	Data *data; sstr[len] = 0; parse.get(sstr,self,conf,data);
-	if (data->seqnum == num) {parse.put(data); parse.cleanup(sstr); return;}
 	livelock = 0;
-	num = data->seqnum; parse.cleanup(sstr); req2window->put(data);
+	parse.cleanup(sstr); req2window->put(data);
 }
 
 // nonblocking try to get write lock at end of file to infinity
@@ -237,7 +236,7 @@ int Read::read(char *&str)
 	return 1;
 }
 
-int Read::sync(const char *str, const char *pat, off_t pos, int len, int &num)
+int Read::sync(const char *str, const char *pat, off_t pos, int len)
 {
 	// extend sync string to expected length
 	int pre = parse.literal(str,pat);
@@ -246,7 +245,6 @@ int Read::sync(const char *str, const char *pat, off_t pos, int len, int &num)
 	int dlen = strlen(dstr);
 	if (dlen > len) {parse.cleanup(dstr); return 0;}
 	while (dlen < len) {dstr = parse.concat(dstr," "); dlen++;}
-	// change sequence number in sync string
 	int val; int flen = parse.number(dstr,val); num = val+1;
 	char *nstr = parse.string(num);
 	int nlen = strlen(nstr);

@@ -197,10 +197,10 @@ void sendMatrix()
 	switch (state.target) {
 	case (SessionMode):
 	for (int i = 0; i < 16; i++) last.session[i] = matrix.session[i];
-	sendData(matrix.file,matrix.plane,SessionConf,matrix.session); break;
+	sendData(matrix.file,matrix.plane,GlobalConf,matrix.session); break;
 	case (PolytopeMode):
 	for (int i = 0; i < 16; i++) last.polytope[matrix.file][i] = matrix.polytope[matrix.file][i];
-	sendData(matrix.file,matrix.plane,PolytopeConf,matrix.polytope[matrix.file]); break;
+	sendData(matrix.file,matrix.plane,MatrixConf,matrix.polytope[matrix.file]); break;
 	case (FacetMode):
 	for (int i = 0; i < 16; i++) last.facet[i] = matrix.facet[i];
 	sendFacet(matrix.file,matrix.plane,matrix.facet); break;
@@ -321,28 +321,14 @@ void changeFixed(enum FixedMode mode)
 void changeState(struct Data *data)
 {
 	switch (data->conf) {
-	case (AdditiveConf): changeClick(AdditiveMode); break;
-	case (SubtractiveConf): changeClick(SubtractiveMode); break;
-	case (RefineConf): changeClick(RefineMode); break;
-	case (TweakConf): changeClick(TweakMode); break;
-	case (PerformConf): changeClick(PerformMode); break;
-	case (TransformConf): changeClick(PierceMode/*!*/); break;
-	case (CylinderConf): changeRoller(CylinderMode); break;
-	case (ClockConf): changeRoller(ClockMode); break;
-	case (NormalConf): changeRoller(NormalMode); break;
-	case (ParallelConf): changeRoller(ParallelMode); break;
-	case (ScaleConf): changeRoller(ScaleMode); break;
-	case (RotateConf): changeMouse(RotateMode); break;
-	case (TangentConf): changeMouse(TangentMode); break;
-	case (TranslateConf): changeMouse(TranslateMode); break;
-	case (SessionConf): changeTarget(SessionMode); break;
-	case (PolytopeConf): changeTarget(PolytopeMode); break;
-	case (FacetConf): changeTarget(FacetMode); break;
-	case (NumericConf): changeTopology(NumericMode); break;
-	case (InvariantConf): changeTopology(InvariantMode); break;
-	case (SymbolicConf): changeTopology(SymbolicMode); break;
-	case (RelativeConf): changeFixed(RelativeMode); break;
-	case (AbsoluteConf): changeFixed(AbsoluteMode); break;
+	case (SculptConf): switch (data->sculpt) {
+	case (ClickUlpt): changeClick(data->click); break;
+	case (MouseUlpt): changeMouse(data->mouse); break;
+	case (RollerUlpt): changeRoller(data->roller); break;
+	case (TargetUlpt): changeTarget(data->target); break;
+	case (TopologyUlpt): changeTopology(data->topo); break;
+	case (FixedUlpt): changeFixed(data->fix); break;
+	default: displayError(data->sculpt,"invalid data->sculpt");}
 	case (MatrixConf): {
 	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
@@ -364,8 +350,8 @@ void triggerAction()
 {
 	if (current.tagbits) sendInvoke(current.file,current.plane);
 	switch (state.click) {
-	case (AdditiveMode): sendAdditive(current.file,current.plane); break;
-	case (SubtractiveMode): sendSubtracive(current.file,current.plane); break;
+	case (AdditiveMode): sendSculpt(current.file,current.plane,AdditiveMode); break;
+	case (SubtractiveMode): sendSculpt(current.file,current.plane,SubtractiveMode); break;
 	case (RefineMode): sendRefine(current.file,current.plane,current.pierce); break;	
 	case (TweakMode): switch (state.fixed) {
 	case (RelativeMode): sendRelative(current.file,current.plane,state.topology,current.pierce); break;	
@@ -392,7 +378,7 @@ void displayError(int error, const char *description)
 
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mods)
 {
-    if (DEBUG && action == 1) printf("GLFW key %d %d %d %d\n",key,scancode,action,mods);
+    if ((DEBUG & CALLBACK_DEBUG) && action == 1) printf("GLFW key %d %d %d %d\n",key,scancode,action,mods);
     if (key == 256 && action == 1) maybeKill(1);
     else if (key == 257 && action == 1) maybeKill(2);
     else if (action == 1) maybeKill(0);

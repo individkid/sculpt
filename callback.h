@@ -51,8 +51,7 @@ struct State
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
 void sendData(int file, int plane, enum Configure conf, float *matrix);
-void sendAdditive(int file, int plane);
-void sendSubtracive(int file, int plane);
+void sendSculpt(int file, int plane, enum ClickMode click);
 void sendRefine(int file, int plane, float *pierce);
 void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce);
 void sendAbsolute(int file, int plane, enum TopologyMode topology);
