@@ -9,9 +9,9 @@ Some commands, in particular --matrix, --global, and --plane, have dynamic field
 Before sending data to the io thread, the window thread saves what it sends. When fields from the middle of the file are sent, the window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
 
 The -- commands and messages between threads are as follows. Note that only messages from the thread that reads files from the command line has side effects.  
--—seek --(resend command from given file location)  
--—include --(read from given file)  
--—exclude --(read from including file)  
+--seek --(resend command from given file location)  
+--include --(read from given file)  
+--exclude --(read from including file)  
 --sculpt click additive --(add region over clicked faced) Read->SculptConf->Window  
 --sculpt click subtractive --(remove region under clicked faced) Read->SculptConf->Window  
 --sculpt click refine --(add random plane through clicked point on facet) Read->SculptConf->Window  
@@ -36,24 +36,24 @@ The -- commands and messages between threads are as follows. Note that only mess
 --sculpt topology symbolic --(tweak holds space invariant) Read->SculptConf->Window  
 --sculpt fixed relative --(tweak holds pierce point fixed) Read->SculptConf->Window  
 --sculpt fixed absolute --(tweak holds nothing fixed) Read->SculptConf->Window  
--—configure --(change constants like focal length) Read->ConfigureConf->Window  
--—command --(send microcode buffers and triggers) Read->Command->Window  
+--configure --(change constants like focal length) Read->ConfigureConf->Window  
+--command --(send microcode buffers and triggers) Read->Command->Window  
 --query --(send request for topology feature to display) Read->Query->Polytope  
--—matrix --(change transformation of polytope) Read->MatrixConf->Window  
--—global --(change transformation of display) Read->GlobalConf->Window  
--—region --(change whether region in polytope) Read->RegionConf->Polytope->Command->Window  
--—inflate --(change polytope regions to all inside) Read->InflateConf->Polytope->Command->Window  
--—space --(add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
--—plane --(add and classify plane from vector) Read->PlaneConf->Polytope->Command->Window  
--—picture --(decorate plane with texture from file) Read->PictureConf->Polytope->Command->Window  
--—test --(read and augment test results in file) Read->TestConf->Polytope  
--—timewheel --(start and stop stock and flow system) Read->TimewheelConf->System  
--—sound --(add stock and flows to system) Read->Sound->System  
--—script --(send script to execute) Read->ScriptConf->Script  
--—invoke --(if at eof, send script to execute) Read->InvokeConf->Script  
--—macro --(send script to execute upon click) Read->MacroConf->Window->Script  
--—hotkey --(send script to execute upon keypress) Read->HotkeyConf->Window->Script  
--—metric --(send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
+--matrix --(change transformation of polytope) Read->MatrixConf->Window  
+--global --(change transformation of display) Read->GlobalConf->Window  
+--region --(change whether region in polytope) Read->RegionConf->Polytope->Command->Window  
+--inflate --(change polytope regions to all inside) Read->InflateConf->Polytope->Command->Window  
+--space --(add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
+--plane --(add and classify plane from vector) Read->PlaneConf->Polytope->Command->Window  
+--picture --(decorate plane with texture from file) Read->PictureConf->Polytope->Command->Window  
+--test --(read and augment test results in file) Read->TestConf->Polytope  
+--timewheel --(start and stop stock and flow system) Read->TimewheelConf->System  
+--sound --(add stock and flows to system) Read->Sound->System  
+--script --(send script to execute) Read->ScriptConf->Script  
+--invoke --(if at eof, send script to execute) Read->InvokeConf->Script  
+--macro --(send script to execute upon click) Read->MacroConf->Window->Script  
+--hotkey --(send script to execute upon keypress) Read->HotkeyConf->Window->Script  
+--metric --(send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
 --(send window transformation change to other processes) Window->GlobalConf->Write  
 --(send polytope transformation change to other processes) Window->MatrixConf->Write  
 --(send facet transformation for plane to other processses) Window->ManipConf->Polytope->PlaneConf->Write  
