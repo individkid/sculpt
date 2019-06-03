@@ -41,7 +41,7 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
 	switch (buffer) {
 	case (Texture0): handle.unit = GL_TEXTURE0; break;
     case (Texture1): handle.unit = GL_TEXTURE1; break;
-    case (Query): glGenQueries(1,&handle.handle); break;
+    case (Inquery): glGenQueries(1,&handle.handle); break;
     case (Uniform): if (!first) {handle.handle = 0; break;}
 	default: glGenBuffers(1,&handle.handle); break;}
     switch (buffer) {
@@ -49,7 +49,7 @@ void Object::initHandle(enum Buffer buffer, int first, Handle &handle)
     case (Feedback): handle.target = GL_TRANSFORM_FEEDBACK_BUFFER; break;
     case (Uniform): handle.target = GL_UNIFORM_BUFFER; break;
     case (Texture0): case (Texture1): handle.target = GL_TEXTURE_2D; break;
-    case (Query): handle.target = GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN; break;
+    case (Inquery): handle.target = GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN; break;
     default: handle.target = GL_ARRAY_BUFFER; break;}
     switch (buffer) {
     case (Feedback): handle.usage = GL_STATIC_READ; break;

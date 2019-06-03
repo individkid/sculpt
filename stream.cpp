@@ -37,6 +37,16 @@ void Stream::get(int fd, Render *&render)
 	// TODO
 }
 
+void Stream::get(int fd, Manip *&manip)
+{
+	// TODO
+}
+
+void Stream::get(int fd, Query *&query)
+{
+	// TODO
+}
+
 void Stream::get(int fd, Data *&data)
 {
 	data = Pools::datas.get();
@@ -64,14 +74,16 @@ void Stream::put(int fd, char *text)
 	wrChars(fd,count,text);
 }
 
-Opcode Stream::get(int fd, Data *&data, Command *&command)
+Opcode Stream::get(int fd, Data *&data, Query *&query, Manip *&manip, Command *&command)
 {
+	data = 0; query = 0; manip = 0; command = 0;
 	Opcode opcode = (Opcode)rdOpcode(fd);
 	switch (opcode) {
 	// TODO for responses with data read into the struct pointed to by rdPointer
-	case (ReadOp): case (ScriptOp): data = (struct Data *)rdPointer(fd); command = 0; break;
-	case (WriteOp): case (WindowOp): get(fd,data); command = 0; break;
-	case (CommandOp): data = 0; get(fd,command); break;
+	case (ReadOp): data = (struct Data *)rdPointer(fd); break;
+	case (WriteOp): get(fd,data); break;
+	case (QueryOp): query = (struct Query *)rdPointer(fd); /*TODO fill query with response*/ break;
+	case (CommandOp): get(fd,command); break;
 	default: error("unimplemented opcode",opcode,__FILE__,__LINE__);}
 	return opcode;
 }
@@ -81,11 +93,22 @@ void Stream::put(int fd, Opcode opcode, Command *command)
 	// TODO
 }
 
+void Stream::put(int fd, Opcode opcode, Manip *manip)
+{
+	// TODO
+}
+
+void Stream::put(int fd, Opcode opcode, Query *query)
+{
+	wrOpcode(fd,opcode); wrPointer(fd,query);
+	// TODO write query arguments
+}
+
 void Stream::put(int fd, Opcode opcode, Data *data)
 {
 	int rsp; switch (opcode) {
-	case (ReadOp): case (ScriptOp): rsp = 0; break;
-	case (WriteOp): case (WindowOp): rsp = 1; break;
+	case (ReadOp): rsp = 0; break;
+	case (WriteOp): rsp = 1; break;
 	default: error("unimplemented opcode",opcode,__FILE__,__LINE__);}
 	wrOpcode(fd,opcode); wrPointer(fd,(rsp?0:data));
 	wrOpcode(fd,FileOp); wrInt(fd,data->file);

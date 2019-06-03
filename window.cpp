@@ -52,8 +52,8 @@ void Window::connect(int i, Write *ptr)
 
 void Window::connect(Polytope *ptr)
 {
-    req2polytope = &ptr->window2req;
     rsp2polytope = &ptr->window2rsp;
+    req2polytope = &ptr->window2req;
 }
 
 void Window::connect(Script *ptr)
@@ -107,8 +107,8 @@ void Window::call()
     processQueues(polytope);
     processCommands(command2req,read);
     processCommands(polytope2req,polytope);
+    processManips(polytope2rsp);
     processDatas(read2req);
-    processDatas(polytope2rsp);
     processDatas(write2rsp);
     processDatas(script2rsp);
 }
@@ -139,7 +139,7 @@ void Window::done()
 Window::Window(int n) : Thread(1), object(new Object[n]),
     req2polytope(0), rsp2polytope(0), req2script(0),
     command2req(this,"Read->Command->Window"), read2req(this,"Read->Data->Window"),
-    polytope2rsp(this,"Window<-Data<-Polytope"), polytope2req(this,"Polytope->Data->Window"),
+    polytope2req(this,"Polytope->Data->Window"), polytope2rsp(this,"Window<-Manip<-Polytope"),
     write2rsp(this,"Window<-Data<-Write"), script2rsp(this,"Window->Data->Script"),
     window(0), finish(0), nfile(n)
 {
@@ -150,7 +150,7 @@ Window::Window(int n) : Thread(1), object(new Object[n]),
 Window::~Window()
 {
     if (window) error("done not called",0,__FILE__,__LINE__);
-    processDatas(polytope2rsp);
+    processManips(polytope2rsp);
     processDatas(write2rsp);
     processDatas(script2rsp);
 }
@@ -160,6 +160,7 @@ extern Window *window;
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
 static Sparse<Pair<int,int>,Data*> macros(__FILE__,__LINE__);
+static Pool<Manip> manips(__FILE__,__LINE__);
 
 extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix)
 {
@@ -171,45 +172,42 @@ extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix
 
 extern "C" void sendSculpt(int file, int plane, enum ClickMode click)
 {
-    Data *data = datas.get();
-    data->file = file; data->plane = plane; data->conf = ManipConf;
-    data->mode = click;
-    window->sendPolytope(data);
+    Manip *manip = manips.get();
+    manip->file = file; manip->plane = plane; manip->click = click;
+    window->sendPolytope(manip);
 }
 
-extern "C" void sendRefine(int file, int plane, float *pierce)
+extern "C" void sendRefine(int file, int plane, float *vector)
 {
-    Data *data = datas.get(); data->pierce = floats.get(3);
-    data->file = file; data->plane = plane; data->conf = ManipConf;
-    data->mode = RefineMode;
-    for (int i = 0; i < 3; i++) data->pierce[i] = pierce[i];
-    window->sendPolytope(data);
+    Manip *manip = manips.get(); manip->vector = floats.get(3);
+    manip->file = file; manip->plane = plane; manip->click = RefineMode;
+    for (int i = 0; i < 3; i++) manip->vector[i] = vector[i];
+    window->sendPolytope(manip);
 }
 
-extern "C" void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce)
+extern "C" void sendRelative(int file, int plane, enum TopologyMode topology, float *vector)
 {
-    Data *data = datas.get(); data->pierce = floats.get(3);
-    data->file = file; data->plane = plane; data->conf = ManipConf;
-    data->mode = TweakMode; data->topology = topology; data->fixed = RelativeMode;
-    for (int i = 0; i < 3; i++) data->pierce[i] = pierce[i];
-    window->sendPolytope(data);
+    Manip *manip = manips.get(); manip->vector = floats.get(3);
+    manip->file = file; manip->plane = plane; manip->click = TweakMode;
+    manip->topology = topology; manip->fixed = RelativeMode;
+    for (int i = 0; i < 3; i++) manip->vector[i] = vector[i];
+    window->sendPolytope(manip);
 }
 
 extern "C" void sendAbsolute(int file, int plane, enum TopologyMode topology)
 {
-    Data *data = datas.get(); data->pierce = floats.get(3);
-    data->file = file; data->plane = plane; data->conf = ManipConf;
-    data->mode = TweakMode; data->topology = topology; data->fixed = AbsoluteMode;
-    window->sendPolytope(data);
+    Manip *manip = manips.get();
+    manip->file = file; manip->plane = plane; manip->click = TweakMode;
+    manip->topology = topology; manip->fixed = AbsoluteMode;
+    window->sendPolytope(manip);
 }
 
 extern "C" void sendFacet(int file, int plane, float *matrix)
 {
-    Data *data = datas.get(); data->manip = floats.get(16);
-    data->file = file; data->plane = plane; data->conf = ManipConf;
-    data->mode = TransformMode;
-    for (int i = 0; i < 16; i++) data->manip[i] = matrix[i];
-    window->sendPolytope(data);
+    Manip *manip = manips.get(); manip->matrix = floats.get(16);
+    manip->file = file; manip->plane = plane; manip->click = TransformMode;
+    for (int i = 0; i < 16; i++) manip->matrix[i] = matrix[i];
+    window->sendPolytope(manip);
 }
 
 extern "C" void sendInvoke(int file, int plane)
@@ -242,9 +240,9 @@ void Window::sendWrite(Data *data)
     object[data->file].req2write->put(data);
 }
 
-void Window::sendPolytope(Data *data)
+void Window::sendPolytope(Manip *manip)
 {
-    req2polytope->put(data);
+    req2polytope->put(manip);
 }
 
 void Window::sendScript(Data *data)
@@ -304,7 +302,7 @@ void Window::bindBuffer(Update &update)
     Handle &buffer = object[update.file].handle[update.buffer];
     switch(update.buffer) {
     case (Texture0): case (Texture1): bindTexture2d(update); break;
-    case (Query): glBeginQuery(buffer.target,buffer.handle); break;
+    case (Inquery): glBeginQuery(buffer.target,buffer.handle); break;
     default: {
     glBindBufferBase(buffer.target,buffer.index,buffer.handle);
     break;}}
@@ -315,7 +313,7 @@ void Window::unbindBuffer(Update &update)
     Handle &buffer = object[update.file].handle[update.buffer];
     switch(update.buffer) {
     case (Texture0): case (Texture1): unbindTexture2d(); break;
-    case (Query): glEndQuery(buffer.target); break;
+    case (Inquery): glEndQuery(buffer.target); break;
     default: glBindBufferBase(buffer.target,buffer.index,0); break;}
 }
 
@@ -324,7 +322,7 @@ void Window::readBuffer(Update &update)
     Handle &buffer = object[update.file].handle[update.buffer];
     switch(update.buffer) {
     case (Texture0): case (Texture1): break;
-    case (Query): glGetQueryObjectuiv(buffer.handle, GL_QUERY_RESULT, update.query); break;
+    case (Inquery): glGetQueryObjectuiv(buffer.handle, GL_QUERY_RESULT, update.query); break;
     default: {
     glBindBuffer(buffer.target,buffer.handle);
     glGetBufferSubData(buffer.target,update.offset,update.size,update.data);
@@ -454,6 +452,20 @@ void Window::processCommands(Message<Command> &message, Queues &queues)
             if (&message == &command2req) object[command->file].rsp2command->put(command);}}
 }
 
+void Window::processManips(Message<Manip> &message)
+{
+    Manip *manip; while (message.get(manip)) {
+        switch (manip->click) {
+        case (RefineMode): floats.put(3,manip->vector); break;
+        case (TweakMode): switch (manip->fixed) {
+        case (RelativeMode): floats.put(3,manip->vector); break;
+        case (AbsoluteMode): break;
+        default: error("invalid fixed",manip->fixed,__FILE__,__LINE__);}
+        case (TransformMode): floats.put(16,manip->matrix); break;
+        default: error("invalid click",manip->click,__FILE__,__LINE__);}
+        manips.put(manip);}
+}
+
 void Window::processDatas(Message<Data> &message)
 {
     Data *data; while (message.get(data)) {
@@ -461,30 +473,16 @@ void Window::processDatas(Message<Data> &message)
             if (data->conf == MacroConf) {
                 Pair<int,int> pair; pair.s = data->file; pair.t = data->plane;
                 if (macros.lookup(pair)) object[data->file].rsp2read->put(macros[pair]);
-                macros[pair] = data;
-                req2polytope->put(data);}
+                macros[pair] = data;}
             else {
                 changeState(data);
                 object[data->file].rsp2read->put(data);}}
-        if (&message == &polytope2rsp) {
-            if (data->conf != MacroConf) {
-            floats.put(16,data->matrix);
-            datas.put(data);}}
         if (&message == &write2rsp) {
-            if (data->conf == ManipConf && data->mode == AdditiveMode) datas.put(data);
-            if (data->conf == ManipConf && data->mode == SubtractiveMode) datas.put(data);
-            if (data->conf == ManipConf && data->mode == RefineMode) {
-                floats.put(3,data->pierce); datas.put(data);}
-            if (data->conf == ManipConf && data->mode == TweakMode) {
-                if (data->fixed == RelativeMode) {
-                    floats.put(3,data->pierce); datas.put(data);}
-                if (data->fixed == AbsoluteMode) datas.put(data);}
-            if (data->conf == ManipConf && data->mode == TransformMode) {
-                floats.put(16,data->matrix); datas.put(data);}
-            if (data->conf == MacroConf) datas.put(data);}}
+            floats.put(16,data->matrix);
+            datas.put(data);}
         if (&message == &script2rsp) {
             // nothing to do
-        }
+        }}
 }
 
 void Window::processMacros()

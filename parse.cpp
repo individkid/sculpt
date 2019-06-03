@@ -219,23 +219,23 @@ void Parse::get(const char *ptr, int file, Command *&command,
 
 	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"polytope"); len2 = literal(ptr+len+len1,"numeric");
 	if (len && len1 && len2) {window = datas.get();
-	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = NumericMode; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topology = NumericMode; window->file = file; return;}
 
 	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"polytope"); len2 = literal(ptr+len+len1,"invariant");
 	if (len && len1 && len2) {window = datas.get();
-	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = InvariantMode; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topology = InvariantMode; window->file = file; return;}
 
 	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"polytope"); len2 = literal(ptr+len+len1,"symbolic");
 	if (len && len1 && len2) {window = datas.get();
-	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topo = SymbolicMode; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = TopologyUlpt; window->topology = SymbolicMode; window->file = file; return;}
 
 	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"fixed"); len2 = literal(ptr+len+len1,"relative");
 	if (len && len1 && len2) {window = datas.get();
-	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fix = RelativeMode; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fixed = RelativeMode; window->file = file; return;}
 
 	len = literal(ptr,"--sculpt"); len1 = literal(ptr+len,"fixed"); len2 = literal(ptr+len+len1,"absolute");
 	if (len && len1 && len2) {window = datas.get();
-	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fix = AbsoluteMode; window->file = file; return;}
+	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fixed = AbsoluteMode; window->file = file; return;}
 
 	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,window); return;}
 

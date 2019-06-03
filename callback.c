@@ -326,8 +326,8 @@ void changeState(struct Data *data)
 	case (MouseUlpt): changeMouse(data->mouse); break;
 	case (RollerUlpt): changeRoller(data->roller); break;
 	case (TargetUlpt): changeTarget(data->target); break;
-	case (TopologyUlpt): changeTopology(data->topo); break;
-	case (FixedUlpt): changeFixed(data->fix); break;
+	case (TopologyUlpt): changeTopology(data->topology); break;
+	case (FixedUlpt): changeFixed(data->fixed); break;
 	default: displayError(data->sculpt,"invalid data->sculpt");}
 	case (MatrixConf): {
 	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);

@@ -44,14 +44,14 @@ class Window : public Thread
 {
 private:
 	Object *object;
-	Message<Data> *req2polytope;
 	Message<Command> *rsp2polytope;
+	Message<Manip> *req2polytope;
 	Message<Data> *req2script;
 public:
 	Message<Command> command2req;
 	Message<Data> read2req;
-	Message<Data> polytope2rsp;
 	Message<Command> polytope2req;
+	Message<Manip> polytope2rsp;
 	Message<Data> write2rsp;
 	Message<Data> script2rsp;
 public:
@@ -70,7 +70,7 @@ public:
 	virtual ~Window();
 public:
 	void sendWrite(Data *data);
-	void sendPolytope(Data *data);
+	void sendPolytope(Manip *manip);
 	void sendScript(Data *data);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);
@@ -97,6 +97,7 @@ private:
 	void processQueues(Queues &queues);
 	void processQueue(Queue &queue, Queues &queues);
 	void processCommands(Message<Command> &message, Queues &queues);
+	void processManips(Message<Manip> &message);
 	void processDatas(Message<Data> &message);
 	void processMacros();
 };

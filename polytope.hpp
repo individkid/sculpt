@@ -28,15 +28,15 @@ class Polytope : public Thread
 private:
 	Message<Data> **rsp2read;
 	Message<Data> **req2write;
-	Message<Data> *rsp2script;
+	Message<Query> *rsp2script;
+	Message<Manip> *rsp2window;
 	Message<Command> *req2window;
-	Message<Data> *rsp2window;
 public:
 	Message<Data> read2req;
 	Message<Data> write2rsp;
-	Message<Data> script2req;
+	Message<Query> script2req;
+	Message<Manip> window2req;
 	Message<Command> window2rsp;
-	Message<Data> window2req;
 public:
 	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
@@ -52,7 +52,4 @@ public:
 	virtual ~Polytope();
 private:
 	int nfile; int p2t[2]; int t2p[2]; int nfd; int iss;
-private:
-	void processCommands(Message<Command> &message);
-	void processDatas(Message<Data> &message);
 };

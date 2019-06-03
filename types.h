@@ -52,7 +52,7 @@ enum Buffer {
 	Face1, // corners of facets, rewritten when polytope changes
 	Triple0, // every triple in Point0, is only appended to
 	Triple1, // triples of threat points of boundary to sample
-	Feedback, Uniform, Query, Texture0, Texture1, Buffers};
+	Feedback, Uniform, Inquery, Texture0, Texture1, Buffers};
 enum Program {
     Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
     Pierce, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> Pierce,Normal,Color,Plane,Tagbits
@@ -106,23 +106,22 @@ enum Sculpt {
 	FixedUlpt,
 	Sculpts};
 enum Configure {
-	SculptConf, // Read->Window to change configuration
-	PlaneConf, // Read->Polytope Polytope->Write to add plane
-	GlobalConf, // Read->Window Window->Write to transform display
-	MatrixConf, // Read->Window Window->Write to transform polytope
-	ManipConf, // Window->Polytope to change or add plane or topology 
-	SpaceConf, // Read->Polytope to change topology
-	RegionConf, // Read->Polytope Polytope->Write to change topology
-	InflateConf, // Read->Polytope to change topology
-	PictureConf, // Read->Polytope to change decoration
-	MetricConf, // Read->System System->Script to setup volatile
-	MacroConf, // Read->Window Window->Script to setup performance
-	HotkeyConf, // Read->Window Window->Script to sentup performance
-	ScriptConf, // Read->Script to setup automation
-	InvokeConf, // Read->Script to setup automation
-	ConfigureConf, // Read->Window to configure constants
-	TimewheelConf, // Read->System to start sound
-	TestConf, // Read->Polytope to check math
+	SculptConf, // Read->Window
+	PlaneConf, // Read->Polytope->Write
+	GlobalConf, // Read->Window->Write
+	MatrixConf, // Read->Window->Write
+	SpaceConf, // Read->Polytope
+	RegionConf, // Read->Polytope->Write
+	InflateConf, // Read->Polytope
+	PictureConf, // Read->Polytope
+	MetricConf, // Read->System->Script
+	MacroConf, // Read->Window->Script
+	HotkeyConf, // Read->Window->Script
+	ScriptConf, // Read->Script
+	InvokeConf, // Read->Script
+	ConfigureConf, // Read->Window
+	TimewheelConf, // Read->System
+	TestConf, // Read->Polytope
 	Configures};
 enum Subconf {
 	StartSub,
@@ -138,7 +137,6 @@ enum Opcode {
 	ReadOp, 
 	WriteOp, 
 	PointerOp, 
-	WindowOp,
 	FileOp,
 	PlaneOp,
 	ConfOp,
@@ -147,8 +145,8 @@ enum Opcode {
 	MouseOp,
 	RollerOp,
 	TargetOp,
-	TopoOp,
-	FixOp,
+	TopologyOp,
+	FixedOp,
 	BoundariesOp,
 	RegionsOp,
 	PlanesOp,
@@ -158,10 +156,6 @@ enum Opcode {
 	OutsidesOp,
 	InsideOp,
 	OutsideOp,
-	ModeOp,
-	TopologyOp,
-	FixedOp,
-	PierceOp,
 	MatrixOp,
 	VersorOp,
 	VectorOp,
@@ -173,8 +167,9 @@ enum Opcode {
 	SubconfOp,
 	SettingOp,
 	TextOp,
-	CommandOp, // TODO
 	QueryOp, // TODO
+	ManipOp, // TODO
+	CommandOp, // TODO
 	Opcodes};
 struct Format
 {
@@ -228,28 +223,36 @@ struct Command
 	struct Command *redraw;
 	struct Command *pierce;
 };
+struct Manip
+{
+	// Window->Manip->Polytope
+	struct Manip *next;
+	int file; int plane;
+	enum ClickMode click;
+	enum TopologyMode topology;
+	enum FixedMode fixed;
+	union {float *vector; float *matrix;};
+};
 struct Data
 {
 	struct Data *next;
-	int file;
-	int plane;
+	int file; int plane;
 	enum Configure conf;
 	// Read->InflateConf->Polytope->Command->Window
 	union {
 	// Read->SculptConf->Window
 	struct {enum Sculpt sculpt; union {
 	enum ClickMode click; enum MouseMode mouse; enum RollerMode roller;
-	enum TargetMode target; enum TopologyMode topo; enum FixedMode fix;};};
+	enum TargetMode target; enum TopologyMode topology; enum FixedMode fixed;};};
 	// Read->SpaceConf->Polytope->Command->Window
 	struct {int boundaries; int regions; int *planes; int *sides;};
 	// Read->RegionConf->Polytope->Command->Window
+	// Window->Manip->Polytope->RegionConf->Write
 	struct {int side; int insides; int outsides; int *inside; int *outside;};
 	// Read->(MatrixConf,GlobalConf)->Window->Write
 	float *matrix;
-	// Window->ManipConf->Polytope->(PlaneConf,RegionConf)->Write
-	struct {enum ClickMode mode; enum TopologyMode topology; enum FixedMode fixed;
-	union {float *pierce; float *manip;};};
 	// Read->PlaneConf->Polytope->Command->Window
+	// Window->Manip->Polytope->PlaneConf->Write
 	struct {int versor; float *vector;};
 	// Read->MetricConf->System->Script
 	struct {float delay; int count; int *ident; double *value; char *script;};

@@ -29,13 +29,13 @@ class Script : public Thread
 {
 private:
 	Message<Data> **rsp2read;
-	Message<Data> *req2polytope;
+	Message<Query> *req2polytope;
 	Message<Data> **req2write;
 	Message<Data> *rsp2system;
 	Message<Data> *rsp2window;
 public:
 	Message<Data> read2req;
-	Message<Data> polytope2rsp;
+	Message<Query> polytope2rsp;
 	Message<Data> write2rsp;
 	Message<Data> system2req;
 	Message<Data> window2req;
@@ -56,5 +56,6 @@ private:
 	lua_State *state;
 	int nfile; int cleanup;
 private:
+	void processQueries(Message<Query> &message);
 	void processDatas(Message<Data> &message);
 };

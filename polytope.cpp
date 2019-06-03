@@ -29,11 +29,11 @@
 
 static Stream stream(__FILE__,__LINE__);
 
-Polytope::Polytope(int n, const char *path) : Thread(), nfile(n), iss(0),
+Polytope::Polytope(int n, const char *path) : Thread(),
 	rsp2read(new Message<Data>*[n]), req2write(new Message<Data>*[n]),
 	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-Data<-Write"),
-	script2req(this,"Script->Data->Polytope"), window2rsp(this,"Polytope<-Data<-Window"),
-	window2req(this,"Window->Data->Polytope")
+	script2req(this,"Script->Query->Polytope"), window2req(this,"Window->Manip->Polytope"),
+	window2rsp(this,"Polytope<-Command<-Window"), nfile(n), iss(0)
 {
 	if (pipe(p2t) < 0) error("pipe open failed",errno,__FILE__,__LINE__);
 	if (pipe(t2p) < 0) error("pipe open failed",errno,__FILE__,__LINE__);
@@ -106,27 +106,27 @@ void Polytope::init()
 
 void Polytope::call()
 {
-	Data *data; Command *command;
+	Data *data; Query *query; Manip *manip; Command *command;
 	if (iss) {iss = 0;
-	Opcode opcode = stream.get(p2t[0],data,command);
+	Opcode opcode = stream.get(p2t[0],data,query,manip,command);
 	switch (opcode) {
 	case (ReadOp): rsp2read[data->file]->put(data); break;
-	case (WriteOp): rsp2read[data->file]->put(data); break;
-	case (ScriptOp): rsp2script->put(data); break;
-	case (WindowOp): rsp2window->put(data); break;
+	case (WriteOp): req2write[data->file]->put(data); break;
+	case (QueryOp): rsp2script->put(query); break;
+	case (ManipOp): rsp2window->put(manip); break;
 	case (CommandOp): req2window->put(command); break;
 	default: error("invalid opcode",opcode,__FILE__,__LINE__);}}
 	while (read2req.get(data)) stream.put(t2p[1],ReadOp,data);
 	while (write2rsp.get(data)) stream.put(t2p[1],WriteOp,data);
-	while (script2req.get(data)) stream.put(t2p[1],ScriptOp,data);
+	while (script2req.get(query)) stream.put(t2p[1],QueryOp,query);
+	while (window2req.get(manip)) stream.put(t2p[1],ManipOp,manip);
 	while (window2rsp.get(command)) stream.put(t2p[1],CommandOp,command);
-	while (window2req.get(data)) stream.put(t2p[1],WindowOp,data);
 }
 
 void Polytope::done()
 {
-	Data *data;
+	Query *query; Manip *manip; Data *data;
 	while (read2req.get(data)) rsp2read[data->file]->put(data);
-	while (script2req.get(data)) rsp2script->put(data);
-	while (window2req.get(data)) rsp2window->put(data);
+	while (script2req.get(query)) rsp2script->put(query);
+	while (window2req.get(manip)) rsp2window->put(manip);
 }

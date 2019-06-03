@@ -27,13 +27,16 @@ protected:
 	Pool<Command> commands;
 	Pool<Update> updates;
 	Pool<Render> renders;
+	Pool<Manip> manips;
+	Pool<Query> queries;
 	Pool<Data> datas;
 	Power<float> floats;
 	Power<char> chars;
 public:
 	Pools(const char *file, int line) :
 		commands(file,line), updates(file,line), renders(file,line),
-		datas(file,line), floats(file,line), chars(file,line) {}
+		manips(file,line), queries(file,line), datas(file,line),
+		floats(file,line), chars(file,line) {}
 	void put(Command *command);
 	void put(Sound *sound);
 	void put(Data *data);

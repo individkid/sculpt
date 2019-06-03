@@ -64,7 +64,7 @@ void Script::init()
 void Script::call()
 {
 	processDatas(read2req);
-	processDatas(polytope2rsp);
+	processQueries(polytope2rsp);
 	processDatas(write2rsp);
 	processDatas(system2req);
 	processDatas(window2req);
@@ -88,9 +88,11 @@ Script::Script(int n) :
 
 Script::~Script()
 {
-	processDatas(polytope2rsp);
+	processQueries(polytope2rsp);
 	processDatas(write2rsp);
 }
+
+static Pool<Query> queries(__FILE__,__LINE__);
 
 #define POP_ERROR(MESSAGE,LINE) { \
 	message(MESSAGE,LINE,__FILE__,__LINE__); \
@@ -130,6 +132,16 @@ const char *reader(lua_State *L, void *data, size_t *size)
        done = 1; *size = strlen(result); return result;
 }
 
+void Script::processQueries(Message<Query> &message)
+{
+	Query *query; while (message.get(query)) {
+		if (!cleanup) {
+			// TODO execute script with response
+		}
+		if (&message == &polytope2rsp) {
+			queries.put(query);}}
+}
+
 void Script::processDatas(Message<Data> &message)
 {
 	Data *data; while (message.get(data)) {
@@ -140,10 +152,7 @@ void Script::processDatas(Message<Data> &message)
 				lua_pushlightuserdata(state,this);
 				lua_call(state,1,0);} else {
 				error(lua_tostring(state,-1),0,__FILE__,__LINE__);
-				lua_pop(state,1);}}
-		}
+				lua_pop(state,1);}}}
 		if (&message == &read2req) {
-			rsp2read[data->file]->put(data);
-		}
-	}
+			rsp2read[data->file]->put(data);}}
 }

@@ -56,5 +56,6 @@ The -- commands and messages between threads are as follows. Note that only mess
 --metric --(send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
 --(send window transformation change to other processes) Window->GlobalConf->Write  
 --(send polytope transformation change to other processes) Window->MatrixConf->Write  
---(send facet transformation for plane to other processses) Window->ManipConf->Polytope->PlaneConf->Write  
+--(send facet transformation for plane to other processses) Window->Manip->Polytope->PlaneConf->Write  
+--(send region opacity change for other processes) Window->Manip->Polytope->RegionConf->Write
 --(request topology information) Script->Query->Polytope  

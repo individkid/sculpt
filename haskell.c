@@ -48,7 +48,6 @@ const char *enamerate(enum Opcode opcode)
 	case (ReadOp): return "ReadOp"; 
 	case (WriteOp): return "WriteOp"; 
 	case (PointerOp): return "PointerOp"; 
-	case (WindowOp): return "WindowOp";
 	case (FileOp): return "FileOp";
 	case (PlaneOp): return "PlaneOp";
 	case (ConfOp): return "ConfOp";
@@ -57,9 +56,8 @@ const char *enamerate(enum Opcode opcode)
 	case (MouseOp): return "MouseOp";
 	case (RollerOp): return "RollerOp";
 	case (TargetOp): return "TargetOp";
-	case (TopoOp): return "TopoOp";
-	case (FixOp): return "FixOp";
-	case (Opcodes): return "Opcodes";
+	case (TopologyOp): return "TopoologyOp";
+	case (FixedOp): return "FixedOp";
 	case (BoundariesOp): return "BoundariesOp";
 	case (RegionsOp): return "RegionsOp";
 	case (PlanesOp): return "PlanesOp";
@@ -69,10 +67,6 @@ const char *enamerate(enum Opcode opcode)
 	case (OutsidesOp): return "OutsidesOp";
 	case (InsideOp): return "InsideOp";
 	case (OutsideOp): return "OutsideOp";
-	case (ModeOp): return "ModeOp";
-	case (TopologyOp): return "TopologyOp";
-	case (FixedOp): return "FixedOp";
-	case (PierceOp): return "PierceOp";
 	case (MatrixOp): return "MatrixOp";
 	case (VersorOp): return "VersorOp";
 	case (VectorOp): return "VectorOp";
@@ -93,7 +87,6 @@ int enumerate(char *name)
 	if (strcmp(name,"ReadOp") == 0) return ReadOp; 
 	if (strcmp(name,"WriteOp") == 0) return WriteOp; 
 	if (strcmp(name,"PointerOp") == 0) return PointerOp; 
-	if (strcmp(name,"WindowOp") == 0) return WindowOp;
 	if (strcmp(name,"FileOp") == 0) return FileOp;
 	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;
 	if (strcmp(name,"ConfOp") == 0) return ConfOp;
@@ -102,8 +95,8 @@ int enumerate(char *name)
 	if (strcmp(name,"MouseOp") == 0) return MouseOp;
 	if (strcmp(name,"RollerOp") == 0) return RollerOp;
 	if (strcmp(name,"TargetOp") == 0) return TargetOp;
-	if (strcmp(name,"TopoOp") == 0) return TopoOp;
-	if (strcmp(name,"FixOp") == 0) return FixOp;
+	if (strcmp(name,"TopologyOp") == 0) return TopologyOp;
+	if (strcmp(name,"FixedOp") == 0) return FixedOp;
 	if (strcmp(name,"BoundariesOp") == 0) return BoundariesOp;
 	if (strcmp(name,"RegionsOp") == 0) return RegionsOp;
 	if (strcmp(name,"PlanesOp") == 0) return PlanesOp;
@@ -113,10 +106,6 @@ int enumerate(char *name)
 	if (strcmp(name,"OutsidesOp") == 0) return OutsidesOp;
 	if (strcmp(name,"InsideOp") == 0) return InsideOp;
 	if (strcmp(name,"OutsideOp") == 0) return OutsideOp;
-	if (strcmp(name,"ModeOp") == 0) return ModeOp;
-	if (strcmp(name,"TopologyOp") == 0) return TopologyOp;
-	if (strcmp(name,"FixedOp") == 0) return FixedOp;
-	if (strcmp(name,"PierceOp") == 0) return PierceOp;
 	if (strcmp(name,"MatrixOp") == 0) return MatrixOp;
 	if (strcmp(name,"VersorOp") == 0) return VersorOp;
 	if (strcmp(name,"VectorOp") == 0) return VectorOp;
@@ -128,7 +117,6 @@ int enumerate(char *name)
 	if (strcmp(name,"SubconfOp") == 0) return SubconfOp;
 	if (strcmp(name,"SettingOp") == 0) return SettingOp;
 	if (strcmp(name,"TextOp") == 0) return TextOp;
-	if (strcmp(name,"Opcodes") == 0) return Opcodes;
 	if (strcmp(name,"TestConf") == 0) return TestConf;
 	fatal("unknown name",0,__FILE__,__LINE__);
 	return -1;

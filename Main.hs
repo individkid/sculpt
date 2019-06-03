@@ -67,8 +67,8 @@ data Opcode = Opcode {
    mouseOp :: CInt,
    rollerOp :: CInt,
    targetOp :: CInt,
-   topoOp :: CInt,
-   fixOp :: CInt,
+   topologyOp :: CInt,
+   fixedOp :: CInt,
    boundariesOp :: CInt,
    regionsOp :: CInt,
    planesOp :: CInt,
@@ -78,10 +78,6 @@ data Opcode = Opcode {
    outsidesOp :: CInt,
    insideOp :: CInt,
    outsideOp :: CInt,
-   modeOp :: CInt,
-   topologyOp :: CInt,
-   fixedOp :: CInt,
-   pierceOp :: CInt,
    matrixOp :: CInt,
    versorOp :: CInt,
    vectorOp :: CInt,
@@ -92,8 +88,7 @@ data Opcode = Opcode {
    scriptOp :: CInt,
    subconfOp :: CInt,
    settingOp :: CInt,
-   textOp :: CInt,
-   opcodes :: CInt}
+   textOp :: CInt}
 
 data Configure = Configure {
    testConf :: CInt}
@@ -114,8 +109,8 @@ main = do
    mouseOpV <- (newCString "MouseOp") >>= enumerate
    rollerOpV <- (newCString "RollerOp") >>= enumerate
    targetOpV <- (newCString "TargetOp") >>= enumerate
-   topoOpV <- (newCString "TopoOp") >>= enumerate
-   fixOpV <- (newCString "FixOp") >>= enumerate
+   topologyOpV <- (newCString "TopologyOp") >>= enumerate
+   fixedOpV <- (newCString "FixedOp") >>= enumerate
    boundariesOpV <- (newCString "BoundariesOp") >>= enumerate
    regionsOpV <- (newCString "RegionsOp") >>= enumerate
    planesOpV <- (newCString "PlanesOp") >>= enumerate
@@ -125,11 +120,6 @@ main = do
    outsidesOpV <- (newCString "OutsidesOp") >>= enumerate
    insideOpV <- (newCString "InsideOp") >>= enumerate
    outsideOpV <- (newCString "OutsideOp") >>= enumerate
-   matrixOpV <- (newCString "MatrixOp") >>= enumerate
-   modeOpV <- (newCString "ModeOp") >>= enumerate
-   topologyOpV <- (newCString "TopologyOp") >>= enumerate
-   fixedOpV <- (newCString "FixedOp") >>= enumerate
-   pierceOpV <- (newCString "PierceOp") >>= enumerate
    matrixOpV <- (newCString "MatrixOp") >>= enumerate
    versorOpV <- (newCString "VersorOp") >>= enumerate
    vectorOpV <- (newCString "VectorOp") >>= enumerate
@@ -141,7 +131,6 @@ main = do
    subconfOpV <- (newCString "SubconfOp") >>= enumerate
    settingOpV <- (newCString "SettingOp") >>= enumerate
    textOpV <- (newCString "TextOp") >>= enumerate
-   opcodesV <- (newCString "Opcodes") >>= enumerate
    testConfV <- (newCString "TestConf") >>= enumerate
    mainLoop rdfd wrfd Opcode {
    readOp = readOpV,
@@ -156,8 +145,8 @@ main = do
    mouseOp = mouseOpV,
    rollerOp = rollerOpV,
    targetOp = targetOpV,
-   topoOp = topoOpV,
-   fixOp = fixOpV,
+   topologyOp = topologyOpV,
+   fixedOp = fixedOpV,
    boundariesOp = boundariesOpV,
    regionsOp = regionsOpV,
    planesOp = planesOpV,
@@ -167,10 +156,6 @@ main = do
    outsidesOp = outsidesOpV,
    insideOp = insideOpV,
    outsideOp = outsideOpV,
-   modeOp = modeOpV,
-   topologyOp = topologyOpV,
-   fixedOp = fixedOpV,
-   pierceOp = pierceOpV,
    matrixOp = matrixOpV,
    versorOp = versorOpV,
    vectorOp = vectorOpV,
@@ -181,8 +166,7 @@ main = do
    scriptOp = scriptOpV,
    subconfOp = subconfOpV,
    settingOp = settingOpV,
-   textOp = textOpV,
-   opcodes = opcodesV} Configure {
+   textOp = textOpV} Configure {
    testConf = testConfV}
 
 toInt :: Integral a => IO a -> IO Int
