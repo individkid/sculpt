@@ -28,6 +28,7 @@ class Read : public File
 private:
 	Message<Command> *req2command;
 	Message<Data> *req2window;
+	Message<Query> *req2query;
 	Message<Data> *req2polytope;
 	Message<Sound> *req2sound;
 	Message<Data> *req2system;
@@ -35,6 +36,7 @@ private:
 public:
 	Message<Command> command2rsp;
 	Message<Data> window2rsp;
+	Message<Query> query2rsp;
 	Message<Data> polytope2rsp;
 	Message<Sound> sound2rsp;
 	Message<Data> system2rsp;

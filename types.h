@@ -167,9 +167,13 @@ enum Opcode {
 	SubconfOp,
 	SettingOp,
 	TextOp,
-	QueryOp, // TODO
-	ManipOp, // TODO
-	CommandOp, // TODO
+	QueryOp,
+	DisplayOp,
+	// TODO
+	ManipOp,
+	// TODO
+	CommandOp,
+	// TODO
 	Opcodes};
 struct Format
 {
@@ -305,6 +309,7 @@ struct Query
 {
 	// Script->Query->Polytope
 	struct Query *next;
+	int file;
 };
 
 union Symbol

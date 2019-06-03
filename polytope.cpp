@@ -30,10 +30,12 @@
 static Stream stream(__FILE__,__LINE__);
 
 Polytope::Polytope(int n, const char *path) : Thread(),
-	rsp2read(new Message<Data>*[n]), req2write(new Message<Data>*[n]),
-	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-Data<-Write"),
-	script2req(this,"Script->Query->Polytope"), window2req(this,"Window->Manip->Polytope"),
-	window2rsp(this,"Polytope<-Command<-Window"), nfile(n), iss(0)
+	rsp2read(new Message<Data>*[n]), rsp2query(new Message<Query>*[n]),
+	req2write(new Message<Data>*[n]),
+	read2req(this,"Read->Data->Polytope"), query2req(this,"Read->Query->Polytope"),
+	write2rsp(this,"Polytope<-Data<-Write"), script2req(this,"Script->Query->Polytope"),
+	window2req(this,"Window->Manip->Polytope"), window2rsp(this,"Polytope<-Command<-Window"),
+	nfile(n), iss(0)
 {
 	if (pipe(p2t) < 0) error("pipe open failed",errno,__FILE__,__LINE__);
 	if (pipe(t2p) < 0) error("pipe open failed",errno,__FILE__,__LINE__);
@@ -64,6 +66,7 @@ void Polytope::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
 	rsp2read[i] = &ptr->polytope2rsp;
+	rsp2query[i] = &ptr->query2rsp;
 }
 
 void Polytope::connect(int i, Write *ptr)
@@ -113,10 +116,12 @@ void Polytope::call()
 	case (ReadOp): rsp2read[data->file]->put(data); break;
 	case (WriteOp): req2write[data->file]->put(data); break;
 	case (QueryOp): rsp2script->put(query); break;
+	case (DisplayOp): rsp2query[query->file]->put(query); break;
 	case (ManipOp): rsp2window->put(manip); break;
 	case (CommandOp): req2window->put(command); break;
 	default: error("invalid opcode",opcode,__FILE__,__LINE__);}}
 	while (read2req.get(data)) stream.put(t2p[1],ReadOp,data);
+	while (query2req.get(query)) stream.put(t2p[1],DisplayOp,query);
 	while (write2rsp.get(data)) stream.put(t2p[1],WriteOp,data);
 	while (script2req.get(query)) stream.put(t2p[1],QueryOp,query);
 	while (window2req.get(manip)) stream.put(t2p[1],ManipOp,manip);
@@ -127,6 +132,7 @@ void Polytope::done()
 {
 	Query *query; Manip *manip; Data *data;
 	while (read2req.get(data)) rsp2read[data->file]->put(data);
+	while (query2req.get(query)) rsp2query[query->file]->put(query);
 	while (script2req.get(query)) rsp2script->put(query);
 	while (window2req.get(manip)) rsp2window->put(manip);
 }

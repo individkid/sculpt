@@ -144,10 +144,12 @@ void Parse::get(const char *ptr, int file, enum Configure conf, Data *&data)
 	data->conf = conf; data->file = file;
 }
 
-void Parse::get(const char *ptr, int file, Command *&command,
-	Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&data)
+void Parse::get(const char *ptr, int file, Command *&command, Data *&window,
+	Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&data)
 {
-	int len, len1, len2, inc; command = 0; system = 0; window = polytope = data = 0;
+	int len, len1, len2, inc;
+	command = 0; query = 0; sound = 0;
+	window = polytope = system = data = 0;
 
 	len = literal(ptr,"--additive"); len1 = literal(ptr+len,"click"); len2 = literal(ptr+len+len1,"");
 	if (len && len1 && len2) {window = datas.get();

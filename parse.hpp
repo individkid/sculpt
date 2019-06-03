@@ -34,8 +34,8 @@ private:
 public:
 	Parse(const char *file, int line) : Pools(file,line) {}
 	void get(const char *ptr, int file, enum Configure conf, Data *&data);
-	void get(const char *ptr, int file, Command *&command,
-		Data *&window, Data *&polytope, Sound *&sound, Data *&system, Data *&data);
+	void get(const char *ptr, int file, Command *&command, Data *&window,
+		Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(const char *left, char *right) {return ::concat(chars,left,right);}

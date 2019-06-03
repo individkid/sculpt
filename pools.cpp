@@ -31,9 +31,22 @@ void Pools::put(Command *command)
 	command = command->next;}
 }
 
+void Pools::put(Manip *manip)
+{
+	// TODO
+	manips.put(manip);
+}
+
+void Pools::put(Query *query)
+{
+	// TODO
+	queries.put(query);
+}
+
 void Pools::put(Sound *sound)
 {
 	// TODO
+	sounds.put(sound);
 }
 
 void Pools::put(Data *data)
