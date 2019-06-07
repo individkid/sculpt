@@ -57,9 +57,9 @@ void Write::init()
 void Write::call()
 {
 	Data *data;
-	while (polytope2req.get(data)) {write(data->text); rsp2polytope->put(data);}
-	while (script2req.get(data)) {write(data->text); rsp2script->put(data);}
-	while (window2req.get(data)) {write(data->text); rsp2window->put(data);}
+	while (polytope2req.get(data)) {/*TODO unparse and send*/ rsp2polytope->put(data);}
+	while (script2req.get(data)) {/*TODO unparse and send*/ rsp2script->put(data);}
+	while (window2req.get(data)) {/*TODO unparse and send*/ rsp2window->put(data);}
 }
 
 void Write::done()

@@ -120,9 +120,7 @@ void Parse::script(const char *ptr, int file, enum Configure, Data *&data)
 
 void Parse::text(const char *ptr, int file, enum Configure conf, Data *&data)
 {
-	int len = text(ptr);
-	data = datas.get(); data->text = strncpy(setup(len+1),ptr,len);
-	data->text[len] = 0; data->conf = conf; data->file = file;
+	// TODO
 }
 
 void Parse::get(const char *ptr, int file, Sound *&sound)
@@ -239,30 +237,29 @@ void Parse::get(const char *ptr, int file, Command *&command, Data *&window,
 	if (len && len1 && len2) {window = datas.get();
 	window->conf = SculptConf; window->sculpt = FixedUlpt; window->fixed = AbsoluteMode; window->file = file; return;}
 
+	len = literal(ptr,"--configure"); if (len) {configure(ptr+len,file,ConfigureConf,window); return;}
+
+	len = literal(ptr,"--command"); if (len) {get(ptr+len,file,command); if (command) return;}
+
 	len = literal(ptr,"--matrix"); if (len) {get(ptr+len,file,MatrixConf,window); return;}
 
 	len = literal(ptr,"--global"); if (len) {get(ptr+len,file,GlobalConf,window); return;}
 
-	len = literal(ptr,"--macro"); if (len) {script(ptr+len,file,MacroConf,window); return;}
+	// TODO --plane --picture --region --inflate --space --polytope --query
+
+	len = literal(ptr,"--timewheel"); if (len) {configure(ptr+len,file,TimewheelConf,system); return;}
 
 	len = literal(ptr,"--sound"); if (len) {get(ptr+len,file,sound); return;}
-
-	len = literal(ptr,"--metric"); if (len) {script(ptr+len,file,MetricConf,system); return;}
 
 	len = literal(ptr,"--script"); if (len) {text(ptr+len,file,ScriptConf,data); return;}
 
 	len = literal(ptr,"--invoke"); if (len) {text(ptr+len,file,InvokeConf,data); return;}
 
-	len = literal(ptr,"--configure"); if (len) {configure(ptr+len,file,ConfigureConf,window); return;}
+	len = literal(ptr,"--macro"); if (len) {script(ptr+len,file,MacroConf,window); return;}
 
-	len = literal(ptr,"--timewheel"); if (len) {configure(ptr+len,file,TimewheelConf,system); return;}
+	// TODO --hotkey
 
-	len = literal(ptr,"--command"); if (len) {get(ptr+len,file,command); if (command) return;}
-
-	len = literal(ptr,"--test"); if (len) {polytope = datas.get();
-	inc = 0; while (ptr[len+inc]) if (ptr[len+inc] == '-' && ptr[len+inc+1] == '-') break; else inc++;
-	polytope->text = prefix(ptr+len,inc+1); polytope->text[inc] = 0; len += inc;
-	polytope->conf = TestConf; polytope->file = file; return;}
+	len = literal(ptr,"--metric"); if (len) {script(ptr+len,file,MetricConf,system); return;}
 }
 
 int Parse::number(const char *str, int &val)

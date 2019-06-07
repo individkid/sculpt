@@ -45,9 +45,8 @@ void setDebug(int val)
 const char *enamerate(enum Opcode opcode)
 {
 	switch (opcode) {
-	case (ReadOp): return "ReadOp"; 
-	case (WriteOp): return "WriteOp"; 
-	case (PointerOp): return "PointerOp"; 
+	case (ReadOp): return "ReadOp";
+	case (WriteOp): return "WriteOp";
 	case (FileOp): return "FileOp";
 	case (PlaneOp): return "PlaneOp";
 	case (ConfOp): return "ConfOp";
@@ -74,10 +73,17 @@ const char *enamerate(enum Opcode opcode)
 	case (CountOp): return "CountOp";
 	case (IdentOp): return "IdentOp";
 	case (ValueOp): return "ValueOp";
-	case (ScriptOp): return "ScriptOp";
+	case (MetricOp): return "MetricOp";
 	case (SubconfOp): return "SubconfOp";
 	case (SettingOp): return "SettingOp";
+	case (FilenameOp): return "FilenameOp";
+	case (ScriptOp): return "ScriptOp";
+	case (QueryOp): return "QueryOp";
+	case (DisplayOp): return "DisplayOp";
 	case (TextOp): return "TextOp";
+	case (ManipOp): return "ManipOp";
+	case (CommandOp): return "CommandOp";
+	case (PointerOp): return "PointerOp";
 	default: fatal("unknown opcode",opcode,__FILE__,__LINE__);}
 	return 0;
 }
@@ -86,7 +92,6 @@ int enumerate(char *name)
 {
 	if (strcmp(name,"ReadOp") == 0) return ReadOp; 
 	if (strcmp(name,"WriteOp") == 0) return WriteOp; 
-	if (strcmp(name,"PointerOp") == 0) return PointerOp; 
 	if (strcmp(name,"FileOp") == 0) return FileOp;
 	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;
 	if (strcmp(name,"ConfOp") == 0) return ConfOp;
@@ -113,11 +118,17 @@ int enumerate(char *name)
 	if (strcmp(name,"CountOp") == 0) return CountOp;
 	if (strcmp(name,"IdentOp") == 0) return IdentOp;
 	if (strcmp(name,"ValueOp") == 0) return ValueOp;
-	if (strcmp(name,"ScriptOp") == 0) return ScriptOp;
+	if (strcmp(name,"MetricOp") == 0) return MetricOp;
 	if (strcmp(name,"SubconfOp") == 0) return SubconfOp;
 	if (strcmp(name,"SettingOp") == 0) return SettingOp;
+	if (strcmp(name,"FilenameOp") == 0) return FilenameOp;
+	if (strcmp(name,"ScriptOp") == 0) return ScriptOp;
+	if (strcmp(name,"QueryOp") == 0) return QueryOp;
+	if (strcmp(name,"DisplayOp") == 0) return DisplayOp;
 	if (strcmp(name,"TextOp") == 0) return TextOp;
-	if (strcmp(name,"TestConf") == 0) return TestConf;
+	if (strcmp(name,"ManipOp") == 0) return ManipOp;
+	if (strcmp(name,"CommandOp") == 0) return CommandOp;
+	if (strcmp(name,"PointerOp") == 0) return PointerOp; 
 	fatal("unknown name",0,__FILE__,__LINE__);
 	return -1;
 }
@@ -140,26 +151,66 @@ int rdOpcode(int fd)
 
 int rdConfigure(int fd)
 {
-	enum Configure conf;
-	if (read(fd,&conf,sizeof(conf)) != sizeof(conf)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdConfigure: %d %d\n",getpid(),conf);
-	return conf;
+	enum Configure configure;
+	if (read(fd,&configure,sizeof(configure)) != sizeof(configure)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdConfigure: %d %d\n",getpid(),configure);
+	return configure;
+}
+
+int rdSculpt(int fd)
+{
+	enum Sculpt sculpt;
+	if (read(fd,&sculpt,sizeof(sculpt)) != sizeof(sculpt)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSculpt: %d %d\n",getpid(),sculpt);
+	return sculpt;
+}
+
+int rdClickMode(int fd)
+{
+	enum ClickMode clickMode;
+	if (read(fd,&clickMode,sizeof(clickMode)) != sizeof(clickMode)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdClickMode: %d %d\n",getpid(),clickMode);
+	return clickMode;
+}
+
+int rdMouseMode(int fd)
+{
+	enum MouseMode mouseMode;
+	if (read(fd,&mouseMode,sizeof(mouseMode)) != sizeof(mouseMode)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdMouseMode: %d %d\n",getpid(),mouseMode);
+	return mouseMode;
+}
+
+int rdRollerMode(int fd)
+{
+	enum RollerMode rollerMode;
+	if (read(fd,&rollerMode,sizeof(rollerMode)) != sizeof(rollerMode)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdRollerMode: %d %d\n",getpid(),rollerMode);
+	return rollerMode;
+}
+
+int rdTargetMode(int fd)
+{
+	enum TargetMode targetMode;
+	if (read(fd,&targetMode,sizeof(targetMode)) != sizeof(targetMode)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdTargetMode: %d %d\n",getpid(),targetMode);
+	return targetMode;
 }
 
 int rdTopologyMode(int fd)
 {
-	enum TopologyMode topology;
-	if (read(fd,&topology,sizeof(topology)) != sizeof(topology)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdTopologyMode: %d %d\n",getpid(),topology);
-	return topology;
+	enum TopologyMode topologyMode;
+	if (read(fd,&topologyMode,sizeof(topologyMode)) != sizeof(topologyMode)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdTopologyMode: %d %d\n",getpid(),topologyMode);
+	return topologyMode;
 }
 
 int rdFixedMode(int fd)
 {
-	enum FixedMode fixed;
-	if (read(fd,&fixed,sizeof(fixed)) != sizeof(fixed)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdFixedMode: %d %d\n",getpid(),fixed);
-	return fixed;
+	enum FixedMode fixedMode;
+	if (read(fd,&fixedMode,sizeof(fixedMode)) != sizeof(fixedMode)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdFixedMode: %d %d\n",getpid(),fixedMode);
+	return fixedMode;
 }
 
 int rdSubconf(int fd)
@@ -233,23 +284,58 @@ void wrOpcode(int fd, int val)
 
 void wrConfigure(int fd, int val)
 {
-	enum Configure conf = val;
+	enum Configure configure = val;
 	if (DEBUG & HASKELL_DEBUG) printf("wrConfigure %d %d\n",getpid(),val);
-	if (write(fd,&conf,sizeof(conf)) != sizeof(conf)) fatal("write failed",errno,__FILE__,__LINE__);
+	if (write(fd,&configure,sizeof(configure)) != sizeof(configure)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrSculpt(int fd, int val)
+{
+	enum Sculpt sculpt = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrSculpt %d %d\n",getpid(),val);
+	if (write(fd,&sculpt,sizeof(sculpt)) != sizeof(sculpt)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrClickMode(int fd, int val)
+{
+	enum ClickMode clickMode = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrClickMode %d %d\n",getpid(),val);
+	if (write(fd,&clickMode,sizeof(clickMode)) != sizeof(clickMode)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrMouseMode(int fd, int val)
+{
+	enum MouseMode mouseMode = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrMouseMode %d %d\n",getpid(),val);
+	if (write(fd,&mouseMode,sizeof(mouseMode)) != sizeof(mouseMode)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrRollerMode(int fd, int val)
+{
+	enum RollerMode rollerMode = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrRollerMode %d %d\n",getpid(),val);
+	if (write(fd,&rollerMode,sizeof(rollerMode)) != sizeof(rollerMode)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrTargetMode(int fd, int val)
+{
+	enum TargetMode targetMode = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrTargetMode %d %d\n",getpid(),val);
+	if (write(fd,&targetMode,sizeof(targetMode)) != sizeof(targetMode)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrTopologyMode(int fd, int val)
 {
 	if (DEBUG & HASKELL_DEBUG) printf("wrTopologyMode %d %d\n",getpid(),val);
-	enum TopologyMode topology = val;
-	if (write(fd,&topology,sizeof(topology)) != sizeof(topology)) fatal("write failed",errno,__FILE__,__LINE__);
+	enum TopologyMode topologyMode = val;
+	if (write(fd,&topologyMode,sizeof(topologyMode)) != sizeof(topologyMode)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrFixedMode(int fd, int val)
 {
 	if (DEBUG & HASKELL_DEBUG) printf("wrFixedMode %d %d\n",getpid(),val);
-	enum FixedMode fixed = val;
-	if (write(fd,&fixed,sizeof(fixed)) != sizeof(fixed)) fatal("write failed",errno,__FILE__,__LINE__);
+	enum FixedMode fixedMode = val;
+	if (write(fd,&fixedMode,sizeof(fixedMode)) != sizeof(fixedMode)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrSubconf(int fd, int val)

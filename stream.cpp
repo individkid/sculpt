@@ -54,8 +54,6 @@ void Stream::get(int fd, Data *&data)
 	exOpcode(fd,PlaneOp); data->plane = rdInt(fd);
 	exOpcode(fd,ConfOp); data->conf = (Configure)rdConfigure(fd);
 	switch (data->conf) {
-	// TODO
-	case (TestConf): exOpcode(fd,TextOp); get(fd,data->text); break;
 	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
 }
 
@@ -115,12 +113,8 @@ void Stream::put(int fd, Opcode opcode, Data *data)
 	wrOpcode(fd,PlaneOp); wrInt(fd,data->plane);
 	wrOpcode(fd,ConfOp); wrConfigure(fd,data->conf);
 	switch (data->conf) {
-	// 	TODO
-	case (TestConf): wrOpcode(fd,TextOp); put(fd,data->text); break;
 	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
 	if (rsp) {switch (data->conf) {
-	// TODO
-	case (TestConf): Pools::chars.put(strlen(data->text)+1,data->text); break;
 	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
 	Pools::datas.put(data);}
 }

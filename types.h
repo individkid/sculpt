@@ -136,7 +136,6 @@ enum Field {
 enum Opcode {
 	ReadOp, 
 	WriteOp, 
-	PointerOp, 
 	FileOp,
 	PlaneOp,
 	ConfOp,
@@ -163,17 +162,18 @@ enum Opcode {
 	CountOp,
 	IdentOp,
 	ValueOp,
-	ScriptOp,
+	MetricOp,
 	SubconfOp,
 	SettingOp,
-	TextOp,
+	FilenameOp,
+	ScriptOp,
 	QueryOp,
 	DisplayOp,
-	// TODO
+	TextOp,
 	ManipOp,
-	// TODO
 	CommandOp,
 	// TODO
+	PointerOp, 
 	Opcodes};
 struct Format
 {
@@ -259,15 +259,15 @@ struct Data
 	// Window->Manip->Polytope->PlaneConf->Write
 	struct {int versor; float *vector;};
 	// Read->MetricConf->System->Script
-	struct {float delay; int count; int *ident; double *value; char *script;};
+	struct {float delay; int count; int *ident; double *value; char *metric;};
 	// Read->ConfigureConf->Window
 	// Read->TimewheelConf->System
 	struct {enum Subconf subconf; float setting;};
 	// Read->PictureConf->Polytope->Command->Window
-	// Read->TestConf->Polytope
+	char *filename;
 	// Read->(ScriptConf,InvokeConf)->Script
 	// Read->(MacroConf,HotkeyConf)->Window->Script
-	char *text;};
+	char *script;};
 };
 struct Term
 {
@@ -310,6 +310,7 @@ struct Query
 	// Script->Query->Polytope
 	struct Query *next;
 	int file;
+	char *text;
 };
 
 union Symbol

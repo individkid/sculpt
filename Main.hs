@@ -28,6 +28,11 @@ foreign import ccall enumerate :: Ptr CChar -> IO CInt
 foreign import ccall rdPointer :: CInt -> IO (Ptr ())
 foreign import ccall rdOpcode :: CInt -> IO CInt
 foreign import ccall rdConfigure :: CInt -> IO CInt
+foreign import ccall rdSculpt :: CInt -> IO CInt
+foreign import ccall rdClickMode :: CInt -> IO CInt
+foreign import ccall rdMouseMode :: CInt -> IO CInt
+foreign import ccall rdRollerMode :: CInt -> IO CInt
+foreign import ccall rdTargetMode :: CInt -> IO CInt
 foreign import ccall rdTopologyMode :: CInt -> IO CInt
 foreign import ccall rdFixedMode :: CInt -> IO CInt
 foreign import ccall rdSubconf :: CInt -> IO CInt
@@ -41,6 +46,11 @@ foreign import ccall rdDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
 foreign import ccall wrPointer :: CInt -> Ptr () -> IO ()
 foreign import ccall wrOpcode :: CInt -> CInt -> IO ()
 foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
+foreign import ccall wrSculpt :: CInt -> CInt -> IO CInt
+foreign import ccall wrClickMode :: CInt -> CInt -> IO CInt
+foreign import ccall wrMouseMode :: CInt -> CInt -> IO CInt
+foreign import ccall wrRollerMode :: CInt -> CInt -> IO CInt
+foreign import ccall wrTargetMode :: CInt -> CInt -> IO CInt
 foreign import ccall wrTopologyMode :: CInt -> CInt -> IO ()
 foreign import ccall wrFixedMode :: CInt -> CInt -> IO ()
 foreign import ccall wrSubconf :: CInt -> CInt -> IO ()
@@ -57,7 +67,6 @@ foreign import ccall hello :: CString -> IO CString
 data Opcode = Opcode {
    readOp :: CInt,
    writeOp :: CInt,
-   pointerOp :: CInt,
    windowOp :: CInt,
    fileOp :: CInt,
    planeOp :: CInt,
@@ -85,13 +94,19 @@ data Opcode = Opcode {
    countOp :: CInt,
    identOp :: CInt,
    valueOp :: CInt,
-   scriptOp :: CInt,
+   metricOp :: CInt,
    subconfOp :: CInt,
    settingOp :: CInt,
-   textOp :: CInt}
+   filenameOp :: CInt,
+   scriptOp :: CInt,
+   queryOp :: CInt,
+   displayOp :: CInt,
+   textOp :: CInt,
+   manipOp :: CInt,
+   commandOp :: CInt,
+   pointerOp :: CInt}
 
-data Configure = Configure {
-   testConf :: CInt}
+data Configure = Configure {}
 
 main = do
    print (holes 5 [2,3,4])
@@ -99,7 +114,6 @@ main = do
    [rdfd,wrfd] <- fmap (map read) getArgs
    readOpV <- (newCString "ReadOp") >>= enumerate
    writeOpV <- (newCString "WriteOp") >>= enumerate
-   pointerOpV <- (newCString "PointerOp") >>= enumerate
    windowOpV <- (newCString "WindowOp") >>= enumerate
    fileOpV <- (newCString "FileOp") >>= enumerate
    planeOpV <- (newCString "PlaneOp") >>= enumerate
@@ -127,15 +141,20 @@ main = do
    countOpV <- (newCString "CountOp") >>= enumerate
    identOpV <- (newCString "IdentOp") >>= enumerate
    valueOpV <- (newCString "ValueOp") >>= enumerate
-   scriptOpV <- (newCString "ScriptOp") >>= enumerate
+   metricOpV <- (newCString "MetricOp") >>= enumerate
    subconfOpV <- (newCString "SubconfOp") >>= enumerate
    settingOpV <- (newCString "SettingOp") >>= enumerate
+   filenameOpV <- (newCString "FilenameOp") >>= enumerate
+   scriptOpV <- (newCString "ScriptOp") >>= enumerate
+   queryOpV <- (newCString "QueryOp") >>= enumerate
+   displayOpV <- (newCString "DisplayOp") >>= enumerate
    textOpV <- (newCString "TextOp") >>= enumerate
-   testConfV <- (newCString "TestConf") >>= enumerate
+   manipOpV <- (newCString "ManipOp") >>= enumerate
+   commandOpV <- (newCString "CommandOp") >>= enumerate
+   pointerOpV <- (newCString "PointerOp") >>= enumerate
    mainLoop rdfd wrfd Opcode {
    readOp = readOpV,
    writeOp = writeOpV,
-   pointerOp = pointerOpV,
    windowOp = windowOpV,
    fileOp = fileOpV,
    planeOp = planeOpV,
@@ -163,11 +182,17 @@ main = do
    countOp = countOpV,
    identOp = identOpV,
    valueOp = valueOpV,
-   scriptOp = scriptOpV,
+   metricOp = metricOpV,
    subconfOp = subconfOpV,
    settingOp = settingOpV,
-   textOp = textOpV} Configure {
-   testConf = testConfV}
+   filenameOp = filenameOpV,
+   scriptOp = scriptOpV,
+   queryOp = queryOpV,
+   displayOp = displayOpV,
+   textOp = textOpV,
+   manipOp = manipOpV,
+   commandOp = commandOpV,
+   pointerOp = pointerOpV} Configure {}
 
 toInt :: Integral a => IO a -> IO Int
 toInt = fmap (fromInteger . toInteger)
@@ -183,25 +208,19 @@ mainLoop rdfd wrfd op co = do
 
 mainIter :: CInt -> CInt -> Opcode -> Configure -> CInt -> IO ()
 mainIter rdfd wrfd op co src
-   | src == (readOp op) || src == (scriptOp op) = do
+   | src == (displayOp op) = do
    ptr <- rdPointer rdfd
    exOpcode rdfd (fileOp op)
    file <- toInt (rdInt rdfd)
-   exOpcode rdfd (planeOp op)
-   plane <- toInt (rdInt rdfd)
-   exOpcode rdfd (confOp op)
-   conf <- rdConfigure rdfd
-   dataIter rdfd wrfd op co conf
+   queryIter rdfd wrfd file op co
    wrOpcode wrfd src
    wrPointer wrfd ptr
    | otherwise = undefined
 
-dataIter :: CInt -> CInt -> Opcode -> Configure -> CInt -> IO ()
-dataIter rdfd wrfd op co conf
-   | conf == (testConf co) = do
+queryIter :: CInt -> CInt -> Int -> Opcode -> Configure -> IO ()
+queryIter rdfd wrfd file op co = do
    exOpcode rdfd (textOp op)
    count <- toInt (rdInt rdfd)
    str <- newCString (replicate count '\0')
    rdChars rdfd (toCInt count) str
    (peekCString str) >>= print
-   | otherwise = undefined
