@@ -19,7 +19,6 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#define INFINITE 1000000
 #define BASE 1.1
 #define DELAY 0.01
 #define ANGLE (1.0/30.0)
@@ -300,34 +299,12 @@ struct Sound
 	struct Equ right; // directly audible right
 };
 
-struct None
-{
-	struct None *next;
-};
-
 struct Query
 {
 	// Script->Query->Polytope
 	struct Query *next;
 	int file;
 	char *text;
-};
-
-union Symbol
-{
-	int count;
-	struct Data *data;
-	struct Command *command;
-	struct Update *update;
-	struct Render *render;
-	struct Format *format;
-	struct Feedback *feedback;
-	struct Sound *sound;
-	struct Term *term;
-	double *dptr;
-	float *fptr;
-	int *iptr;
-	char *cptr;
 };
 
 #endif

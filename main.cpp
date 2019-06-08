@@ -18,6 +18,7 @@
 
 #include "message.hpp"
 #include "window.hpp"
+#include "file.hpp"
 #include "write.hpp"
 #include "polytope.hpp"
 #include "read.hpp"
@@ -30,9 +31,10 @@ int main(int argc, char *argv[])
 	char *path = argv[0];
 	argc--; argv++;
 
-	Read *read[argc]; for (int i = 0; i < argc; i++) read[i] = new Read(i,argv[i]);
+	File *file[argc]; for (int i = 0; i < argc; i++) file[i] = new File(argv[i]);
+	Read *read[argc]; for (int i = 0; i < argc; i++) read[i] = new Read(i,file[i]);
 	Polytope *polytope = new Polytope(argc,argv[0]);
-	Write *write[argc]; for (int i = 0; i < argc; i++) write[i] = new Write(i,argv[i]);
+	Write *write[argc]; for (int i = 0; i < argc; i++) write[i] = new Write(i,file[i]);
 	System *system = new System(argc);
 	Script *script = new Script(argc);
 	window = new Window(argc);

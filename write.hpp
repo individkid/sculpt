@@ -21,6 +21,7 @@
 class Window;
 class Polytope;
 class Script;
+class File;
 
 class Write : public Thread
 {
@@ -41,10 +42,8 @@ private:
 	virtual void call();
 	virtual void done();
 public:
-	Write(int i, const char *n);
+	Write(int i, File *f);
 private:
-	const char *name;
-	int pipe;
-private:
-	void write(const char *str);
+	int self;
+	File *file;
 };

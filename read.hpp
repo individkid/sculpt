@@ -16,14 +16,15 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "file.hpp"
+#include "message.hpp"
 
 class Window;
 class Polytope;
 class System;
 class Script;
+class File;
 
-class Read : public File
+class Read : public Thread
 {
 private:
 	Message<Command> *req2command;
@@ -52,8 +53,10 @@ private:
 	virtual void wait();
 	virtual void done();
 public:
-	Read(int i, const char *n);
+	Read(int i, File *f);
 	virtual ~Read();
 public:
 	int self;
+	File *file;
+	// TODO buffer for incomplete commands
 };

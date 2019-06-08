@@ -49,9 +49,6 @@ void Write::init()
 	if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
 	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
 	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
-	char *pname = new char[strlen(name)+6]; strcpy(pname,name); strcat(pname,".fifo");
-	if (mkfifo(pname,0666) < 0 && errno != EEXIST) error("cannot open",pname,__FILE__,__LINE__);
-	if ((pipe = open(pname,O_WRONLY)) < 0) error("cannot open",pname,__FILE__,__LINE__);
 }
 
 void Write::call()
@@ -68,22 +65,11 @@ void Write::done()
 	while (polytope2req.get(data)) rsp2polytope->put(data);
 	while (script2req.get(data)) rsp2script->put(data);
 	while (window2req.get(data)) rsp2window->put(data);
-	if (close(pipe) < 0) error("close failed",errno,__FILE__,__LINE__);
 }
 
-Write::Write(int i, const char *n) : Thread(),
+Write::Write(int i, File *f) : Thread(),
 	rsp2polytope(0), rsp2script(0), rsp2window(0),
 	polytope2req(this,"Polytope->Data->Write"), script2req(this,"Script->Data->Write"),
-	window2req(this,"Window->Data->Write"), name(n), pipe(-1)
+	window2req(this,"Window->Data->Write"), self(i), file(f)
 {
-}
-
-void Write::write(const char *str)
-{
-	int len = strlen(str);
-	int val = ::write(pipe,str,len);
-	while (val != len) {
-	if (val < 0 && errno != EINTR) error("write failed",errno,__FILE__,__LINE__);
-	if (val > 0) {len -= val; str += val;}
-	val = ::write(pipe,str,len);}
 }
