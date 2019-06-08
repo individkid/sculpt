@@ -54,13 +54,20 @@ File::File(const char *n) : name(n)
 	if (::pipe(pipe) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((temp = youngest(name)) < 0) error("cannot open",errno,__FILE__,__LINE__);
+	running = 1;
 	if (pthread_create(&thread, 0, fileThread, this) < 0) error("cannot create",errno,__FILE__,__LINE__);
 }
 
 File::~File()
 {
+	if (close(fifo[0]) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(fifo[1]) < 0) error("close failed",errno,__FILE__,__LINE__);
-	// TODO close other file descriptors and kill run thread somehow
+	if (close(pipe[0]) < 0) error("close failed",errno,__FILE__,__LINE__);
+	if (close(pipe[1]) < 0) error("close failed",errno,__FILE__,__LINE__);
+	if (close(given) < 0) error("close failed",errno,__FILE__,__LINE__);
+	if (close(temp) < 0) error("close failed",errno,__FILE__,__LINE__);
+	running = 0;
+	if (pthread_join(thread, 0) < 0) error("cannot join",errno,__FILE__,__LINE__);
 }
 
 int File::read(char *buf, int len)
@@ -85,6 +92,7 @@ int File::update(const char *buf, int len, int id, char def)
 
 void File::run()
 {
+	// while running
 	// try write lock temp,
 	//  read fifo[0],
 	//  write lock given,

@@ -52,6 +52,7 @@ private:
 	const char *name;
 	int given, temp, fifo[2], pipe[2];
 	pthread_t thread;
+	int running;
 	// TODO mutex and sparse array for identifiers
 	friend void *fileThread(void *ptr);
 	void run();

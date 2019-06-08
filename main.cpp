@@ -33,43 +33,44 @@ int main(int argc, char *argv[])
 
 	File *file[argc]; for (int i = 0; i < argc; i++) file[i] = new File(argv[i]);
 	Read *read[argc]; for (int i = 0; i < argc; i++) read[i] = new Read(i,file[i]);
-	Polytope *polytope = new Polytope(argc,argv[0]);
 	Write *write[argc]; for (int i = 0; i < argc; i++) write[i] = new Write(i,file[i]);
 	System *system = new System(argc);
 	Script *script = new Script(argc);
+	Polytope *polytope = new Polytope(argc,argv[0]);
 	window = new Window(argc);
 
 	for (int i = 0; i < argc; i++) {read[i]->connect(polytope); polytope->connect(i,read[i]);}
 	for (int i = 0; i < argc; i++) {read[i]->connect(system); system->connect(i,read[i]);}
 	for (int i = 0; i < argc; i++) {read[i]->connect(script); script->connect(i,read[i]);}
 	for (int i = 0; i < argc; i++) {read[i]->connect(window); window->connect(i,read[i]);}
-	for (int i = 0; i < argc; i++) {polytope->connect(i,write[i]); write[i]->connect(polytope);}
-	polytope->connect(script); script->connect(polytope);
-	polytope->connect(window); window->connect(polytope);
 	for (int i = 0; i < argc; i++) {write[i]->connect(script); script->connect(i,write[i]);}
 	for (int i = 0; i < argc; i++) {write[i]->connect(window); window->connect(i,write[i]);}
 	system->connect(script); script->connect(system);
 	script->connect(window); window->connect(script);
+	for (int i = 0; i < argc; i++) {polytope->connect(i,write[i]); write[i]->connect(polytope);}
+	polytope->connect(script); script->connect(polytope);
+	polytope->connect(window); window->connect(polytope);
 
 	for (int i = 0; i < argc; i++) read[i]->exec();
-	polytope->exec();
 	for (int i = 0; i < argc; i++) write[i]->exec();
 	system->exec();
 	script->exec();
+	polytope->exec();
 	window->exec();
 
 	for (int i = 0; i < argc; i++) read[i]->kill();
-	polytope->kill();
 	for (int i = 0; i < argc; i++) write[i]->kill();
 	system->kill();
 	script->kill();
+	polytope->kill();
 	window->kill();
 
 	for (int i = 0; i < argc; i++) delete read[i];
-	delete polytope;
 	for (int i = 0; i < argc; i++) delete write[i];
+	for (int i = 0; i < argc; i++) delete file[i];
 	delete system;
 	delete script;
+	delete polytope;
 	delete window;
 
 	return 0;
