@@ -34,12 +34,11 @@ struct Pid
 	time_t sec;
 };
 
-// copied from fifo to temp
 struct Header {
-	int pos; // always seek set in pipe and temp
+	int pos;
 	off_t loc;
 	size_t len; 
-	int mod; // always 0 in pipe; followed by data if 0
+	int mod;
 	struct Pid pid;
 };
 
@@ -73,9 +72,13 @@ public:
 private:
 	const char *name;
 	int given; // read and written by File::run
+	  // has only data
 	int temp; // read and written by File::run
+	  // has only headers
 	int fifo[2]; // read by File::run; written by File::read File::append File::update
+	  // has headers, and data if header.mod == 0
 	int pipe[2]; // read by File::read; written by File::run
+	  // has headers, and data regardless of header.mod
 	pthread_t thread;
 	off_t progress; // read and written by File::run
 	int running; // read and written by File::run
