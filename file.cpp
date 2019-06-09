@@ -149,7 +149,8 @@ void File::run()
 			if (::read(temp,&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
 			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_END;
 			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
-		transfer(given,pipe[1],given,F_RDLCK,header);}
+		if (header.mod == 0 || (header.pid.pid == pid.pid && header.pid.sec == pid.sec))
+			transfer(given,pipe[1],given,F_RDLCK,header);}
 }
 
 void File::transfer(int src, int dst, int lck, int typ, const struct Header &hdr)
