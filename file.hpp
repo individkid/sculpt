@@ -20,15 +20,24 @@
 #define FILE_H
 
 #include <pthread.h>
+#include <unistd.h>
+#include <time.h>
 #include <map>
 
 #define BUFFER_SIZE 100
-
-extern "C" void *fileThread(void *ptr);
+#define FILE_LENGTH 1000
 
 struct Header {
 	off_t loc;
 	size_t len;
+};
+
+extern "C" void *fileThread(void *ptr);
+
+struct Pid
+{
+	pid_t pid;
+	time_t sec;
 };
 
 class File
@@ -60,13 +69,14 @@ private:
 	const char *name;
 	int given, temp, fifo[2], pipe[2];
 	pthread_t thread;
-	int running;
+	int running, initialize;
 	pthread_mutex_t mutex;
         std::map<int,Header> ident;
 	char buffer[BUFFER_SIZE];
 	off_t location;
-	size_t offset;
-	size_t length;
+	size_t offset, todo;
+	int length;
+	Pid pid;
 	friend void *fileThread(void *ptr);
 	void run();
 	int youngest(const char *name);

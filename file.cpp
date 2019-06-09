@@ -50,7 +50,9 @@ File::File(const char *n) : name(n)
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((temp = youngest(name)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if (pthread_mutex_init(&mutex, 0) < 0) error("cannot init",errno,__FILE__,__LINE__);
-	location = 0; offset = 0; length = 0; running = 1;
+	location = 0; offset = 0; length = 0; todo = 0;
+	running = 1; initialize = 1;
+	// TODO initialize pid
 	if (pthread_create(&thread, 0, fileThread, this) < 0) error("cannot create",errno,__FILE__,__LINE__);
 }
 
@@ -67,9 +69,29 @@ File::~File()
 	if (pthread_mutex_destroy(&mutex) < 0) error("cannot destroy",errno,__FILE__,__LINE__);
 }
 
-int File::read(char *buf, int len)
+int File::read(char *buf, int max)
 {
-	return -1;
+	if (todo == 0 && length == 0) {
+	  if (initialize) {
+	    // send location/zero/pid on fifo[1]
+	  }
+	  Header header;
+	  if (::read(pipe[0],&header,sizeof(header)) != sizeof(header))
+	    error("read failed",errno,__FILE__,__LINE__);
+	  if (header.len == 0 && initialize) initialize = 0;
+	  if (header.len == 0 && !initialize) running = 0;
+	  if (header.loc != location+offset) {
+	    location = header.loc; todo = header.len; offset = 0;}}
+	int ready = todo;
+	if (ready > BUFFER_SIZE-length) ready = BUFFER_SIZE-length;
+	if (::read(pipe[0],buffer+length,ready) != ready)
+	  error("read failed",errno,__FILE__,__LINE__);
+	length += ready; todo -= ready;
+	if (max > length) max = length;
+	for (int i = 0; i < max; i++) buf[i] = buffer[i];
+	for (int i = 0; i+max < length; i++) buffer[i] = buffer[i+max];
+	length -= max; offset += max;
+	return max;
 }
 
 int File::identify(int id, int len, int off)
@@ -89,20 +111,32 @@ int File::update(const char *buf, int len, int id, char def)
 
 void File::run()
 {
-	// while running
-	// try write lock temp,
-	//  read fifo[0],
-	//  write lock given,
-	//  write given,
-	//  unlock given,
-	//  append temp,
-	//  abandon and reopen temp if too long,
-	//  write pipe[1],
+	//while running
+	// try write lock temp
+	//  read fifo[0]
+	//  if len is nonzero
+	//   write lock given
+	//   write given
+	//   unlock given
+	//  append temp
 	//  unlock temp
-	// or wait read lock temp,
-	//  read temp,
-	//  write pipe[1],
+	//  abandon and reopen temp if too long
+	//  if len is zero and pid is self
+	//   read lock given
+	//   read given
+	//   write pipe[1]
+	//   unlock given
+	//  write pipe[1]
+	// or wait read lock temp
 	//  unlock temp
+	//  read temp
+	//  if len is nonzero
+	//   write pipe[1]
+	//  if len is zero and pid is self
+	//   read lock given
+	//   read given
+	//   write pipe[1]
+	//   unlock given
 }
 
 int File::youngest(const char *name)
