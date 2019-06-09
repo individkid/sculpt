@@ -27,11 +27,6 @@
 
 #define  MAX_TEMP_LENGTH 1000
 
-struct Header {
-	off_t loc;
-	size_t len;
-};
-
 template <class T> void error(const char *str, T wrt, const char *file, int line)
 {
 	std::cerr << "error:" << str << " wrt:" << wrt << " file:" << file << " line:" << line << std::endl;
@@ -54,7 +49,8 @@ File::File(const char *n) : name(n)
 	if (::pipe(pipe) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((temp = youngest(name)) < 0) error("cannot open",errno,__FILE__,__LINE__);
-	running = 1;
+	if (pthread_mutex_init(&mutex, 0) < 0) error("cannot init",errno,__FILE__,__LINE__);
+	location = 0; offset = 0; length = 0; running = 1;
 	if (pthread_create(&thread, 0, fileThread, this) < 0) error("cannot create",errno,__FILE__,__LINE__);
 }
 
@@ -68,6 +64,7 @@ File::~File()
 	if (close(temp) < 0) error("close failed",errno,__FILE__,__LINE__);
 	running = 0;
 	if (pthread_join(thread, 0) < 0) error("cannot join",errno,__FILE__,__LINE__);
+	if (pthread_mutex_destroy(&mutex) < 0) error("cannot destroy",errno,__FILE__,__LINE__);
 }
 
 int File::read(char *buf, int len)
