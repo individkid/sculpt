@@ -25,8 +25,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define  MAX_TEMP_LENGTH 1000
-
 template <class T> void error(const char *str, T wrt, const char *file, int line)
 {
 	std::cerr << "error:" << str << " wrt:" << wrt << " file:" << file << " line:" << line << std::endl;
@@ -48,8 +46,8 @@ File::File(const char *n) : name(n)
 	if ((fifo[1] = open(pname,O_WRONLY)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if (::pipe(pipe) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
-	if ((temp = youngest(name)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if (pthread_mutex_init(&mutex, 0) < 0) error("cannot init",errno,__FILE__,__LINE__);
+	temp = youngest();
 	location = 0; offset = 0; length = 0; todo = 0;
 	running = 1; initialize = 1;
 	// TODO initialize pid
@@ -72,20 +70,18 @@ File::~File()
 int File::read(char *buf, int max)
 {
 	if (todo == 0 && length == 0) {
-	  if (initialize) {
-	    // send location/zero/pid on fifo[1]
-	  }
-	  Header header;
-	  if (::read(pipe[0],&header,sizeof(header)) != sizeof(header))
-	    error("read failed",errno,__FILE__,__LINE__);
-	  if (header.len == 0 && initialize) initialize = 0;
-	  if (header.len == 0 && !initialize) running = 0;
-	  if (header.loc != location+offset) {
-	    location = header.loc; todo = header.len; offset = 0;}}
+		Header header;
+		if (initialize) {
+			// send location/zero/pid on fifo[1]
+		}
+		if (::read(pipe[0],&header,sizeof(header)) != sizeof(header)) error("read failed",errno,__FILE__,__LINE__);
+		if (header.len == 0 && initialize) initialize = 0;
+		if (header.len == 0 && !initialize) running = 0;
+		if (header.loc != location+offset) {
+			location = header.loc; todo = header.len; offset = 0;}}
 	int ready = todo;
 	if (ready > BUFFER_SIZE-length) ready = BUFFER_SIZE-length;
-	if (::read(pipe[0],buffer+length,ready) != ready)
-	  error("read failed",errno,__FILE__,__LINE__);
+	if (::read(pipe[0],buffer+length,ready) != ready) error("read failed",errno,__FILE__,__LINE__);
 	length += ready; todo -= ready;
 	if (max > length) max = length;
 	for (int i = 0; i < max; i++) buf[i] = buffer[i];
@@ -112,34 +108,69 @@ int File::update(const char *buf, int len, int id, char def)
 void File::run()
 {
 	//while running
+	// abandon and reopen temp if too long
 	// try write lock temp
-	//  read fifo[0]
+	//  read header from fifo[0]
+	//  append header to temp
 	//  if len is nonzero
 	//   write lock given
+	//   read fifo[0]
 	//   write given
 	//   unlock given
-	//  append temp
 	//  unlock temp
-	//  abandon and reopen temp if too long
-	//  if len is zero and pid is self
-	//   read lock given
-	//   read given
-	//   write pipe[1]
-	//   unlock given
-	//  write pipe[1]
 	// or wait read lock temp
+	//  read header from temp
 	//  unlock temp
-	//  read temp
-	//  if len is nonzero
-	//   write pipe[1]
-	//  if len is zero and pid is self
-	//   read lock given
-	//   read given
-	//   write pipe[1]
-	//   unlock given
+	// read lock given
+	// read given
+	// write pipe[1]
+	// unlock given
+	while (running) {
+		struct Header header;
+		struct stat buf;
+		if (fstat(temp,&buf) < 0) error("cannot stat",errno,__FILE__,__LINE__);
+		if (buf.st_size > FILE_LENGTH) {
+			if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
+			temp = youngest();}
+		struct flock lock;
+		lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_END;
+		int val = fcntl(temp,F_SETLK,&lock);
+		if (val == -1 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);
+		if (val != -1) {
+			if (::read(fifo[0],&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
+			if (lseek(temp,0,SEEK_END) < 0) error("cannot seek",errno,__FILE__,__LINE__);
+			if (write(temp,&header,sizeof(header)) < 0) error("cannot write",errno,__FILE__,__LINE__);
+			if (header.mod == 0) transfer(fifo[0],given,given,F_WRLCK,header);
+			lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_END;
+			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
+		else {
+			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_END;
+			if (fcntl(temp,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
+			if (::read(temp,&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
+			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_END;
+			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
+		transfer(given,pipe[1],given,F_RDLCK,header);}
 }
 
-int File::youngest(const char *name)
+void File::transfer(int src, int dst, int lck, int typ, const struct Header &hdr)
+{
+	char buffer[BUFFER_SIZE];
+	struct flock lock;
+	lock.l_start = hdr.loc; lock.l_len = hdr.len; lock.l_type = typ; lock.l_whence = hdr.pos;
+	if (fcntl(lck,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
+	if (lseek(lck,hdr.loc,hdr.pos) < 0) error("cannot seek",errno,__FILE__,__LINE__);
+	size_t len = hdr.len;
+	while (len) {
+		int min = len;
+		if (min > BUFFER_SIZE) min = BUFFER_SIZE;
+		if (::read(src,buffer,min) != min) error("cannot read",errno,__FILE__,__LINE__);
+		if (write(dst,buffer,min) != min) error("cannot write",errno,__FILE__,__LINE__);
+		len -= min;}
+	lock.l_start = hdr.loc; lock.l_len = hdr.len; lock.l_type = F_UNLCK; lock.l_whence = hdr.pos;
+	if (fcntl(lck,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
+}
+
+int File::youngest()
 {
 	// TODO glob for youngest of .temp*.name or create new one
 	return -1;

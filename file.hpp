@@ -26,19 +26,23 @@
 
 #define BUFFER_SIZE 100
 #define FILE_LENGTH 1000
-
-struct Header {
-	off_t loc;
-	size_t len;
-};
-
-extern "C" void *fileThread(void *ptr);
+#define INFINITE_LENGTH 1000000000ull
 
 struct Pid
 {
 	pid_t pid;
 	time_t sec;
 };
+
+struct Header {
+	int pos;
+	off_t loc;
+	size_t len;
+	int mod;
+	struct Pid pid;
+};
+
+extern "C" void *fileThread(void *ptr);
 
 class File
 {
@@ -79,7 +83,8 @@ private:
 	Pid pid;
 	friend void *fileThread(void *ptr);
 	void run();
-	int youngest(const char *name);
+	void transfer(int src, int dst, int lck, int typ, const struct Header &hdr);
+	int youngest();
 };
 
 #endif
