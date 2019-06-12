@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <map>
+#include <deque>
 
 #define BUFFER_SIZE 100
 #define FILE_LENGTH 1000
@@ -35,10 +36,18 @@ struct Pid
 };
 
 struct Header {
-	int pos;
 	off_t loc;
 	size_t len; 
 	int mod;
+	  // mod 0 in fifo causes append of len to given
+	  // mod 1 in fifo causes write of len to given at loc
+	  // mod 2 in fifo qualified by pid causes read
+	  //  of len or less from given at loc
+	  // mod 3 in fifo causes terminate
+	  // mod 0 or 1 in pipe causes postpone or return of len
+	  // mod 2 in pipe causes return of len
+	  //  or finish initialize if len is 0
+	  // mod 3 in pipe is error
 	struct Pid pid;
 };
 
@@ -80,15 +89,14 @@ private:
 	int pipe[2]; // read by File::read; written by File::run
 	  // has headers, and data regardless of header.mod
 	pthread_t thread;
-	off_t progress; // read and written by File::run
 	int running; // read and written by File::run
-	int initialize; // read and written by File::read
+	int init; // read and written by File::read
+	size_t todo; // used by File::read
+	off_t done; // used by File::read
 	pthread_mutex_t mutex; // used by File::identify and File::update
     std::map<int,Header> ident; // used by File::identify and File::update
-	char buffer[BUFFER_SIZE]; // used by File::read
-	off_t location; // used by File::read
-	size_t offset, todo; // used by File::read
-	int length; // used by File::read
+    std::deque<char*> pend; // used by File::read
+    std::deque<size_t> size; // used by File::read
 	Pid pid;
 	friend void *fileThread(void *ptr);
 	void run();
