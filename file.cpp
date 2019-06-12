@@ -48,6 +48,7 @@ File::File(const char *n) : name(n)
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if (pthread_mutex_init(&mutex, 0) < 0) error("cannot init",errno,__FILE__,__LINE__);
 	youngest();
+	if ((progress = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
 	done = 0; todo = 0; running = 1; init = 1;
 	// TODO initialize pid
 	if (pthread_create(&thread, 0, fileThread, this) < 0) error("cannot create",errno,__FILE__,__LINE__);
@@ -61,7 +62,7 @@ File::~File()
 	if (close(pipe[1]) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(given) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(temp) < 0) error("close failed",errno,__FILE__,__LINE__);
-	// TODO send header.mod = 2 on fifo[1]
+	// TODO send header.mod = FinishMode on fifo[1]
 	if (pthread_join(thread, 0) < 0) error("cannot join",errno,__FILE__,__LINE__);
 	if (pthread_mutex_destroy(&mutex) < 0) error("cannot destroy",errno,__FILE__,__LINE__);
 }
@@ -70,12 +71,12 @@ int File::read(char *buf, int max)
 {
 	if (init) {
 		Header header;
-		header.loc = done; header.len = BUFFER_SIZE; header.mod = 2; header.pid = pid;
+		header.loc = done; header.len = BUFFER_SIZE; header.mod = ReadMode; header.pid = pid;
 		if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("write failed",errno,__FILE__,__LINE__);
 		done += BUFFER_SIZE;
 		if (todo == 0) while (1) {
 			if (::read(pipe[0],&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
-			if (header.mod == 2) {todo = header.len; break;}
+			if (header.mod == ReadMode) {todo = header.len; break;}
 			size.push_back(header.len);
 			char *buf = new char[header.len];
 			pend.push_back(buf);
@@ -140,58 +141,67 @@ void File::run()
 	// write pipe[1]
 	// unlock given
 	while (running) {
-		struct Header header; header.mod = 3;
+		struct Header header;
 		struct flock lock;
-		lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_END;
-		int val = fcntl(temp,F_SETLK,&lock);
-		if (val == -1 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);
+		off_t templen;
+		int val = -1;
+		if ((templen = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
+		if (progress == templen) {
+			lock.l_start = templen; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
+			val = fcntl(temp,F_SETLK,&lock);
+			if (val == -1 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);}
+		if (val != -1 && progress < templen) {
+			lock.l_start = templen; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
+			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
+			val = -1;}
 		if (val != -1) {
-			off_t progress;
-			if ((progress = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
-			if (progress < FILE_LENGTH) {
+			if (templen < FILE_LENGTH) {
 				if (::read(fifo[0],&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
-				if (header.mod < 2) transfer(fifo[0],given,given,F_WRLCK,header);
+				if (header.mod == AppendMode || header.mod == WriteMode) {
+					transfer(fifo[0],given,given,F_WRLCK,header);}
 				if (write(temp,&header,sizeof(header)) < 0) error("cannot write",errno,__FILE__,__LINE__);
-				lock.l_start = progress; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
+				lock.l_start = templen; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
 				if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
 			else {
 				if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
-				youngest(); progress = 0;}}
+				youngest();}}
 		else {
-			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_END;
+			lock.l_start = progress; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
 			if (fcntl(temp,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
 			if (::read(temp,&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
-			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_END;
+			lock.l_start = progress; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
 			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
-		if (header.mod == 1 || (header.mod == 2 && header.pid.pid == pid.pid && header.pid.sec == pid.sec)) {
-			off_t progress;
-			if ((progress = lseek(given,0,SEEK_END)) < 0) error("cannot lseek",errno,__FILE__,__LINE__);
-			if (header.loc + header.len > progress) header.len = progress - header.loc;
+		progress += sizeof(header);
+		if (header.mod == AppendMode || header.mod == WriteMode || (header.mod == ReadMode &&
+			header.pid.pid == pid.pid && header.pid.sec == pid.sec)) {
+			off_t givenlen;
+			if ((givenlen = lseek(given,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
+			if (header.loc + header.len > givenlen) header.len = givenlen - header.loc;
 			if (write(pipe[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
 			transfer(given,pipe[1],given,F_RDLCK,header);}
-		if (header.mod == 3 && header.pid.pid == pid.pid && header.pid.sec == pid.sec) running = 0;}
+		if (header.mod == FinishMode && header.pid.pid == pid.pid && header.pid.sec == pid.sec) running = 0;}
 }
 
 void File::transfer(int src, int dst, int lck, int typ, struct Header &hdr)
 {
 	char buffer[BUFFER_SIZE];
 	struct flock lock;
-	if (hdr.mod == 1) lock.l_start = hdr.loc; else lock.l_start = 0;
+	if (hdr.mod == WriteMode) lock.l_start = hdr.loc; else lock.l_start = 0;
 	lock.l_len = hdr.len; lock.l_type = typ;
-	if (hdr.mod == 0) lock.l_whence = SEEK_END; else lock.l_whence = SEEK_SET;
+	if (hdr.mod == AppendMode) lock.l_whence = SEEK_END; else lock.l_whence = SEEK_SET;
 	if (fcntl(lck,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
-	lock.l_start = lseek(lck,lock.l_start,lock.l_whence);
+	lock.l_start = lseek(lck,lock.l_start,lock.l_whence); lock.l_whence = SEEK_SET;
 	if (lock.l_start < 0) error("cannot seek",errno,__FILE__,__LINE__);
 	size_t len = lock.l_len;
-	while (len) {
+	while (len > 0) {
 		int min = len;
 		if (min > BUFFER_SIZE) min = BUFFER_SIZE;
 		if (::read(src,buffer,min) != min) error("cannot read",errno,__FILE__,__LINE__);
 		if (write(dst,buffer,min) != min) error("cannot write",errno,__FILE__,__LINE__);
 		len -= min;}
-	lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
+	lock.l_type = F_UNLCK;
 	if (fcntl(lck,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
-	hdr.mod = 1; hdr.loc = lock.l_start;
+	hdr.mod = WriteMode; hdr.loc = lock.l_start;
 }
 
 void File::youngest()

@@ -29,6 +29,13 @@
 #define FILE_LENGTH 1000
 #define INFINITE_LENGTH 1000000000ull
 
+enum Mode {
+	AppendMode,
+	WriteMode,
+	ReadMode,
+	FinishMode,
+	Modes};
+
 struct Pid
 {
 	pid_t pid;
@@ -38,16 +45,18 @@ struct Pid
 struct Header {
 	off_t loc;
 	size_t len; 
-	int mod;
-	  // mod 0 in fifo causes append of len to given
-	  // mod 1 in fifo causes write of len to given at loc
-	  // mod 2 in fifo qualified by pid causes read
+	Mode mod;
+	  // AppendMode in fifo causes append of len to given
+	  // WriteMode in fifo causes write of len to given at loc
+	  // ReadMode in fifo qualified by pid causes read
 	  //  of len or less from given at loc
-	  // mod 3 in fifo causes terminate
-	  // mod 0 or 1 in pipe causes postpone or return of len
-	  // mod 2 in pipe causes return of len
+	  // FinishMode in fifo qualified by pid causes terminate
+	  // AppendMode or WriteMode in pipe causes postpone
+	  //  or return of len
+	  // ReadMode in pipe causes return of len
 	  //  or finish initialize if len is 0
-	  // mod 3 in pipe is error
+	  //  or error if not initializing
+	  // FinishMode in pipe is error
 	struct Pid pid;
 };
 
@@ -90,6 +99,7 @@ private:
 	  // has headers, and data regardless of header.mod
 	pthread_t thread;
 	int running; // read and written by File::run
+	off_t progress; // used by File::run
 	int init; // read and written by File::read
 	size_t todo; // used by File::read
 	off_t done; // used by File::read
