@@ -97,8 +97,6 @@ private:
 	int pipe[2]; // read by File::read; written by File::run
 	  // has headers, and data regardless of header.mod
 	pthread_t thread;
-	int running; // read and written by File::run for finishup
-	off_t progress; // used by File::run for keepup
 	int init; // read and written by File::read for catchup
 	size_t todo; // used by File::read for body size
 	off_t done; // used by File::read for init request
