@@ -20,8 +20,6 @@
 #define FILE_H
 
 #include <pthread.h>
-#include <unistd.h>
-#include <time.h>
 #include <map>
 #include <deque>
 

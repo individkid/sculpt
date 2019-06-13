@@ -21,10 +21,8 @@
 #include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/uio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <time.h>
 #include <libgen.h>
 
 template <class T> void error(const char *str, T wrt, const char *file, int line)
