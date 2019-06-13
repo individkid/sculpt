@@ -24,6 +24,8 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
+#include <libgen.h>
 
 template <class T> void error(const char *str, T wrt, const char *file, int line)
 {
@@ -46,11 +48,15 @@ File::File(const char *n) : name(n)
 	if ((fifo[1] = open(pname,O_WRONLY)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if (::pipe(pipe) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
-	if (pthread_mutex_init(&mutex, 0) < 0) error("cannot init",errno,__FILE__,__LINE__);
-	youngest();
+	if ((errno = pthread_mutex_init(&mutex, 0)) != 0) error("cannot init",errno,__FILE__,__LINE__);
+	tempname = new char[strlen(name)+7];
+	if (dirname_r(name,tempname) == 0) error("dirname failed",errno,__FILE__,__LINE__);
+	strcat(tempname,".temp.");
+	if (basename_r(name,tempname+strlen(tempname)) == 0) error("basename failed",errno,__FILE__,__LINE__);
+	if ((temp = open(tempname,O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((progress = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
-	done = 0; todo = 0; running = 1; init = 1;
-	// TODO initialize pid
+	done = 0; todo = 0; running = 1; init = 1; offset = 0; length = 0;
+	pid.pid = getpid(); time(&pid.sec);
 	if (pthread_create(&thread, 0, fileThread, this) < 0) error("cannot create",errno,__FILE__,__LINE__);
 }
 
@@ -62,9 +68,10 @@ File::~File()
 	if (close(pipe[1]) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(given) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(temp) < 0) error("close failed",errno,__FILE__,__LINE__);
-	// TODO send header.mod = FinishMode on fifo[1]
+	Header header; header.mod = FinishMode;
+	if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
 	if (pthread_join(thread, 0) < 0) error("cannot join",errno,__FILE__,__LINE__);
-	if (pthread_mutex_destroy(&mutex) < 0) error("cannot destroy",errno,__FILE__,__LINE__);
+	if ((errno = pthread_mutex_destroy(&mutex)) != 0) error("cannot destroy",errno,__FILE__,__LINE__);
 }
 
 int File::read(char *buf, int max)
@@ -80,44 +87,64 @@ int File::read(char *buf, int max)
 			size.push_back(header.len);
 			char *buf = new char[header.len];
 			pend.push_back(buf);
+			base.push_back(header.loc);
 			if (::read(pipe[0],buf,header.len) != header.len) error("cannot read",errno,__FILE__,__LINE__);}
 		if (todo == 0) init = 0; else {
 			if (todo < max) max = todo;
-			todo -= max;
+			todo -= max; length += max;
 			if (::read(pipe[0],buf,max) != max) error("cannot read",errno,__FILE__,__LINE__);
 			return max;}}
 	if (todo == 0 && size.size()) todo = size.front();
 	if (size.size()) {
 		char *ptr = pend.front();
 		size_t len = size.front();
+		off_t loc = base.front();
+		if (loc+len-todo != offset+length) {offset = loc; length = 0;}
 		if (todo < max) max = todo;
 		for (int i = 0; i < max; i++) buf[i] = ptr[len-todo+i];
-		todo -= max;
-		if (todo == 0) {delete ptr; pend.pop_front(); size.pop_front();}
+		todo -= max; length += max;
+		if (todo == 0) {delete ptr; pend.pop_front(); size.pop_front(); base.pop_front();}
 		return max;}
 	if (todo == 0) {
 		Header header;
 		if (::read(pipe[0],&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
+		if (header.loc != offset+length) {offset = header.loc; length = 0;}
 		todo = header.len;}
 	if (todo < max) max = todo;
-	todo -= max;
+	todo -= max; length += max;
 	if (::read(pipe[0],buf,max) != max) error("cannot read",errno,__FILE__,__LINE__);
 	return max;
 }
 
 int File::identify(int id, int len, int off)
 {
-	return -1;
+	if (off > length) return -2;
+	if (len > off) return -2;
+	if ((errno = pthread_mutex_lock(&mutex)) != 0) error("cannot mutex",errno,__FILE__,__LINE__);
+	id2loc[id] = offset+length-off; id2loc[id] = len;
+	if ((errno = pthread_mutex_unlock(&mutex)) != 0) error("cannot mutex",errno,__FILE__,__LINE__);
+	return 0;
 }
 
-int File::append(const char *buf, int len)
+int File::append(const char *buf, size_t len)
 {
-	return -1;
+	Header header; header.mod = AppendMode; header.len = len;
+	if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
+	if (write(fifo[1],buf,len) != len) error("cannot write",errno,__FILE__,__LINE__);
+	return 0;
 }
 
-int File::update(const char *buf, int len, int id, char def)
+int File::update(const char *buf, size_t len, int id, char def)
 {
-	return -1;
+	Header header; header.mod = WriteMode;
+	if ((errno = pthread_mutex_lock(&mutex)) != 0) error("cannot mutex",errno,__FILE__,__LINE__);
+	header.loc = id2loc[id]; header.len = id2loc[id];
+	if ((errno = pthread_mutex_unlock(&mutex)) != 0) error("cannot mutex",errno,__FILE__,__LINE__);
+	if (header.len < len) len = header.len;
+	if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
+	if (write(fifo[1],buf,len) != len) error("cannot write",errno,__FILE__,__LINE__);
+	while (len++ < header.len) if (write(fifo[1],&def,1) != 1) error("cannot write",errno,__FILE__,__LINE__);
+	return 0;
 }
 
 void File::run()
@@ -163,8 +190,9 @@ void File::run()
 				lock.l_start = templen; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_SET;
 				if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
 			else {
-				if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
-				youngest();}}
+				if (unlink(tempname) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
+				if (close(temp) < 0 && errno != EBADF) error("cannot close",errno,__FILE__,__LINE__);
+				if ((temp = open(tempname,O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);}}
 		else {
 			lock.l_start = progress; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_SET;
 			if (fcntl(temp,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
@@ -202,9 +230,4 @@ void File::transfer(int src, int dst, int lck, int typ, struct Header &hdr)
 	lock.l_type = F_UNLCK;
 	if (fcntl(lck,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
 	hdr.mod = WriteMode; hdr.loc = lock.l_start;
-}
-
-void File::youngest()
-{
-	// TODO glob for youngest of .temp*.name or create new one, and open it in temp
 }

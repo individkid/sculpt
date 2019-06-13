@@ -79,16 +79,17 @@ public:
 	  // assigns given identifier to record of given length at given offset back
 	  // returns -2 if prior reads were not contiguous back to given offset
 	  // returns given length
-	int append(const char *buf, int len); // called by Write Thread
+	int append(const char *buf, size_t len); // called by Write Thread
 	  // appends new record
 	  // returns given length
-	int update(const char *buf, int len, int id, char def); // called by Write Thread
+	int update(const char *buf, size_t len, int id, char def); // called by Write Thread
 	  // updates identified record
 	  // truncates or fills with default to match identified length
 	  // falls back to append if id is unassigned
 	  // returns truncated filled or given length
 private:
 	const char *name;
+	char *tempname;
 	int given; // read and written by File::run
 	  // has only data
 	int temp; // read and written by File::run
@@ -98,20 +99,23 @@ private:
 	int pipe[2]; // read by File::read; written by File::run
 	  // has headers, and data regardless of header.mod
 	pthread_t thread;
-	int running; // read and written by File::run
-	off_t progress; // used by File::run
-	int init; // read and written by File::read
-	size_t todo; // used by File::read
-	off_t done; // used by File::read
+	int running; // read and written by File::run for finishup
+	off_t progress; // used by File::run for keepup
+	int init; // read and written by File::read for catchup
+	size_t todo; // used by File::read for body size
+	off_t done; // used by File::read for init request
+	off_t offset; // used by File::read for contiguity
+	size_t length; // used by File::read for contiguity
 	pthread_mutex_t mutex; // used by File::identify and File::update
-    std::map<int,Header> ident; // used by File::identify and File::update
+    std::map<int,off_t> id2loc; // used by File::identify and File::update
+    std::map<int,size_t> id2len; // used by File::identify and File::update
     std::deque<char*> pend; // used by File::read
     std::deque<size_t> size; // used by File::read
+    std::deque<off_t> base; // used by File::read
 	Pid pid;
 	friend void *fileThread(void *ptr);
 	void run();
 	void transfer(int src, int dst, int lck, int typ, struct Header &hdr);
-	void youngest();
 };
 
 #endif
