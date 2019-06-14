@@ -88,6 +88,10 @@ public:
 private:
 	const char *name;
 	char *tempname[3]; int rr;
+	  // open    | missing | missing
+	  // closed  | missing | missing
+	  // closed  | open    | missing
+	  // missing | open    | missing
 	int given; // read and written by File::run
 	  // has only data
 	int temp; // read and written by File::run

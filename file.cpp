@@ -166,6 +166,12 @@ void File::run()
 	struct flock lock;
 	int val;
 	off_t pos;
+	if (temppos >= FILE_LENGTH) {
+		if (open(tempname[(rr+2)%3],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
+		if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
+		if ((temp = open(tempname[(rr+1)%3],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
+		if (unlink(tempname[(rr+0)%3]) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
+		temppos = 0; rr = (rr+1)%3;}
 	lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_CUR;
 	if ((val = fcntl(temp,F_SETLK,&lock)) < 0 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);
 	if ((pos = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
@@ -187,12 +193,6 @@ void File::run()
 		lock.l_start = -sizeof(header); lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
 		if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
 	temppos += sizeof(header);
-	if (temppos >= FILE_LENGTH) {
-		if (open(tempname[(rr+2)%3],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
-		if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
-		if ((temp = open(tempname[(rr+1)%3],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
-		if (unlink(tempname[(rr+0)%3]) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
-		temppos = 0; rr = (rr+1)%3;}
 	if (header.mod == ReadMode && header.pid != pid) continue;
 	if (header.mod == FinishMode && header.pid != pid) continue;
 	if (header.mod == FinishMode) break;
