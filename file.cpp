@@ -60,9 +60,12 @@ File::File(const char *n) : name(n)
 		tempname[i][len] = '0'+i; tempname[i][len+1] = '.'; tempname[i][len+2] = 0;
 		if (basename_r(name,tempname[i]+len+2) == 0) error("basename failed",errno,__FILE__,__LINE__);
 		if ((fd[i] = open(tempname[i],O_RDWR)) < 0 && errno != ENOENT) error("open failed",errno,__FILE__,__LINE__);}
-	for (int i = 0; i < 4; i++) {if (fd[(i+1)%4] < 0 && fd[i] >= 0) {rr = i; break;}}
-	if (rr < 0) {rr = 0; if ((temp = open(tempname[0],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);}
-	else {temp = fd[rr]; for (int i = 0; i < 4; i++) {if (i != rr) {if (close(fd[i]) < 0) error("close failed",errno,__FILE__,__LINE__);}}}
+	for (int i = 0; i < 4; i++) {
+		if (fd[(i+1)%4] < 0 && fd[i] >= 0) {rr = i; break;}}
+	if (rr < 0) {rr = 0;
+		if ((temp = open(tempname[0],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);}
+	else {temp = fd[rr]; for (int i = 0; i < 4; i++) {if (i != rr) {
+		if (close(fd[i]) < 0) error("close failed",errno,__FILE__,__LINE__);}}}
 	if ((temppos = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
 	done = 0; todo = 0; init = 1; offset = 0; length = 0;
 	pid.pid = getpid(); time(&pid.sec);
