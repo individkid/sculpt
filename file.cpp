@@ -52,11 +52,18 @@ File::File(const char *n) : name(n)
 	if (::pipe(pipe) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((errno = pthread_mutex_init(&mutex, 0)) != 0) error("cannot init",errno,__FILE__,__LINE__);
-	tempname = new char[strlen(name)+7];
-	if (dirname_r(name,tempname) == 0) error("dirname failed",errno,__FILE__,__LINE__);
-	strcat(tempname,".temp.");
-	if (basename_r(name,tempname+strlen(tempname)) == 0) error("basename failed",errno,__FILE__,__LINE__);
-	if ((temp = open(tempname,O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
+	int val; int len; int fd[4]; rr = -1;
+	for (int i = 0; i < 4; i++) {
+		tempname[i] = new char[strlen(name)+8];
+		if (dirname_r(name,tempname[i]) == 0) error("dirname failed",errno,__FILE__,__LINE__);
+		strcat(tempname[i],".temp"); len = strlen(tempname[i]);
+		tempname[i][len] = '0'+i; tempname[i][len+1] = '.'; tempname[i][len+2] = 0;
+		if (basename_r(name,tempname[i]+len+2) == 0) error("basename failed",errno,__FILE__,__LINE__);
+		if ((fd[i] = open(tempname[i],O_RDWR)) < 0 && errno != ENOENT) error("open failed",errno,__FILE__,__LINE__);}
+	for (int i = 0; i < 4; i++) {if (fd[(i+1)%4] < 0 && fd[i] >= 0) {rr = i; break;}}
+	if (rr < 0) {rr = 0; if ((temp = open(tempname[0],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);}
+	else {temp = fd[rr]; for (int i = 0; i < 4; i++) {if (i != rr) {if (close(fd[i]) < 0) error("close failed",errno,__FILE__,__LINE__);}}}
+	if ((temppos = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
 	done = 0; todo = 0; init = 1; offset = 0; length = 0;
 	pid.pid = getpid(); time(&pid.sec);
 	if (pthread_create(&thread, 0, fileThread, this) < 0) error("cannot create",errno,__FILE__,__LINE__);
@@ -152,8 +159,10 @@ int File::update(const char *buf, size_t len, int id, char def)
 void File::run()
 {
 	//while running
-	// abandon and reopen temp if too long
 	// try write lock temp
+	// if try succedded and temp too long
+	//  abandon and reopen temp
+	// if try succeded and temp not too long
 	//  read header from fifo[0]
 	//  append header to temp
 	//  if len is nonzero
@@ -162,7 +171,8 @@ void File::run()
 	//   write given
 	//   unlock given
 	//  unlock temp
-	// or wait read lock temp
+	// if try failed
+	//  wait read lock temp
 	//  read header from temp
 	//  unlock temp
 	// read lock given
@@ -171,27 +181,36 @@ void File::run()
 	// unlock given
 	while (1) {
 		struct Header header;
+		struct flock lock;
 		int val;
-		if ((val = ::read(temp,&header,sizeof(header))) < 0) error("cannot read",errno,__FILE__,__LINE__);
-		if (val > 0 && val < sizeof(header)) error("header incomplete",val,__FILE__,__LINE__);
-		if (val == 0) {
-			struct flock lock;
-			lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_CUR;
-			if ((val = fcntl(temp,F_SETLK,&lock)) == -1 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);}
-		if (val < 0) {
-			struct flock lock;
+		off_t pos;
+		lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_CUR;
+		if ((val = fcntl(temp,F_SETLK,&lock)) < 0 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);
+		if ((pos = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
+		if (pos != temppos) {
+			if (lseek(temp,temppos,SEEK_SET) < 0) error("cannot seek",errno,__FILE__,__LINE__);}
+		if (val == 0 && pos != temppos) {
+			lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
+			if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
+		if (val < 0 || pos != temppos) {
 			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_CUR;
 			if (fcntl(temp,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
+			if (::read(temp,&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
 			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
-			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
-			if (::read(temp,&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);}
-		else {
-			struct flock lock;
+			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
+		if (val == 0 && pos == temppos) {
 			if (::read(fifo[0],&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
 			if (header.mod == AppendMode || header.mod == WriteMode) transfer(fifo[0],given,given,F_WRLCK,header);
 			if (write(temp,&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
 			lock.l_start = -sizeof(header); lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
-			if ((val = fcntl(temp,F_SETLK,&lock)) == -1 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);}
+			if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
+		temppos += sizeof(header);
+		if (temppos > FILE_LENGTH) {
+			if (open(tempname[(rr+2)%4],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
+			if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
+			if ((temp = open(tempname[(rr+1)%4],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
+			if (unlink(tempname[(rr+3)%4]) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
+			temppos = 0; rr = (rr+1)%4;}
 		if (header.mod == ReadMode && header.pid != pid) continue;
 		if (header.mod == FinishMode && header.pid != pid) continue;
 		if (header.mod == FinishMode) break;

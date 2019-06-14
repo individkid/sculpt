@@ -87,7 +87,7 @@ public:
 	  // returns truncated filled or given length
 private:
 	const char *name;
-	char *tempname;
+	char *tempname[4]; int rr;
 	int given; // read and written by File::run
 	  // has only data
 	int temp; // read and written by File::run
@@ -97,6 +97,7 @@ private:
 	int pipe[2]; // read by File::read; written by File::run
 	  // has headers, and data regardless of header.mod
 	pthread_t thread;
+	off_t temppos; // read and written by File::run for recreate
 	int init; // read and written by File::read for catchup
 	size_t todo; // used by File::read for body size
 	off_t done; // used by File::read for init request
