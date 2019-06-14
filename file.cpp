@@ -184,7 +184,7 @@ void File::run()
 			lock.l_start = -sizeof(header); lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
 			if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
 		temppos += sizeof(header);
-		if (temppos > FILE_LENGTH) {
+		if (temppos >= FILE_LENGTH) {
 			if (open(tempname[(rr+2)%4],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
 			if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
 			if ((temp = open(tempname[(rr+1)%4],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
