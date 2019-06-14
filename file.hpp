@@ -87,7 +87,7 @@ public:
 	  // returns truncated filled or given length
 private:
 	const char *name;
-	char *tempname[4]; int rr;
+	char *tempname[3]; int rr;
 	int given; // read and written by File::run
 	  // has only data
 	int temp; // read and written by File::run

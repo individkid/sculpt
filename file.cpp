@@ -53,18 +53,18 @@ File::File(const char *n) : name(n)
 	if ((given = open(name,O_RDWR)) < 0) error("cannot open",errno,__FILE__,__LINE__);
 	if ((errno = pthread_mutex_init(&mutex, 0)) != 0) error("cannot init",errno,__FILE__,__LINE__);
 	int val; int len; int fd[4]; rr = -1;
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 3; i++) {
 		tempname[i] = new char[strlen(name)+8];
 		if (dirname_r(name,tempname[i]) == 0) error("dirname failed",errno,__FILE__,__LINE__);
 		strcat(tempname[i],".temp"); len = strlen(tempname[i]);
 		tempname[i][len] = '0'+i; tempname[i][len+1] = '.'; tempname[i][len+2] = 0;
 		if (basename_r(name,tempname[i]+len+2) == 0) error("basename failed",errno,__FILE__,__LINE__);
 		if ((fd[i] = open(tempname[i],O_RDWR)) < 0 && errno != ENOENT) error("open failed",errno,__FILE__,__LINE__);}
-	for (int i = 0; i < 4; i++) {
-		if (fd[(i+1)%4] < 0 && fd[i] >= 0) {rr = i; break;}}
+	for (int i = 0; i < 3; i++) {
+		if (fd[(i+1)%3] < 0 && fd[i] >= 0) {rr = i; break;}}
 	if (rr < 0) {rr = 0;
 		if ((temp = open(tempname[0],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);}
-	else {temp = fd[rr]; for (int i = 0; i < 4; i++) {if (i != rr) {
+	else {temp = fd[rr]; for (int i = 0; i < 3; i++) {if (i != rr && fd[i] >= 0) {
 		if (close(fd[i]) < 0) error("close failed",errno,__FILE__,__LINE__);}}}
 	if ((temppos = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
 	done = 0; todo = 0; init = 1; offset = 0; length = 0;
@@ -188,11 +188,11 @@ void File::run()
 		if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
 	temppos += sizeof(header);
 	if (temppos >= FILE_LENGTH) {
-		if (open(tempname[(rr+2)%4],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
+		if (open(tempname[(rr+2)%3],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
 		if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
-		if ((temp = open(tempname[(rr+1)%4],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
-		if (unlink(tempname[(rr+3)%4]) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
-		temppos = 0; rr = (rr+1)%4;}
+		if ((temp = open(tempname[(rr+1)%3],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
+		if (unlink(tempname[(rr+0)%3]) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
+		temppos = 0; rr = (rr+1)%3;}
 	if (header.mod == ReadMode && header.pid != pid) continue;
 	if (header.mod == FinishMode && header.pid != pid) continue;
 	if (header.mod == FinishMode) break;
