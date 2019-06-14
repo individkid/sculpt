@@ -159,46 +159,46 @@ int File::update(const char *buf, size_t len, int id, char def)
 void File::run()
 {
 	while (1) {
-		struct Header header;
-		struct flock lock;
-		int val;
-		off_t pos;
-		lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_CUR;
-		if ((val = fcntl(temp,F_SETLK,&lock)) < 0 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);
-		if ((pos = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
-		if (pos != temppos) {
-			if (lseek(temp,temppos,SEEK_SET) < 0) error("cannot seek",errno,__FILE__,__LINE__);}
-		if (val == 0 && pos != temppos) {
-			lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
-			if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
-		if (val < 0 || pos != temppos) {
-			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_CUR;
-			if (fcntl(temp,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
-			if (::read(temp,&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
-			lock.l_start = 0; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
-			if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
-		if (val == 0 && pos == temppos) {
-			if (::read(fifo[0],&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
-			if (header.mod == AppendMode || header.mod == WriteMode) transfer(fifo[0],given,given,F_WRLCK,header);
-			if (write(temp,&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
-			lock.l_start = -sizeof(header); lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
-			if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
-		temppos += sizeof(header);
-		if (temppos >= FILE_LENGTH) {
-			if (open(tempname[(rr+2)%4],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
-			if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
-			if ((temp = open(tempname[(rr+1)%4],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
-			if (unlink(tempname[(rr+3)%4]) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
-			temppos = 0; rr = (rr+1)%4;}
-		if (header.mod == ReadMode && header.pid != pid) continue;
-		if (header.mod == FinishMode && header.pid != pid) continue;
-		if (header.mod == FinishMode) break;
-		if (header.mod == ReadMode) {
-			off_t givenlen;
-			if ((givenlen = lseek(given,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
-			if (header.loc + header.len > givenlen) header.len = givenlen - header.loc;}
-		if (write(pipe[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
-		transfer(given,pipe[1],given,F_RDLCK,header);}
+	struct Header header;
+	struct flock lock;
+	int val;
+	off_t pos;
+	lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_WRLCK; lock.l_whence = SEEK_CUR;
+	if ((val = fcntl(temp,F_SETLK,&lock)) < 0 && errno != EAGAIN) error("cannot fcntl",errno,__FILE__,__LINE__);
+	if ((pos = lseek(temp,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
+	if (pos != temppos) {
+		if (lseek(temp,temppos,SEEK_SET) < 0) error("cannot seek",errno,__FILE__,__LINE__);}
+	if (val == 0 && pos != temppos) {
+		lock.l_start = 0; lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
+		if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
+	if (val < 0 || pos != temppos) {
+		lock.l_start = 0; lock.l_len = 1; lock.l_type = F_RDLCK; lock.l_whence = SEEK_CUR;
+		if (fcntl(temp,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
+		if (::read(temp,&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
+		lock.l_start = 0; lock.l_len = 1; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
+		if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
+	if (val == 0 && pos == temppos) {
+		if (::read(fifo[0],&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
+		if (header.mod == AppendMode || header.mod == WriteMode) transfer(fifo[0],given,given,F_WRLCK,header);
+		if (write(temp,&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
+		lock.l_start = -sizeof(header); lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
+		if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
+	temppos += sizeof(header);
+	if (temppos >= FILE_LENGTH) {
+		if (open(tempname[(rr+2)%4],O_RDWR) >= 0) error("file exists",errno,__FILE__,__LINE__);
+		if (close(temp) < 0) error("cannot close",errno,__FILE__,__LINE__);
+		if ((temp = open(tempname[(rr+1)%4],O_RDWR|O_CREAT,0666)) < 0) error("cannot open",errno,__FILE__,__LINE__);
+		if (unlink(tempname[(rr+3)%4]) < 0 && errno != ENOENT) error("cannot unlink",errno,__FILE__,__LINE__);
+		temppos = 0; rr = (rr+1)%4;}
+	if (header.mod == ReadMode && header.pid != pid) continue;
+	if (header.mod == FinishMode && header.pid != pid) continue;
+	if (header.mod == FinishMode) break;
+	if (header.mod == ReadMode) {
+		off_t givenlen;
+		if ((givenlen = lseek(given,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
+		if (header.loc + header.len > givenlen) header.len = givenlen - header.loc;}
+	if (write(pipe[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
+	transfer(given,pipe[1],given,F_RDLCK,header);}
 }
 
 void File::transfer(int src, int dst, int lck, int typ, struct Header &hdr)
