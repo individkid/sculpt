@@ -158,27 +158,6 @@ int File::update(const char *buf, size_t len, int id, char def)
 
 void File::run()
 {
-	//while running
-	// try write lock temp
-	// if try succedded and temp too long
-	//  abandon and reopen temp
-	// if try succeded and temp not too long
-	//  read header from fifo[0]
-	//  append header to temp
-	//  if len is nonzero
-	//   write lock given
-	//   read fifo[0]
-	//   write given
-	//   unlock given
-	//  unlock temp
-	// if try failed
-	//  wait read lock temp
-	//  read header from temp
-	//  unlock temp
-	// read lock given
-	// read given
-	// write pipe[1]
-	// unlock given
 	while (1) {
 		struct Header header;
 		struct flock lock;
