@@ -11,8 +11,6 @@ Initially before blocking on read from the unnamed pipe, Read sends location/zer
 Before sending data to the io thread, the window thread saves what it sends. When fields from the middle of the file are sent, the window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
 
 The -- commands and messages between threads are as follows. Note that only messages from the thread that reads files from the command line has side effects.  
---include (read from given file)  
---exclude (read from including file)  
 --sculpt click additive (add region over clicked faced) Read->SculptConf->Window  
 --sculpt click subtractive (remove region under clicked faced) Read->SculptConf->Window  
 --sculpt click refine (add random plane through clicked point on facet) Read->SculptConf->Window  
@@ -37,8 +35,6 @@ The -- commands and messages between threads are as follows. Note that only mess
 --sculpt topology symbolic (tweak holds space invariant) Read->SculptConf->Window  
 --sculpt fixed relative (tweak holds pierce point fixed) Read->SculptConf->Window  
 --sculpt fixed absolute (tweak holds nothing fixed) Read->SculptConf->Window  
---configure (change constants like focal length) Read->ConfigureConf->Window  
---command (send microcode buffers and triggers) Read->Command->Window  
 --matrix (change transformation of polytope) Read->MatrixConf->Window  
 --global (change transformation of display) Read->GlobalConf->Window  
 --plane (add and classify plane from vector) Read->PlaneConf->Polytope->Command->Window  
@@ -47,14 +43,17 @@ The -- commands and messages between threads are as follows. Note that only mess
 --inflate (change polytope regions to all inside) Read->InflateConf->Polytope->Command->Window  
 --space (add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
 --polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope->Command->Window
+--include (open given file and use as shared subspace) Read->IncludeConf->Polytope  
 --query (send request for topology feature to display) Read->Query->Polytope  
---timewheel (start and stop stock and flow system) Read->TimewheelConf->System  
+--command (send microcode buffers and triggers) Read->Command->Window  
 --sound (add stock and flows to system) Read->Sound->System  
 --script (send script to execute) Read->ScriptConf->Script  
---invoke (if at eof, send script to execute) Read->InvokeConf->Script  
 --macro (send script to execute upon click) Read->MacroConf->Window->Script  
 --hotkey (send script to execute upon keypress) Read->HotkeyConf->Window->Script  
 --metric (send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
+--notify (send script to execute upon topology change) Read->NotifyConf->Polytope->Script
+--configure (change constants like focal length) Read->ConfigureConf->Window  
+--timewheel (start and stop stock and flow system) Read->TimewheelConf->System  
 (send window transformation change to other processes) Window->GlobalConf->Write  
 (send polytope transformation change to other processes) Window->MatrixConf->Write  
 (send facet transformation for plane to other processses) Window->Manip->Polytope->PlaneConf->Write  

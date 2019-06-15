@@ -117,7 +117,6 @@ enum Configure {
 	MacroConf, // Read->Window->Script
 	HotkeyConf, // Read->Window->Script
 	ScriptConf, // Read->Script
-	InvokeConf, // Read->Script
 	ConfigureConf, // Read->Window
 	TimewheelConf, // Read->System
 	TestConf, // Read->Polytope
