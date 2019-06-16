@@ -30,7 +30,7 @@ public:
 	int get(const char *&ptr, int file, Command *&command);
 	int get(const char *&ptr, int file, Sound *&sound);
 	int get(const char *&ptr, int file, Query *&query);
-	void get(const char *ptr, int file, Command *&command, Data *&window,
+	void get(const char *&ptr, int file, Command *&command, Data *&window,
 		Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}
@@ -59,10 +59,10 @@ public:
 	int numbers(const char *&str, int siz, int *&val);
 	int scalars(const char *&str, int siz, float *&val);
 	int alloc(Data *&ptr);
-	void deloc(int siz, int *val);
-	void deloc(int siz, float *val);
-	void deloc(char *val);
-	void deloc(Data *ptr);
+	void deloc(int siz, int *&val);
+	void deloc(int siz, float *&val);
+	void deloc(char *&val);
+	void deloc(Data *&ptr);
 };
 
 #endif

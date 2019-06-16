@@ -79,7 +79,7 @@ void Read::call()
     while (sound2rsp.get(sound)) parse.put(sound);
     while (system2rsp.get(system)) parse.put(system);
     while (script2rsp.get(script)) parse.put(script);
-	while (1) {char *str = buffer;
+	while (1) {const char *str = buffer;
 	parse.get(str,self,command,window,query,polytope,sound,system,script);
 	if (command) req2command->put(command);
 	if (window) req2window->put(window);
