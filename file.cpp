@@ -90,9 +90,9 @@ int File::read(char *buf, int max)
 {
 	if (init) {
 		Header header;
-		header.loc = done; header.len = BUFFER_SIZE; header.mod = ReadMode; header.pid = pid;
+		header.loc = done; header.len = BUFFER_LENGTH; header.mod = ReadMode; header.pid = pid;
 		if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("write failed",errno,__FILE__,__LINE__);
-		done += BUFFER_SIZE;
+		done += BUFFER_LENGTH;
 		if (todo == 0) while (1) {
 			if (::read(pipe[0],&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
 			if (header.mod == ReadMode) {todo = header.len; break;}
@@ -206,7 +206,7 @@ void File::run()
 
 void File::transfer(int src, int dst, int lck, int typ, struct Header &hdr)
 {
-	char buffer[BUFFER_SIZE];
+	char buffer[BUFFER_LENGTH];
 	struct flock lock;
 	if (hdr.mod == AppendMode) lock.l_start = 0; else lock.l_start = hdr.loc;
 	lock.l_len = hdr.len; lock.l_type = typ;
@@ -217,7 +217,7 @@ void File::transfer(int src, int dst, int lck, int typ, struct Header &hdr)
 	size_t len = lock.l_len;
 	while (len > 0) {
 		int min = len;
-		if (min > BUFFER_SIZE) min = BUFFER_SIZE;
+		if (min > BUFFER_LENGTH) min = BUFFER_LENGTH;
 		if (::read(src,buffer,min) != min) error("cannot read",errno,__FILE__,__LINE__);
 		if (write(dst,buffer,min) != min) error("cannot write",errno,__FILE__,__LINE__);
 		len -= min;}

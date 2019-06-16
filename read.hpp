@@ -55,8 +55,8 @@ private:
 public:
 	Read(int i, File *f);
 	virtual ~Read();
-public:
+private:
 	int self;
 	File *file;
-	// TODO buffer for incomplete commands
+	char *buffer;
 };

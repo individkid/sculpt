@@ -23,9 +23,9 @@
 #include <map>
 #include <deque>
 
-#define BUFFER_SIZE 100
 #define FILE_LENGTH 1000
 #define INFINITE_LENGTH 1000000000ull
+#define BUFFER_LENGTH 100
 
 enum Mode {
 	AppendMode,

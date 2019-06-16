@@ -23,14 +23,13 @@
 
 class Parse : public Pools
 {
-private:
+public:
+	Parse(const char *file, int line) : Pools(file,line) {}
 	int get(const char *&ptr, Update *&update);
 	int get(const char *&ptr, Render *&render);
 	int get(const char *&ptr, int file, Command *&command);
 	int get(const char *&ptr, int file, Sound *&sound);
 	int get(const char *&ptr, int file, Query *&query);
-public:
-	Parse(const char *file, int line) : Pools(file,line) {}
 	void get(const char *ptr, int file, Command *&command, Data *&window,
 		Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
@@ -50,7 +49,6 @@ public:
 	char *setup(char chr) {return ::setup(chars,chr);}
 	char *setup(int len) {char *str = chars.get(len+1); for (int i = 0; i < len+1; i++) str[i] = 0; return str;}
 	const char *cleanup(char *str) {return ::cleanup(chars,str);}
-private:
 	int identifier(const char *&str, int &val);
 	int number(const char *&str, int &val);
 	int scalar(const char *&str, float &val);

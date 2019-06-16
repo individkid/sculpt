@@ -79,7 +79,7 @@ void Read::call()
     while (sound2rsp.get(sound)) parse.put(sound);
     while (system2rsp.get(system)) parse.put(system);
     while (script2rsp.get(script)) parse.put(script);
-	char *str = 0; // TODO return from buffer
+	while (1) {char *str = buffer;
 	parse.get(str,self,command,window,query,polytope,sound,system,script);
 	if (command) req2command->put(command);
 	if (window) req2window->put(window);
@@ -88,12 +88,17 @@ void Read::call()
 	if (sound) req2sound->put(sound);
 	if (system) req2system->put(system);
 	if (script) req2script->put(script);
-	parse.cleanup(str);
+	int length = str-buffer;
+	if (length == 0) break;
+	buffer = parse.prefix(buffer,-length);}
 }
 
 void Read::wait()
 {
-	// TODO buffer File::read up to discontiguity or -- for Read::read
+	char *temp = parse.setup(BUFFER_SIZE);
+	int length = file->read(temp,BUFFER_SIZE-1);
+	temp[length] = 0;
+	buffer = parse.concat(buffer,temp);
 }
 
 void Read::done()
@@ -104,7 +109,7 @@ Read::Read(int s, File *f) : Thread(),
 	command2rsp(this,"Read<-Data<-Command"), window2rsp(this,"Read<-Data<-Window"),
 	query2rsp(this,"Read<-Query<-Polytope"), polytope2rsp(this,"Read<-Data<-Polytope"),
 	sound2rsp(this,"Read<-Sound<-System"), system2rsp(this,"Read<-Data<-System"),
-	script2rsp(this,"Read<-Data<-Script"), self(s), file(f)
+	script2rsp(this,"Read<-Data<-Script"), self(s), file(f), buffer(0)
 {
 }
 

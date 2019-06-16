@@ -37,6 +37,7 @@
 #define LUA_DEBUG 4
 #define CALLBACK_DEBUG 8
 #define WINDOW_DEBUG 16
+#define BUFFER_SIZE 100
 
 struct GLFWwindow;
 typedef unsigned MYenum;
