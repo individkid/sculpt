@@ -106,20 +106,22 @@ enum Sculpt {
 	Sculpts};
 enum Configure {
 	SculptConf, // Read->Window
-	PlaneConf, // Read->Polytope->Write
 	GlobalConf, // Read->Window->Write
 	MatrixConf, // Read->Window->Write
+	PlaneConf, // Read->Polytope->Write
+	PictureConf, // Read->Polytope
 	SpaceConf, // Read->Polytope
 	RegionConf, // Read->Polytope->Write
 	InflateConf, // Read->Polytope
-	PictureConf, // Read->Polytope
-	MetricConf, // Read->System->Script
+	PolytopeConf, // Read->Polytope
+	IncludeConf, // Read->Polytope
+	ScriptConf, // Read->Script
 	MacroConf, // Read->Window->Script
 	HotkeyConf, // Read->Window->Script
-	ScriptConf, // Read->Script
+	MetricConf, // Read->System->Script
+	NotifyConf, // Read->Polytope->Script
 	ConfigureConf, // Read->Window
 	TimewheelConf, // Read->System
-	TestConf, // Read->Polytope
 	Configures};
 enum Subconf {
 	StartSub,
@@ -132,46 +134,51 @@ enum Field {
 	ReadField,
 	Fields};
 enum Opcode {
-	ReadOp, 
-	WriteOp, 
-	FileOp,
-	PlaneOp,
-	ConfOp,
-	SculptOp,
-	ClickOp,
-	MouseOp,
-	RollerOp,
-	TargetOp,
-	TopologyOp,
-	FixedOp,
-	BoundariesOp,
-	RegionsOp,
-	PlanesOp,
-	SidesOp,
-	SideOp,
-	InsidesOp,
-	OutsidesOp,
-	InsideOp,
-	OutsideOp,
+	// Thread
+	ReadOp, WriteOp, QueryOp, DisplayOp, ManipOp, CommandOp, SoundOp, PointerOp, 
+	// Data
+	FileOp, PlaneOp, ConfOp,
+	SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,
+	BoundariesOp, RegionsOp, PlanesOp, SidesOp,
+	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
 	MatrixOp,
-	VersorOp,
-	VectorOp,
-	DelayOp,
-	CountOp,
-	IdentOp,
-	ValueOp,
-	MetricOp,
-	SubconfOp,
-	SettingOp,
+	VersorOp, VectorOp,
+	DelayOp, CountOp, IdentOp, ValueOp, MetricOp,
+	SubconfOp, SettingOp,
 	FilenameOp,
 	ScriptOp,
-	QueryOp,
-	DisplayOp,
-	TextOp,
-	ManipOp,
-	CommandOp,
-	// TODO
-	PointerOp, 
+	// Query
+	/*FileOp,*/ TextOp,
+	// Command
+	/*FileOp,*/ FeedbackOp, FinishOp,
+	AllocOp, /*WriteOp,*/ BindOp, /*ReadOp,*/
+	// Update
+	/*FileOp,*/ /*FinishOp,*/
+	BufferOp,
+	OffsetOp, WidthOp,
+	SizeOp, HeightOp,
+	DataOp, /*TextOp,*/ ScalarOp, /*QueryOp,*/
+	FormatOp, /*FeedbackOp,*/ DatasOp,
+	FunctionOp, FunctionsOp,
+	// Render
+	/*FileOp,*/
+	ProgramOp, BaseOp, /*CountOp,*/ /*SizeOp,*/
+	// Feedback
+	PierceOp, NormalOp, TagbitsOp, /*PlaneOp,*/
+	// Format
+	CursorOp, AffineOp, PerplaneOp, BasisOp,
+	CutoffOp, SlopeOp, AspectOp,
+	FeatherOp, ArrowOp, EnableOp,
+	// Manip
+	/*FileOp,*/ /*PlaneOp,*/
+	/*ClickOp,*/ /*TopologyOp,*/ /*FixedOp,*/
+	/*VectorOp,*/ /*MatrixOp,*/
+	// Sound
+	/*FileOp,*/ /*IdentOp,*/ /*ValueOp,*/
+	// Sum
+	/*CountOp,*/
+	// Term
+	CoefOp, FactorOp, SquareOp, CompOp,
 	Opcodes};
 struct Format
 {

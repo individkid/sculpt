@@ -51,6 +51,6 @@ void Pools::put(Sound *sound)
 
 void Pools::put(Data *data)
 {
-	if (data->conf == MatrixConf || data->conf == GlobalConf) floats.put(16,data->matrix);
+	// TODO
 	datas.put(data);
 }

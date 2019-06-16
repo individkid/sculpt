@@ -24,16 +24,13 @@
 class Parse : public Pools
 {
 private:
-	int get(const char *ptr, Update *&update);
-	int get(const char *ptr, Render *&render);
-	int get(const char *ptr, int file, Command *&command);
-	void script(const char *ptr, int file, enum Configure conf, Data *&data);
-	void text(const char *ptr, int file, enum Configure conf, Data *&data);
-	void get(const char *ptr, int file, Sound *&sound);
-	void configure(const char *ptr, int file, enum Configure conf, Data *&data);
+	int get(const char *&ptr, Update *&update);
+	int get(const char *&ptr, Render *&render);
+	int get(const char *&ptr, int file, Command *&command);
+	int get(const char *&ptr, int file, Sound *&sound);
+	int get(const char *&ptr, int file, Query *&query);
 public:
 	Parse(const char *file, int line) : Pools(file,line) {}
-	void get(const char *ptr, int file, enum Configure conf, Data *&data);
 	void get(const char *ptr, int file, Command *&command, Data *&window,
 		Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
@@ -53,10 +50,21 @@ public:
 	char *setup(char chr) {return ::setup(chars,chr);}
 	char *setup(int len) {char *str = chars.get(len+1); for (int i = 0; i < len+1; i++) str[i] = 0; return str;}
 	const char *cleanup(char *str) {return ::cleanup(chars,str);}
-	int number(const char *str, int &val);
-	int scalar(const char *str, float &val);
-	int literal(const char *str, const char *pat);
-	int text(const char *str);
+private:
+	int identifier(const char *&str, int &val);
+	int number(const char *&str, int &val);
+	int scalar(const char *&str, float &val);
+	int literal(const char *&str, const char *pat);
+	int text(const char *&str, char *&val);
+	int word(const char *&str, char *&txt);
+	int identifiers(const char *&str, int siz, int *&val);
+	int numbers(const char *&str, int siz, int *&val);
+	int scalars(const char *&str, int siz, float *&val);
+	int alloc(Data *&ptr);
+	void deloc(int siz, int *val);
+	void deloc(int siz, float *val);
+	void deloc(char *val);
+	void deloc(Data *ptr);
 };
 
 #endif

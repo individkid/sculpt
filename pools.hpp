@@ -33,11 +33,12 @@ protected:
 	Pool<Data> datas;
 	Power<float> floats;
 	Power<char> chars;
+	Power<int> ints;
 public:
 	Pools(const char *file, int line) :
 		commands(file,line), updates(file,line), renders(file,line),
-		manips(file,line), queries(file,line), sounds(file,line),
-		datas(file,line), floats(file,line), chars(file,line) {}
+		manips(file,line), queries(file,line), sounds(file,line), datas(file,line),
+		floats(file,line), chars(file,line), ints(file,line) {}
 	void put(Command *command);
 	void put(Manip *manip);
 	void put(Query *query);
