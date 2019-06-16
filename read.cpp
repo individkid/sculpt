@@ -109,8 +109,9 @@ Read::Read(int s, File *f) : Thread(),
 	command2rsp(this,"Read<-Data<-Command"), window2rsp(this,"Read<-Data<-Window"),
 	query2rsp(this,"Read<-Query<-Polytope"), polytope2rsp(this,"Read<-Data<-Polytope"),
 	sound2rsp(this,"Read<-Sound<-System"), system2rsp(this,"Read<-Data<-System"),
-	script2rsp(this,"Read<-Data<-Script"), self(s), file(f), buffer(0)
+	script2rsp(this,"Read<-Data<-Script"), self(s), file(f)
 {
+	buffer = parse.setup("");
 }
 
 Read::~Read()
