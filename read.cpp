@@ -90,7 +90,7 @@ void Read::call()
 	if (script) req2script->put(script);
 	int length = str-buffer;
 	if (length == 0) break;
-	buffer = parse.prefix(buffer,-length);}
+	buffer = parse.postfix(buffer,length);}
 }
 
 void Read::wait()
