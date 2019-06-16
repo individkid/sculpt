@@ -134,6 +134,12 @@ enum Field {
 	BindField,
 	ReadField,
 	Fields};
+enum Factor {
+	ConstFactor,
+	VaryFactor,
+	SquareFactor,
+	CompFactor,
+	Factors};
 enum Opcode {
 	// Thread
 	ReadOp, WriteOp, QueryOp, DisplayOp, ManipOp, CommandOp, SoundOp, PointerOp, 
@@ -264,23 +270,21 @@ struct Data
 	// Read->PlaneConf->Polytope->Command->Window
 	// Window->Manip->Polytope->PlaneConf->Write
 	struct {int versor; float *vector;};
-	// Read->MetricConf->System->Script
+	// Read->(MetricConf,NotifyConf)->System->Script
 	struct {float delay; int count; int *ident; double *value; char *metric;};
 	// Read->ConfigureConf->Window
 	// Read->TimewheelConf->System
 	struct {enum Subconf subconf; float setting;};
 	// Read->PictureConf->Polytope->Command->Window
 	char *filename;
-	// Read->(ScriptConf,InvokeConf)->Script
+	// Read->ScriptConf->Script
 	// Read->(MacroConf,HotkeyConf)->Window->Script
 	char *script;};
 };
 struct Term
 {
-	double coef;
-	union {int id; double *ptr;} factor;
-	union {int id; double *ptr;} square;
-	union {int id; double *ptr;} comp;
+	double coef; enum Factor factor;
+	int *id; double **ptr;
 };
 struct Sum
 {

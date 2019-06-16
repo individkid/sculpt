@@ -35,13 +35,13 @@ The -- commands and messages between threads are as follows. Note that only mess
 --sculpt topology symbolic (tweak holds space invariant) Read->SculptConf->Window  
 --sculpt fixed relative (tweak holds pierce point fixed) Read->SculptConf->Window  
 --sculpt fixed absolute (tweak holds nothing fixed) Read->SculptConf->Window  
---matrix (change transformation of polytope) Read->MatrixConf->Window  
 --global (change transformation of display) Read->GlobalConf->Window  
+--matrix (change transformation of polytope) Read->MatrixConf->Window  
 --plane (add and classify plane from vector) Read->PlaneConf->Polytope->Command->Window  
 --picture (decorate plane with texture from file) Read->PictureConf->Polytope->Command->Window  
+--space (add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
 --region (change whether region in polytope) Read->RegionConf->Polytope->Command->Window  
 --inflate (change polytope regions to all inside) Read->InflateConf->Polytope->Command->Window  
---space (add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
 --polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope->Command->Window
 --include (open given file and use as shared subspace) Read->IncludeConf->Polytope  
 --query (send request for topology feature to display) Read->Query->Polytope  
@@ -51,7 +51,7 @@ The -- commands and messages between threads are as follows. Note that only mess
 --macro (send script to execute upon click) Read->MacroConf->Window->Script  
 --hotkey (send script to execute upon keypress) Read->HotkeyConf->Window->Script  
 --metric (send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
---notify (send script to execute upon topology change) Read->NotifyConf->Polytope->Script
+--notify (send script to execute upon topology change) Read->Query->Polytope->Script
 --configure (change constants like focal length) Read->ConfigureConf->Window  
 --timewheel (start and stop stock and flow system) Read->TimewheelConf->System  
 (send window transformation change to other processes) Window->GlobalConf->Write  
