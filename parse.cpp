@@ -124,17 +124,17 @@ int Parse::get(const char *&ptr, int file, Query *&query)
 }
 
 #define CONF_SCULPT(ULPTS,MODES,ULPT,MODE) \
-	if (literal(tmp=ptr,"--sculpt") && alloc(window) && literal(tmp,#ULPTS) && \
-	literal(tmp,#MODES)) {window->file = file; window->conf = SculptConf; \
-	window->sculpt = ULPT##Ulpt; window->ULPTS = MODE##Mode; return;} \
-	else {deloc(window);}
+	if (literal(ptr,"--sculpt") && alloc(window) && literal(ptr,#ULPTS) && \
+	literal(ptr,#MODES)) {window->file = file; window->conf = SculptConf; \
+	window->sculpt = ULPT##Ulpt; window->ULPTS = MODE##Mode; return 1;} \
+	else {deloc(window); ptr = sav;}
 
-void Parse::get(const char *ptr, int file, Command *&command, Data *&window,
+int Parse::get(const char *&ptr, int file, Command *&command, Data *&window,
 	Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script)
 {
 	command = 0; query = 0; sound = 0;
 	window = polytope = system = script = 0;
-	const char *tmp; char *txt; int num;
+	const char *sav = ptr; char *txt; int num;
 
 	CONF_SCULPT(click,additive,Click,Additive);
 	CONF_SCULPT(click,subractive,Click,Subtractive);
@@ -159,64 +159,75 @@ void Parse::get(const char *ptr, int file, Command *&command, Data *&window,
 	CONF_SCULPT(fixed,relative,Fixed,Relative)
 	CONF_SCULPT(fixed,absolute,Fixed,Absolute)
 
-	if (literal(tmp=ptr,"--global") && alloc(window) && scalars(tmp,16,window->matrix)) {
-	window->file = file; window->conf = GlobalConf; return;}
-	else {deloc(16,window->matrix); deloc(window);}
-	if (literal(tmp=ptr,"--matrix") && alloc(window) && scalars(tmp,16,window->matrix)) {
-	window->file = file; window->conf = MatrixConf; return;}
-	else {deloc(16,window->matrix); deloc(window);}
-	if (literal(tmp=ptr,"--plane") && alloc(polytope) && identifier(tmp,polytope->plane) &&
-	number(tmp,polytope->versor) && scalars(tmp,3,polytope->vector)) {
-	polytope->file = file; polytope->conf = PlaneConf; return;}
-	else {deloc(3,polytope->vector); deloc(polytope);}
-	if (literal(tmp=ptr,"--picture") && identifier(tmp,polytope->plane) && word(tmp,polytope->filename)) {
-	polytope->file = file; polytope->conf = PictureConf; return;}
-	else {deloc(polytope->filename); deloc(polytope);}
-	if (literal(tmp=ptr,"--space") && number(tmp,polytope->boundaries) && number(tmp,polytope->regions) &&
-	identifiers(tmp,polytope->boundaries,polytope->planes) &&
-	numbers(tmp,polytope->boundaries*polytope->regions,polytope->sides)) {
-	polytope->file = file; polytope->conf = SpaceConf; return;}
+	if (literal(ptr,"--global") && alloc(window) && scalars(ptr,16,window->matrix)) {
+	window->file = file; window->conf = GlobalConf; return 1;}
+	else {deloc(16,window->matrix); deloc(window); ptr = sav;}
+	if (literal(ptr,"--matrix") && alloc(window) && scalars(ptr,16,window->matrix)) {
+	window->file = file; window->conf = MatrixConf; return 1;}
+	else {deloc(16,window->matrix); deloc(window); ptr = sav;}
+	if (literal(ptr,"--plane") && alloc(polytope) && identifier(ptr,polytope->plane) &&
+	number(ptr,polytope->versor) && scalars(ptr,3,polytope->vector)) {
+	polytope->file = file; polytope->conf = PlaneConf; return 1;}
+	else {deloc(3,polytope->vector); deloc(polytope); ptr = sav;}
+	if (literal(ptr,"--picture") && identifier(ptr,polytope->plane) && word(ptr,polytope->filename)) {
+	polytope->file = file; polytope->conf = PictureConf; return 1;}
+	else {deloc(polytope->filename); deloc(polytope); ptr = sav;}
+	if (literal(ptr,"--space") && number(ptr,polytope->boundaries) && number(ptr,polytope->regions) &&
+	identifiers(ptr,polytope->boundaries,polytope->planes) &&
+	numbers(ptr,polytope->boundaries*polytope->regions,polytope->sides)) {
+	polytope->file = file; polytope->conf = SpaceConf; return 1;}
 	else {deloc(polytope->boundaries,polytope->planes);
-	deloc(polytope->boundaries*polytope->regions,polytope->sides); deloc(polytope);}
-	if (literal(tmp=ptr,"--region") && number(tmp,polytope->side) &&
-	number(tmp,polytope->insides) && number(tmp,polytope->outsides) &&
-	identifiers(tmp,polytope->insides,polytope->inside) &&
-	identifiers(tmp,polytope->outsides,polytope->outside)) {
-	polytope->file = file; polytope->conf = RegionConf; return;}
+	deloc(polytope->boundaries*polytope->regions,polytope->sides); deloc(polytope); ptr = sav;}
+	if (literal(ptr,"--region") && number(ptr,polytope->side) &&
+	number(ptr,polytope->insides) && number(ptr,polytope->outsides) &&
+	identifiers(ptr,polytope->insides,polytope->inside) &&
+	identifiers(ptr,polytope->outsides,polytope->outside)) {
+	polytope->file = file; polytope->conf = RegionConf; return 1;}
 	else {deloc(polytope->insides,polytope->inside); deloc(polytope->outsides,polytope->outside);
-	deloc(polytope);}
-	if (literal(tmp=ptr,"--inflate") && alloc(polytope)) {
-	polytope->file = file; polytope->conf = InflateConf; return;}
-	if (literal(tmp=ptr,"--polyant") && alloc(polytope) && 0/*TODO*/) {
-	polytope->file = file; polytope->conf = PolytopeConf; return;}
-	else {/*TODO*/ deloc(polytope);}
-	if (literal(tmp=ptr,"--include") && text(tmp,txt)) {
-	/*TODO*/ deloc(txt); return;}
-	if (literal(tmp=ptr,"--query") && get(tmp,file,query)) return;
-	if (literal(tmp=ptr,"--command") && get(tmp,file,command)) return;
-	if (literal(tmp=ptr,"--sound") && get(tmp,file,sound)) return;
-	if (literal(tmp=ptr,"--script") && alloc(script) && text(tmp,script->script)) {
-	script->file = file; script->conf = ScriptConf; return;}
-	else {deloc(script->script); deloc(script);}
-	if (literal(tmp=ptr,"--macro") && alloc(window) && text(tmp,window->script)) {
-	window->file = file; window->conf = MacroConf; return;}
-	else {deloc(window->script); deloc(window);}
-	if (literal(tmp=ptr,"--hotkey") && alloc(window) && text(tmp,window->script)) {
-	window->file = file; window->conf = HotkeyConf; return;}
-	else {deloc(window->script); deloc(window);}
-	if (literal(tmp=ptr,"--metric") && alloc(system) && scalar(tmp,system->delay) &&
-	number(tmp,system->count) && identifiers(tmp,system->count,system->ident) && text(tmp,system->metric)) {
-	system->file = file; system->conf = MetricConf; return;}
-	else {deloc(system->count,system->ident); deloc(system->metric); deloc(system);}
-	if (literal(tmp=ptr,"--notify") && get(tmp,file,query)) return;
-	if (literal(tmp=ptr,"--configure") && alloc(window) &&
-	number(tmp,num) && scalar(tmp,window->setting)) {
-	window->file = file; window->conf = ConfigureConf; window->subconf = (Subconf)num; return;}
-	else {deloc(window);}
-	if (literal(tmp=ptr,"--timewheel") && alloc(system) &&
-	number(tmp,num) && scalar(tmp,system->setting)) {
-	system->file = file; system->conf = TimewheelConf; system->subconf = (Subconf)num; return;}
-	else {deloc(system);}
+	deloc(polytope); ptr = sav;}
+	if (literal(ptr,"--inflate") && alloc(polytope)) {
+	polytope->file = file; polytope->conf = InflateConf; return 1;}
+	else {deloc(polytope); ptr = sav;}
+	if (literal(ptr,"--polyant") && alloc(polytope) && 0/*TODO*/) {
+	polytope->file = file; polytope->conf = PolytopeConf; return 1;}
+	else {/*TODO*/ deloc(polytope); ptr = sav;}
+	if (literal(ptr,"--include") && text(ptr,txt)) {
+	/*TODO*/ deloc(txt); return 1;}
+	else {ptr = sav;}
+	if (literal(ptr,"--query") && get(ptr,file,query)) return 1;
+	else {ptr = sav;}
+	if (literal(ptr,"--command") && get(ptr,file,command)) return 1;
+	else {ptr = sav;}
+	if (literal(ptr,"--sound") && get(ptr,file,sound)) return 1;
+	else {ptr = sav;}
+	if (literal(ptr,"--script") && alloc(script) && text(ptr,script->script)) {
+	script->file = file; script->conf = ScriptConf; return 1;}
+	else {deloc(script->script); deloc(script); ptr = sav;}
+	if (literal(ptr,"--macro") && alloc(window) && text(ptr,window->script)) {
+	window->file = file; window->conf = MacroConf; return 1;}
+	else {deloc(window->script); deloc(window); ptr = sav;}
+	if (literal(ptr,"--hotkey") && alloc(window) && text(ptr,window->script)) {
+	window->file = file; window->conf = HotkeyConf; return 1;}
+	else {deloc(window->script); deloc(window); ptr = sav;}
+	if (literal(ptr,"--metric") && alloc(system) && scalar(ptr,system->delay) &&
+	number(ptr,system->count) && identifiers(ptr,system->count,system->ident) && text(ptr,system->metric)) {
+	system->file = file; system->conf = MetricConf; return 1;}
+	else {deloc(system->count,system->ident); deloc(system->metric); deloc(system); ptr = sav;}
+	if (literal(ptr,"--notify") && get(ptr,file,query)) return 1;
+	else {ptr = sav;}
+	if (literal(ptr,"--configure") && alloc(window) &&
+	number(ptr,num) && scalar(ptr,window->setting)) {
+	window->file = file; window->conf = ConfigureConf; window->subconf = (Subconf)num; return 1;}
+	else {deloc(window); ptr = sav;}
+	if (literal(ptr,"--timewheel") && alloc(system) &&
+	number(ptr,num) && scalar(ptr,system->setting)) {
+	system->file = file; system->conf = TimewheelConf; system->subconf = (Subconf)num; return 1;}
+	else {deloc(system); ptr = sav;}
+
+	if (ptr[0] == '-' && ptr[1] == '-') ptr += 2;
+	while (ptr[0] != 0 && !(ptr[0] == '-' && ptr[1] == '-')) ptr++;
+	if (ptr[0] == 0) ptr = sav;
+	return 0;
 }
 
 int Parse::identifier(const char *&str, int &val)
@@ -302,29 +313,41 @@ int Parse::scalars(const char *&str, int siz, float *&val)
 	return 1;
 }
 
-int Parse::alloc(Data *&ptr)
+int Parse::alloc(Data *&val)
 {
 	Data init = {0};
-	ptr = datas.get(); *ptr = init;
+	val = datas.get(); *val = init;
 	return 1;
 }
 
-void Parse::deloc(int siz, int *val)
+int Parse::deloc(int siz, int *&val)
 {
-	if (siz&&val) ints.put(siz,val);
+	if (siz == 0 || val == 0) return 0;
+	ints.put(siz,val);
+	val = 0;
+	return 1;
 }
 
-void Parse::deloc(int siz, float *val)
+int Parse::deloc(int siz, float *&val)
 {
-	if (siz&&val) floats.put(siz,val);
+	if (siz == 0 || val == 0) return 0;
+	floats.put(siz,val);
+	val = 0;
+	return 1;
 }
 
-void Parse::deloc(char *val)
+int Parse::deloc(char *&val)
 {
-	if (val) chars.put(strlen(val)+1,val);
+	if (val == 0) return 0;
+	chars.put(strlen(val)+1,val);
+	val = 0;
+	return 1;
 }
 
-void Parse::deloc(Data *ptr)
+int Parse::deloc(Data *&val)
 {
-	if (ptr) datas.put(ptr);
+	if (val == 0) return 0;
+	datas.put(val);
+	val = 0;
+	return 1;
 }
