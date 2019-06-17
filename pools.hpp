@@ -20,36 +20,6 @@
 #define POOLS_HPP
 
 #include "message.hpp"
-#include <set>
-#include <map>
-
-enum Identity {
-	NameIdent,
-	NumberIdent,
-	Identities};
-struct Unique
-{
-	enum Identity ident;
-	union {int number; const char *name;};
-	bool operator()(const Unique &lhs, const Unique &rhs) const
-	{if (ident == NameIdent) return (strcmp(lhs.name,rhs.name) < 0);
-	return (lhs.number < rhs.number);}
-};
-struct Range
-{
-	int base;
-	int size;
-	bool operator()(const Range &lhs, const Range &rhs) const
-	{return (lhs.base+lhs.size <= rhs.base);}
-};
-struct Holes
-{
-	std::map<Unique,int,Unique> unique;
-	std::set<Range,Range> range;
-	int get();
-	int get(int num);
-	int get(const char *nam);
-};
 
 class Pools
 {

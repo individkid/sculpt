@@ -140,6 +140,10 @@ enum Factor {
 	SquareFactor,
 	CompFactor,
 	Factors};
+enum Identity {
+	NameIdent,
+	NumberIdent,
+	Identities};
 enum Opcode {
 	// Thread
 	ReadOp, WriteOp, QueryOp, DisplayOp, ManipOp, CommandOp, SoundOp, PointerOp, 

@@ -159,7 +159,7 @@ extern Window *window;
 
 static Pool<Data> datas(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
-static Sparse<Pair<int,int>,Data*> macros(__FILE__,__LINE__);
+static std::map<std::pair<int,int>,Data*> macros;
 static Pool<Manip> manips(__FILE__,__LINE__);
 
 extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix)
@@ -212,8 +212,8 @@ extern "C" void sendFacet(int file, int plane, float *matrix)
 
 extern "C" void sendInvoke(int file, int plane)
 {
-    Pair<int,int> pair; pair.s = file; pair.t = plane;
-    if (!macros.lookup(pair)) error("invalid tagbits",0,__FILE__,__LINE__);
+    std::pair<int,int> pair; pair.first = file; pair.second = plane;
+    if (macros.find(pair) == macros.end()) error("invalid tagbits",0,__FILE__,__LINE__);
     window->sendScript(macros[pair]);
 }
 
@@ -471,8 +471,8 @@ void Window::processDatas(Message<Data> &message)
     Data *data; while (message.get(data)) {
         if (&message == &read2req) {
             if (data->conf == MacroConf) {
-                Pair<int,int> pair; pair.s = data->file; pair.t = data->plane;
-                if (macros.lookup(pair)) object[data->file].rsp2read->put(macros[pair]);
+                std::pair<int,int> pair; pair.first = data->file; pair.second = data->plane;
+                if (macros.find(pair) != macros.end()) object[data->file].rsp2read->put(macros[pair]);
                 macros[pair] = data;}
             else {
                 changeState(data);
@@ -487,8 +487,9 @@ void Window::processDatas(Message<Data> &message)
 
 void Window::processMacros()
 {
-    Pair<int,int> pair;
-    while (macros.first(pair)) {
-    Data *data = macros[pair];
+    while (macros.begin() != macros.end()) {
+    std::map<std::pair<int,int>,Data*>::iterator iter = macros.begin();
+    Data *data = (*iter).second;
+    macros.erase(iter);
     object[data->file].rsp2read->put(data);}
 }
