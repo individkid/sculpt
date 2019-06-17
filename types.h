@@ -191,6 +191,7 @@ enum Opcode {
 	// Term
 	CoefOp, FactorOp, SquareOp, CompOp,
 	Opcodes};
+
 struct Format
 {
 	float cursor[2];
@@ -243,6 +244,7 @@ struct Command
 	struct Command *redraw;
 	struct Command *pierce;
 };
+
 struct Manip
 {
 	// Window->Manip->Polytope
@@ -253,6 +255,7 @@ struct Manip
 	enum FixedMode fixed;
 	union {float *vector; float *matrix;};
 };
+
 struct Data
 {
 	struct Data *next;
@@ -285,6 +288,7 @@ struct Data
 	// Read->(MacroConf,HotkeyConf)->Window->Script
 	char *script;};
 };
+
 struct Term
 {
 	double coef; enum Factor factor;
