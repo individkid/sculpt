@@ -18,6 +18,50 @@
 
 #include "pools.hpp"
 
+int Holes::get()
+{
+	if (range.begin() == range.end()) {
+		Range zero; zero.base = 0; zero.size = 1;
+		range.insert(zero);
+		return 0;}
+	std::set<Range,Range>::iterator iter = range.begin();
+	Range elem = *iter;
+	int val;
+	if (elem.base == 0) {
+		val = elem.size++;
+		std::set<Range,Range>::iterator after = iter;
+		if (++after != range.end()) {
+			Range post = *after;
+			if (elem.base+elem.size == post.base) {
+				elem.size += post.size;
+				range.erase(after);}}}
+	else {
+		val = elem.base--;
+		std::set<Range,Range>::iterator before = iter;
+		if (--before != range.end()) {
+			Range prev = *before;
+			if (prev.base+prev.size == elem.base) {
+				elem.base = prev.base;
+				range.erase(before);}}}
+	range.erase(iter);
+	range.insert(elem);
+	return val;
+}
+
+int Holes::get(int num)
+{
+	Unique key; key.ident = NumberIdent; key.number = num;
+	if (unique.find(key) == unique.end()) unique[key] = get();
+	return unique[key];
+}
+
+int Holes::get(const char *nam)
+{
+	Unique key; key.ident = NameIdent; key.name = nam;
+	if (unique.find(key) == unique.end()) unique[key] = get();
+	return unique[key];
+}
+
 void Pools::put(Command *command)
 {
 	while (command) {
