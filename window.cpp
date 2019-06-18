@@ -109,7 +109,7 @@ void Window::call()
     processCommands(polytope2req,polytope);
     processManips(polytope2rsp);
     processDatas(read2req);
-    processDatas(write2rsp);
+    processStates(write2rsp);
     processDatas(script2rsp);
 }
 
@@ -151,23 +151,24 @@ Window::~Window()
 {
     if (window) error("done not called",0,__FILE__,__LINE__);
     processManips(polytope2rsp);
-    processDatas(write2rsp);
+    processStates(write2rsp);
     processDatas(script2rsp);
 }
 
 extern Window *window;
 
 static Pool<Data> datas(__FILE__,__LINE__);
+static Pool<State> states(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
 static Sparse<Pair<int,int>,Data*> macros(__FILE__,__LINE__);
 static Pool<Manip> manips(__FILE__,__LINE__);
 
-extern "C" void sendData(int file, int plane, enum Configure conf, float *matrix)
+extern "C" void sendState(int file, enum Change change, float *matrix)
 {
-    Data *data = datas.get(); data->matrix = floats.get(16);
-    data->file = file; data->plane = plane; data->conf = conf;
-    for (int i = 0; i < 16; i++) data->matrix[i] = matrix[i];
-    window->sendWrite(data);
+    State *state = states.get(); state->matrix = floats.get(16);
+    state->file = file; state->change = change;
+    for (int i = 0; i < 16; i++) state->matrix[i] = matrix[i];
+    window->sendWrite(state);
 }
 
 extern "C" void sendSculpt(int file, int plane, enum ClickMode click)
@@ -235,9 +236,9 @@ extern "C" int decodeClick(int button, int action, int mods)
     return -1;
 }
 
-void Window::sendWrite(Data *data)
+void Window::sendWrite(State *state)
 {
-    object[data->file].req2write->put(data);
+    object[state->file].req2write->put(state);
 }
 
 void Window::sendPolytope(Manip *manip)
@@ -466,6 +467,18 @@ void Window::processManips(Message<Manip> &message)
         manips.put(manip);}
 }
 
+void Window::processStates(Message<State> &message)
+{
+    State *state; while (message.get(state)) {
+        switch (state->change) {
+            case (GlobalChange):
+            case (MatrixChange): floats.put(16,state->matrix); break;
+            case (PlaneChange):
+            case (RegionChange):
+            case (TextChange):
+            default: error("invalid change",state->change,__FILE__,__LINE__);}}
+}
+
 void Window::processDatas(Message<Data> &message)
 {
     Data *data; while (message.get(data)) {
@@ -477,9 +490,6 @@ void Window::processDatas(Message<Data> &message)
             else {
                 changeState(data);
                 object[data->file].rsp2read->put(data);}}
-        if (&message == &write2rsp) {
-            floats.put(16,data->matrix);
-            datas.put(data);}
         if (&message == &script2rsp) {
             // nothing to do
         }}

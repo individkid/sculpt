@@ -26,13 +26,13 @@ class File;
 class Write : public Thread
 {
 private:
-	Message<Data> *rsp2polytope;
-	Message<Data> *rsp2script;
-	Message<Data> *rsp2window;
+	Message<State> *rsp2polytope;
+	Message<State> *rsp2script;
+	Message<State> *rsp2window;
 public:
-	Message<Data> polytope2req;
-	Message<Data> script2req;
-	Message<Data> window2req;
+	Message<State> polytope2req;
+	Message<State> script2req;
+	Message<State> window2req;
 public:
 	void connect(Polytope *ptr);
 	void connect(Script *ptr);

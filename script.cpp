@@ -65,7 +65,7 @@ void Script::call()
 {
 	processDatas(read2req);
 	processQueries(polytope2rsp);
-	processDatas(write2rsp);
+	processStates(write2rsp);
 	processDatas(system2req);
 	processDatas(window2req);
 }
@@ -79,7 +79,7 @@ void Script::done()
 }
 
 Script::Script(int n) :
-	rsp2read(new Message<Data>*[n]), req2write(new Message<Data>*[n]),
+	rsp2read(new Message<Data>*[n]), req2write(new Message<State>*[n]),
 	read2req(this,"Read->Data->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
 	write2rsp(this,"Script<-Data<-Write"), system2req(this,"System->Data->Script"),
 	window2req(this,"Window->Data->Script"), state(0), nfile(n), cleanup(0)
@@ -89,10 +89,11 @@ Script::Script(int n) :
 Script::~Script()
 {
 	processQueries(polytope2rsp);
-	processDatas(write2rsp);
+	processStates(write2rsp);
 }
 
 static Pool<Query> queries(__FILE__,__LINE__);
+static Power<char> chars(__FILE__,__LINE__);
 
 #define POP_ERROR(MESSAGE,LINE) { \
 	message(MESSAGE,LINE,__FILE__,__LINE__); \
@@ -140,6 +141,18 @@ void Script::processQueries(Message<Query> &message)
 		}
 		if (&message == &polytope2rsp) {
 			queries.put(query);}}
+}
+
+void Script::processStates(Message<State> &message)
+{
+    State *state; while (message.get(state)) {
+        switch (state->change) {
+            case (TextChange): chars.put(strlen(state->text)+1,state->text); break;
+            case (GlobalChange):
+            case (MatrixChange):
+            case (PlaneChange):
+            case (RegionChange):
+            default: error("invalid change",state->change,__FILE__,__LINE__);}}
 }
 
 void Script::processDatas(Message<Data> &message)

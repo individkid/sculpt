@@ -52,7 +52,7 @@ public:
 	Message<Data> read2req;
 	Message<Command> polytope2req;
 	Message<Manip> polytope2rsp;
-	Message<Data> write2rsp;
+	Message<State> write2rsp;
 	Message<Data> script2rsp;
 public:
 	void connect(int i, Read *ptr);
@@ -69,7 +69,7 @@ public:
 	Window(int n);
 	virtual ~Window();
 public:
-	void sendWrite(Data *data);
+	void sendWrite(State *state);
 	void sendPolytope(Manip *manip);
 	void sendScript(Data *data);
 	void warpCursor(float *cursor);
@@ -98,6 +98,7 @@ private:
 	void processQueue(Queue &queue, Queues &queues);
 	void processCommands(Message<Command> &message, Queues &queues);
 	void processManips(Message<Manip> &message);
+	void processStates(Message<State> &message);
 	void processDatas(Message<Data> &message);
 	void processMacros();
 };

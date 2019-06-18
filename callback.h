@@ -37,7 +37,7 @@ struct Matrix
 	int plane;
 	int file;
 };
-struct State
+struct Mode
 {
 	int toggle;
 	enum ClickMode click;
@@ -50,7 +50,7 @@ struct State
 
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
-void sendData(int file, int plane, enum Configure conf, float *matrix);
+void sendState(int file, enum Change change, float *matrix);
 void sendSculpt(int file, int plane, enum ClickMode click);
 void sendRefine(int file, int plane, float *pierce);
 void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce);

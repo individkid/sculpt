@@ -49,6 +49,12 @@ void Pools::put(Sound *sound)
 	sounds.put(sound);
 }
 
+void Pools::put(State *state)
+{
+	// TODO
+	states.put(state);
+}
+
 void Pools::put(Data *data)
 {
 	// TODO

@@ -34,7 +34,7 @@ struct Object
 {
 	Message<Command> *rsp2command;
 	Message<Data> *rsp2read;
-	Message<Data> *req2write;
+	Message<State> *req2write;
 	Handle handle[Buffers];
 	MYuint vao[Programs];
 	void initFile(int first);

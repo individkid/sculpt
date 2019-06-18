@@ -102,6 +102,11 @@ void Stream::put(int fd, Opcode opcode, Query *query)
 	// TODO write query arguments
 }
 
+void Stream::put(int fd, Opcode opcode, State *state)
+{
+	// TODO
+}
+
 void Stream::put(int fd, Opcode opcode, Data *data)
 {
 	int rsp; switch (opcode) {

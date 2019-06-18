@@ -117,10 +117,10 @@ enum Configure {
 	PolytopeConf, // Read->Polytope
 	IncludeConf, // Read->Polytope
 	ScriptConf, // Read->Script
+	PauseConf, // Read->Script
 	MacroConf, // Read->Window->Script
 	HotkeyConf, // Read->Window->Script
 	MetricConf, // Read->System->Script
-	NotifyConf, // Read->Polytope->Script
 	ConfigureConf, // Read->Window
 	TimewheelConf, // Read->System
 	Configures};
@@ -128,6 +128,13 @@ enum Subconf {
 	StartSub,
 	StopSub,
 	Subconfs};
+enum Change {
+	GlobalChange,
+	MatrixChange,
+	PlaneChange,
+	RegionChange,
+	TextChange,
+	Changes};
 enum Field {
 	AllocField,
 	WriteField,
@@ -136,7 +143,7 @@ enum Field {
 	Fields};
 enum Opcode {
 	// Thread
-	ReadOp, WriteOp, QueryOp, DisplayOp, ManipOp, CommandOp, SoundOp, PointerOp, 
+	ReadOp, ManipOp, WriteOp, QueryOp, DisplayOp, WindowOp, CommandOp, PointerOp, 
 	// Data
 	FileOp, PlaneOp, ConfOp,
 	SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,
@@ -223,9 +230,8 @@ struct Render
 	int count;
 	int size;
 };
-struct Command
+struct Command // (Polytope,Read) -> Window
 {
-	// Read->Command->Window
 	struct Command *next;
 	int file; int feedback; int finish;
 	struct Update *update[Fields];
@@ -233,9 +239,8 @@ struct Command
 	struct Command *redraw;
 	struct Command *pierce;
 };
-struct Manip
+struct Manip // (Window,Read) -> Polytope
 {
-	// Window->Manip->Polytope
 	struct Manip *next;
 	int file; int plane;
 	enum ClickMode click;
@@ -243,35 +248,47 @@ struct Manip
 	enum FixedMode fixed;
 	union {float *vector; float *matrix;};
 };
-struct Data
+struct State // (Polytope,Window,Script)->Write
+{
+	// Polytope->(RegionState,PlaneState)->Write
+	// Window->(MatrixState,GlobalState)->Write
+	// Script->TextState->Write
+	struct State *next;
+	int file;
+	enum Change change;
+	union {
+	int plane; struct {int side; int insides; int outsides; int *inside; int *outside;};
+	float *matrix;
+	struct {int versor; float *vector;};
+	char *text;};
+};
+struct Data // Read -> (Polytope,Window,Script,System)
 {
 	struct Data *next;
 	int file; int plane;
 	enum Configure conf;
-	// Read->InflateConf->Polytope->Command->Window
+	// Read->InflateConf->Polytope
 	union {
 	// Read->SculptConf->Window
 	struct {enum Sculpt sculpt; union {
 	enum ClickMode click; enum MouseMode mouse; enum RollerMode roller;
 	enum TargetMode target; enum TopologyMode topology; enum FixedMode fixed;};};
-	// Read->SpaceConf->Polytope->Command->Window
+	// Read->SpaceConf->Polytope
 	struct {int boundaries; int regions; int *planes; int *sides;};
-	// Read->RegionConf->Polytope->Command->Window
-	// Window->Manip->Polytope->RegionConf->Write
+	// Read->RegionConf->Polytope
 	struct {int side; int insides; int outsides; int *inside; int *outside;};
-	// Read->(MatrixConf,GlobalConf)->Window->Write
+	// Read->(MatrixConf,GlobalConf)->Window
 	float *matrix;
-	// Read->PlaneConf->Polytope->Command->Window
-	// Window->Manip->Polytope->PlaneConf->Write
+	// Read->PlaneConf->Polytope
 	struct {int versor; float *vector;};
 	// Read->MetricConf->System->Script
 	struct {float delay; int count; int *ident; double *value; char *metric;};
 	// Read->ConfigureConf->Window
 	// Read->TimewheelConf->System
 	struct {enum Subconf subconf; float setting;};
-	// Read->PictureConf->Polytope->Command->Window
+	// Read->(PictureConf,IncludeConf)->Polytope
 	char *filename;
-	// Read->(ScriptConf,InvokeConf)->Script
+	// Read->(ScriptConf,PquseConf)->Script
 	// Read->(MacroConf,HotkeyConf)->Window->Script
 	char *script;};
 };
@@ -292,7 +309,7 @@ struct Equ
 	struct Sum numer;
 	struct Sum denom;
 };
-struct Sound
+struct Sound // Read -> System
 {
 	// Read->Sound->System
 	struct Sound *next;
@@ -306,9 +323,10 @@ struct Sound
 	struct Equ right; // directly audible right
 };
 
-struct Query
+struct Query // (Read,Script) -> Polytope
 {
 	// Script->Query->Polytope
+	// Read->Query->Polytope->Script
 	struct Query *next;
 	int file;
 	char *text;

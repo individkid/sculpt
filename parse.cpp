@@ -30,11 +30,12 @@ const char *buffer[] = {
 	"Point2",
 	"Face1","Triple0","Triple1",
 	"Pierce","Vector","Plane","Tagbits","Scalar",
-	"Uniform","Query","Texture0","Texture1"};
-const char *data[] = {"data","scalar","query"};
+	"Uniform","Query","Texture0","Texture1",0};
+const char *data[] = {"data","scalar","query",0};
 const char *name[] = {"getUniform","firstUniform","putUniform","checkQuery",0};
-void (*function[])(struct Update *) = {getUniform,firstUniform,putUniform,checkQuery};
-const char *program[] = {"Draw","Pierce","Sect0","Sect1","Side1","Side2"};
+void (*function[])(struct Update *) = {getUniform,firstUniform,putUniform,checkQuery,0};
+const char *program[] = {"Draw","Pierce","Sect0","Sect1","Side1","Side2",0};
+const char *subconf[] = {0};
 
 int Parse::get(const char *&ptr, Update *&update)
 {
@@ -42,8 +43,7 @@ int Parse::get(const char *&ptr, Update *&update)
 	if (number(ptr,update->file)) ;
 	else {updates.put(update); update = 0; return 0;}
 	for (i = 0; i < Buffers; i++) {
-		const char *pat = cleanup(concat(" ",buffer[i]));
-		if (literal(ptr,pat)) {update->buffer = (Buffer)i; break;}}
+		if (literal(ptr,buffer[i])) {update->buffer = (Buffer)i; break;}}
 	if (i == Buffers) {updates.put(update); update = 0; return 0;}
 	if (number(ptr,update->offset)) ;
 	else {updates.put(update); update = 0; return 0;}
@@ -57,8 +57,7 @@ int Parse::get(const char *&ptr, Update *&update)
 		int val; if (number(ptr,val)) {update->text[i] = val;}
 		else {updates.put(update); update = 0; return 0;}}
 	for (i = 0; name[i]; i++) {
-		const char *pat = cleanup(concat(" ",name[i]));
-		if (literal(ptr,pat)) {update->function = function[i]; break;}}
+		if (literal(ptr,name[i])) {update->function = function[i]; break;}}
 	return 1;
 }
 
@@ -68,8 +67,7 @@ int Parse::get(const char *&ptr, Render *&render)
 	if (number(ptr,render->file)) ;
 	else {renders.put(render); render = 0; return 0;}
 	for (i = 0; i < Programs; i++) {
-		const char *pat = cleanup(concat(" ",program[i]));
-		if (literal(ptr,pat)) {render->program = (Program)i; break;}}
+		if (literal(ptr,program[i])) {render->program = (Program)i; break;}}
 	if (i == Programs) {renders.put(render); render = 0; return 0;}
 	if (number(ptr,render->base)) ;
 	else {renders.put(render); render = 0; return 0;}
@@ -84,31 +82,36 @@ int Parse::get(const char *&ptr, int file, Command *&command)
 {
 	Command init = {0}; command = commands.get(); *command = init;
 	int i;
-	if (literal(ptr," feedback")) {command->feedback = 1;}
+	if (literal(ptr,"feedback")) {command->feedback = 1;}
 	for (i = 0; i < Fields; i++) {
-		const char *pat = cleanup(concat(" ",field[i]));
 		Update *update = 0; int inval = 0;
-		while (literal(ptr,pat)) {Update *temp;
+		while (literal(ptr,field[i])) {Update *temp;
 			if (get(ptr,temp)) {insert(update,temp);} else {inval = 1; break;}}
 		while (update) {
             insert(command->update[(Field)i],update);
             remove(update,update);}
         if (inval) {put(command); command = 0; return 0;}}
     Render *render = 0; int inval = 0;
-	while (literal(ptr," render")) {Render *temp;
+	while (literal(ptr,"render")) {Render *temp;
 		if (get(ptr,temp)) {insert(render,temp);} else {inval = 1; break;}}
 	while (render) {
 		insert(command->render,render);
 		remove(render,render);}
     if (inval) {put(command); command = 0; return 0;}
-	if (literal(ptr," redraw")) {
+	if (literal(ptr,"redraw")) {
 		if (get(ptr,file,command->redraw)) ;
 		else {put(command); command = 0; return 0;}}
-	if (literal(ptr," pierce")) {
+	if (literal(ptr,"pierce")) {
 		if (get(ptr,file,command->pierce)) ;
 		else {put(command); command = 0; return 0;}}
 	command->file = file;
 	return 1;
+}
+
+int Parse::get(const char *&ptr, int file, Manip *&manip)
+{
+	// TODO
+	return 0;
 }
 
 int Parse::get(const char *&ptr, int file, Sound *&sound)
@@ -129,12 +132,12 @@ int Parse::get(const char *&ptr, int file, Query *&query)
 	window->sculpt = ULPT##Ulpt; window->ULPTS = MODE##Mode; return 1;} \
 	else {deloc(window); ptr = sav;}
 
-int Parse::get(const char *&ptr, int file, Command *&command, Data *&window,
+int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Manip *&manip,
 	Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script)
 {
-	command = 0; query = 0; sound = 0;
+	command = 0; manip = 0; query = 0; sound = 0;
 	window = polytope = system = script = 0;
-	const char *sav = ptr; char *txt; int num;
+	const char *sav = ptr;
 
 	CONF_SCULPT(click,additive,Click,Additive);
 	CONF_SCULPT(click,subractive,Click,Subtractive);
@@ -169,7 +172,8 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window,
 	number(ptr,polytope->versor) && scalars(ptr,3,polytope->vector)) {
 	polytope->file = file; polytope->conf = PlaneConf; return 1;}
 	else {deloc(3,polytope->vector); deloc(polytope); ptr = sav;}
-	if (literal(ptr,"--picture") && identifier(ptr,polytope->plane) && word(ptr,polytope->filename)) {
+	if (literal(ptr,"--picture") && alloc(polytope) && identifier(ptr,polytope->plane) &&
+	word(ptr,polytope->filename)) {
 	polytope->file = file; polytope->conf = PictureConf; return 1;}
 	else {deloc(polytope->filename); deloc(polytope); ptr = sav;}
 	if (literal(ptr,"--space") && number(ptr,polytope->boundaries) && number(ptr,polytope->regions) &&
@@ -188,20 +192,21 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window,
 	if (literal(ptr,"--inflate") && alloc(polytope)) {
 	polytope->file = file; polytope->conf = InflateConf; return 1;}
 	else {deloc(polytope); ptr = sav;}
-	if (literal(ptr,"--polyant") && alloc(polytope) && 0/*TODO*/) {
+	if (literal(ptr,"--polytope") && alloc(polytope) && 0/*TODO*/) {
 	polytope->file = file; polytope->conf = PolytopeConf; return 1;}
 	else {/*TODO*/ deloc(polytope); ptr = sav;}
-	if (literal(ptr,"--include") && text(ptr,txt)) {
-	/*TODO*/ deloc(txt); return 1;}
-	else {ptr = sav;}
-	if (literal(ptr,"--query") && get(ptr,file,query)) return 1;
-	else {ptr = sav;}
+	if (literal(ptr,"--include") && alloc(polytope) && word(ptr,polytope->filename)) {
+	polytope->conf = IncludeConf; return 1;}
+	else {deloc(polytope); ptr = sav;}
 	if (literal(ptr,"--command") && get(ptr,file,command)) return 1;
 	else {ptr = sav;}
 	if (literal(ptr,"--sound") && get(ptr,file,sound)) return 1;
 	else {ptr = sav;}
 	if (literal(ptr,"--script") && alloc(script) && text(ptr,script->script)) {
 	script->file = file; script->conf = ScriptConf; return 1;}
+	else {deloc(script->script); deloc(script); ptr = sav;}
+	if (literal(ptr,"--pause") && alloc(script) && text(ptr,script->script)) {
+	script->file = file; script->conf = PauseConf; return 1;}
 	else {deloc(script->script); deloc(script); ptr = sav;}
 	if (literal(ptr,"--macro") && alloc(window) && text(ptr,window->script)) {
 	window->file = file; window->conf = MacroConf; return 1;}
@@ -213,15 +218,15 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window,
 	number(ptr,system->count) && identifiers(ptr,system->count,system->ident) && text(ptr,system->metric)) {
 	system->file = file; system->conf = MetricConf; return 1;}
 	else {deloc(system->count,system->ident); deloc(system->metric); deloc(system); ptr = sav;}
-	if (literal(ptr,"--notify") && get(ptr,file,query)) return 1;
+	if (literal(ptr,"--query") && get(ptr,file,query)) return 1;
 	else {ptr = sav;}
 	if (literal(ptr,"--configure") && alloc(window) &&
-	number(ptr,num) && scalar(ptr,window->setting)) {
-	window->file = file; window->conf = ConfigureConf; window->subconf = (Subconf)num; return 1;}
+	subconf(ptr,window->subconf) && scalar(ptr,window->setting)) {
+	window->file = file; window->conf = ConfigureConf; return 1;}
 	else {deloc(window); ptr = sav;}
 	if (literal(ptr,"--timewheel") && alloc(system) &&
-	number(ptr,num) && scalar(ptr,system->setting)) {
-	system->file = file; system->conf = TimewheelConf; system->subconf = (Subconf)num; return 1;}
+	subconf(ptr,window->subconf) && scalar(ptr,system->setting)) {
+	system->file = file; system->conf = TimewheelConf; return 1;}
 	else {deloc(system); ptr = sav;}
 
 	if (ptr[0] == '-' && ptr[1] == '-') ptr += 2;
@@ -310,6 +315,12 @@ int Parse::scalars(const char *&str, int siz, float *&val)
 {
 	val = floats.get(siz);
 	for (int i = 0; i < siz; i++) if (!scalar(str,val[i])) return 0;
+	return 1;
+}
+
+int Parse::subconf(const char *&str, enum Subconf &val)
+{
+	for (int i = 0; ::subconf[i]; i++) if (literal(str,::subconf[i])) return 0;
 	return 1;
 }
 

@@ -44,14 +44,14 @@ The -- commands and messages between threads are as follows. Note that only mess
 --space (add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
 --polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope->Command->Window
 --include (open given file and use as shared subspace) Read->IncludeConf->Polytope  
---query (send request for topology feature to display) Read->Query->Polytope  
 --command (send microcode buffers and triggers) Read->Command->Window  
 --sound (add stock and flows to system) Read->Sound->System  
 --script (send script to execute) Read->ScriptConf->Script  
+--pause (send script and wait for response) Read->PauseConf->Script
 --macro (send script to execute upon click) Read->MacroConf->Window->Script  
 --hotkey (send script to execute upon keypress) Read->HotkeyConf->Window->Script  
 --metric (send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
---notify (send script to execute upon topology change) Read->NotifyConf->Polytope->Script
+--query (send script to execute upon topology change) Read->Query->Polytope->Script
 --configure (change constants like focal length) Read->ConfigureConf->Window  
 --timewheel (start and stop stock and flow system) Read->TimewheelConf->System  
 (send window transformation change to other processes) Window->GlobalConf->Write  

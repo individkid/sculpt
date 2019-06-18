@@ -30,6 +30,7 @@ private:
 	Message<Command> *req2command;
 	Message<Data> *req2window;
 	Message<Query> *req2query;
+	Message<Manip> *req2manip;
 	Message<Data> *req2polytope;
 	Message<Sound> *req2sound;
 	Message<Data> *req2system;
@@ -38,6 +39,7 @@ public:
 	Message<Command> command2rsp;
 	Message<Data> window2rsp;
 	Message<Query> query2rsp;
+	Message<Manip> manip2rsp;
 	Message<Data> polytope2rsp;
 	Message<Sound> sound2rsp;
 	Message<Data> system2rsp;

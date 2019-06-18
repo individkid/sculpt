@@ -30,13 +30,13 @@ class Script : public Thread
 private:
 	Message<Data> **rsp2read;
 	Message<Query> *req2polytope;
-	Message<Data> **req2write;
+	Message<State> **req2write;
 	Message<Data> *rsp2system;
 	Message<Data> *rsp2window;
 public:
 	Message<Data> read2req;
 	Message<Query> polytope2rsp;
-	Message<Data> write2rsp;
+	Message<State> write2rsp;
 	Message<Data> system2req;
 	Message<Data> window2req;
 public:
@@ -57,5 +57,6 @@ private:
 	int nfile; int cleanup;
 private:
 	void processQueries(Message<Query> &message);
+	void processStates(Message<State> &message);
 	void processDatas(Message<Data> &message);
 };

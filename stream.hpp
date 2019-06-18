@@ -38,6 +38,7 @@ public:
 	void put(int fd, Opcode opcode, Command *command);
 	void put(int fd, Opcode opcode, Manip *manip);
 	void put(int fd, Opcode opcode, Query *query);
+	void put(int fd, Opcode opcode, State *state);
 	void put(int fd, Opcode opcode, Data *data);
 };
 

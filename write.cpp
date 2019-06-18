@@ -53,23 +53,23 @@ void Write::init()
 
 void Write::call()
 {
-	Data *data;
-	while (polytope2req.get(data)) {/*TODO unparse and send*/ rsp2polytope->put(data);}
-	while (script2req.get(data)) {/*TODO unparse and send*/ rsp2script->put(data);}
-	while (window2req.get(data)) {/*TODO unparse and send*/ rsp2window->put(data);}
+	State *state;
+	while (polytope2req.get(state)) {/*TODO unparse and send*/ rsp2polytope->put(state);}
+	while (script2req.get(state)) {/*TODO unparse and send*/ rsp2script->put(state);}
+	while (window2req.get(state)) {/*TODO unparse and send*/ rsp2window->put(state);}
 }
 
 void Write::done()
 {
-	Data *data;
-	while (polytope2req.get(data)) rsp2polytope->put(data);
-	while (script2req.get(data)) rsp2script->put(data);
-	while (window2req.get(data)) rsp2window->put(data);
+	State *state;
+	while (polytope2req.get(state)) rsp2polytope->put(state);
+	while (script2req.get(state)) rsp2script->put(state);
+	while (window2req.get(state)) rsp2window->put(state);
 }
 
 Write::Write(int i, File *f) : Thread(),
 	rsp2polytope(0), rsp2script(0), rsp2window(0),
-	polytope2req(this,"Polytope->Data->Write"), script2req(this,"Script->Data->Write"),
-	window2req(this,"Window->Data->Write"), self(i), file(f)
+	polytope2req(this,"Polytope->State->Write"), script2req(this,"Script->State->Write"),
+	window2req(this,"Window->State->Write"), self(i), file(f)
 {
 }
