@@ -83,8 +83,8 @@ void Read::call()
     while (sound2rsp.get(sound)) parse.put(sound);
     while (system2rsp.get(system)) parse.put(system);
     while (script2rsp.get(script)) parse.put(script);
-	while (1) {const char *str = buffer;
-	parse.get(str,self,command,window,manip,query,polytope,sound,system,script);
+	const char *str = buffer;
+	while (parse.get(str,self,command,window,manip,query,polytope,sound,system,script)) {
 	if (command) req2command->put(command);
 	if (window) req2window->put(window);
 	if (manip) req2manip->put(manip);
@@ -92,10 +92,9 @@ void Read::call()
 	if (polytope) req2polytope->put(polytope);
 	if (sound) req2sound->put(sound);
 	if (system) req2system->put(system);
-	if (script) req2script->put(script);
+	if (script) req2script->put(script);}
 	int length = str-buffer;
-	if (length == 0) break;
-	buffer = parse.postfix(buffer,length);}
+	buffer = parse.postfix(buffer,length);
 }
 
 void Read::wait()

@@ -26,6 +26,33 @@ extern "C" {
 #include "types.h"
 }
 
+#include <set>
+#include <map>
+
+struct Unique
+{
+	enum Identity ident;
+	union {int number; const char *name;};
+	bool operator()(const Unique &lhs, const Unique &rhs) const
+	{if (ident == NameIdent) return (strcmp(lhs.name,rhs.name) < 0);
+	return (lhs.number < rhs.number);}
+};
+struct Range
+{
+	int base;
+	int size;
+	bool operator()(const Range &lhs, const Range &rhs) const
+	{return (lhs.base+lhs.size <= rhs.base);}
+};
+struct Holes
+{
+	std::map<Unique,int,Unique> unique;
+	std::set<Range,Range> range;
+	int get();
+	int get(int num);
+	int get(const char *nam);
+};
+
 template <class T> class Power;
 
 char *concat(Power<char> &pool, const char *left, const char *right);
@@ -208,53 +235,6 @@ public:
 		int pow = 0; while (siz>(1<<pow)) pow++;
 		if (pow >= 10) error("string too size",siz,file,line);
 		(*this)[pow].put(ptr);
-	}
-};
-
-template <class S, class T>
-class Sparse {
-private:
-	Power<int> vlds;
-	Power<S> keys;
-	Power<T> vals;
-	int *vld;
-	S *key;
-	T *val;
-	int size;
-public:
-	Sparse(const char *f, int l) : vlds(f,l), keys(f,l), vals(f,l),
-		vld(vlds.get(1)), key(keys.get(1)), val(vals.get(1)), size(1) {}
-	~Sparse()
-	{
-		vlds.put(size,vld); keys.put(size,key); vals.put(size,val);
-	}
-	T &operator[](S s)
-	{
-		for (int i = 0; i < size; i++) if (vld[i] && key[i] == s) return val[i];
-		for (int i = 0; i < size; i++) if (!vld[i]) {vld[i] = 1; return val[i];}
-		int temp = size; size *= 2;
-		int *tvld = vld; vld = vlds.get(size);
-		S *tkey = key; key = keys.get(size);
-		T *tval = val; val = vals.get(size);
-		for (int i = 0; i < size; i++) vld[i] = (i < temp ? tvld[i] : 0);
-		for (int i = 0; i < temp; i++) key[i] = tkey[i];
-		for (int i = 0; i < temp; i++) val[i] = tval[i];
-		vlds.put(temp,tvld); keys.put(temp,tkey); vals.put(temp,tval);
-		vld[temp] = 1; return val[temp];
-	}
-	void remove(S s)
-	{
-		for (int i = 0; i < size; i++) if (vld[i] && key[i] == s) {vld[i] = 0; return;}
-	}
-	int first(S &s)
-	{
-		for (int i = 0; i < size; i++) if (vld[i]) {s = key[i]; return 1;}
-		return 0;
-	}
-	int lookup(S s)
-	{
-		for (int i = 0; i < size; i++) if (vld[i] && key[i] == s) return 1;
-		return 0;
 	}
 };
 

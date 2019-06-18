@@ -50,13 +50,13 @@ public:
 	char *setup(char chr) {return ::setup(chars,chr);}
 	char *setup(int len) {char *str = chars.get(len+1); for (int i = 0; i < len+1; i++) str[i] = 0; return str;}
 	const char *cleanup(char *str) {return ::cleanup(chars,str);}
-	int identifier(const char *&str, int &val);
+	int identifier(const char *&str, int &val, Holes &holes);
 	int number(const char *&str, int &val);
 	int scalar(const char *&str, float &val);
 	int literal(const char *&str, const char *pat);
 	int text(const char *&str, char *&val);
 	int word(const char *&str, char *&txt);
-	int identifiers(const char *&str, int siz, int *&val);
+	int identifiers(const char *&str, int siz, int *&val, Holes &holes);
 	int numbers(const char *&str, int siz, int *&val);
 	int scalars(const char *&str, int siz, float *&val);
 	int subconf(const char *&str, enum Subconf &val);

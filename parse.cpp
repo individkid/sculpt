@@ -168,24 +168,24 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Man
 	if (literal(ptr,"--matrix") && alloc(window) && scalars(ptr,16,window->matrix)) {
 	window->file = file; window->conf = MatrixConf; return 1;}
 	else {deloc(16,window->matrix); deloc(window); ptr = sav;}
-	if (literal(ptr,"--plane") && alloc(polytope) && identifier(ptr,polytope->plane) &&
+	if (literal(ptr,"--plane") && alloc(polytope) && identifier(ptr,polytope->plane,planes) &&
 	number(ptr,polytope->versor) && scalars(ptr,3,polytope->vector)) {
 	polytope->file = file; polytope->conf = PlaneConf; return 1;}
 	else {deloc(3,polytope->vector); deloc(polytope); ptr = sav;}
-	if (literal(ptr,"--picture") && alloc(polytope) && identifier(ptr,polytope->plane) &&
+	if (literal(ptr,"--picture") && alloc(polytope) && identifier(ptr,polytope->plane,planes) &&
 	word(ptr,polytope->filename)) {
 	polytope->file = file; polytope->conf = PictureConf; return 1;}
 	else {deloc(polytope->filename); deloc(polytope); ptr = sav;}
 	if (literal(ptr,"--space") && number(ptr,polytope->boundaries) && number(ptr,polytope->regions) &&
-	identifiers(ptr,polytope->boundaries,polytope->planes) &&
+	identifiers(ptr,polytope->boundaries,polytope->planes,planes) &&
 	numbers(ptr,polytope->boundaries*polytope->regions,polytope->sides)) {
 	polytope->file = file; polytope->conf = SpaceConf; return 1;}
 	else {deloc(polytope->boundaries,polytope->planes);
 	deloc(polytope->boundaries*polytope->regions,polytope->sides); deloc(polytope); ptr = sav;}
 	if (literal(ptr,"--region") && number(ptr,polytope->side) &&
 	number(ptr,polytope->insides) && number(ptr,polytope->outsides) &&
-	identifiers(ptr,polytope->insides,polytope->inside) &&
-	identifiers(ptr,polytope->outsides,polytope->outside)) {
+	identifiers(ptr,polytope->insides,polytope->inside,planes) &&
+	identifiers(ptr,polytope->outsides,polytope->outside,planes)) {
 	polytope->file = file; polytope->conf = RegionConf; return 1;}
 	else {deloc(polytope->insides,polytope->inside); deloc(polytope->outsides,polytope->outside);
 	deloc(polytope); ptr = sav;}
@@ -215,7 +215,8 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Man
 	window->file = file; window->conf = HotkeyConf; return 1;}
 	else {deloc(window->script); deloc(window); ptr = sav;}
 	if (literal(ptr,"--metric") && alloc(system) && scalar(ptr,system->delay) &&
-	number(ptr,system->count) && identifiers(ptr,system->count,system->ident) && text(ptr,system->metric)) {
+	number(ptr,system->count) && identifiers(ptr,system->count,system->ident,stocks) &&
+	text(ptr,system->metric)) {
 	system->file = file; system->conf = MetricConf; return 1;}
 	else {deloc(system->count,system->ident); deloc(system->metric); deloc(system); ptr = sav;}
 	if (literal(ptr,"--query") && get(ptr,file,query)) return 1;
@@ -235,9 +236,12 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Man
 	return 0;
 }
 
-int Parse::identifier(const char *&str, int &val)
+int Parse::identifier(const char *&str, int &val, Holes &holes)
 {
-	// TODO
+	int num; char *ptr; const char *sav = str;
+	if (number(str,num)) {val = holes.get(num); return 1;}
+	if (word(str,ptr)) {val = holes.get(setup(ptr)); return 1;}
+	str = sav;
 	return 0;
 }
 
@@ -297,10 +301,10 @@ int Parse::word(const char *&str, char *&val)
 	return 1;
 }
 
-int Parse::identifiers(const char *&str, int siz, int *&val)
+int Parse::identifiers(const char *&str, int siz, int *&val, Holes &holes)
 {
 	val = ints.get(siz);
-	for (int i = 0; i < siz; i++) if (!identifier(str,val[i])) return 0;
+	for (int i = 0; i < siz; i++) if (!identifier(str,val[i],holes)) return 0;
 	return 0;
 }
 
