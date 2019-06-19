@@ -31,13 +31,13 @@ private:
 	Message<Data> **rsp2read;
 	Message<Query> *req2polytope;
 	Message<State> **req2write;
-	Message<Data> *rsp2system;
+	Message<Sound> *rsp2system;
 	Message<Data> *rsp2window;
 public:
 	Message<Data> read2req;
 	Message<Query> polytope2rsp;
 	Message<State> write2rsp;
-	Message<Data> system2req;
+	Message<Sound> system2req;
 	Message<Data> window2req;
 public:
 	void connect(int i, Read *ptr);
@@ -58,5 +58,6 @@ private:
 private:
 	void processQueries(Message<Query> &message);
 	void processStates(Message<State> &message);
+	void processSounds(Message<Sound> &message);
 	void processDatas(Message<Data> &message);
 };

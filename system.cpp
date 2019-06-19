@@ -42,7 +42,7 @@ void System::call()
 {
 	processSounds(sound2req);
 	processDatas(read2req);
-	processDatas(script2rsp);
+	processSounds(script2rsp);
 }
 
 void System::done()
@@ -50,7 +50,7 @@ void System::done()
 	cleanup = 1;
 	processSounds(sound2req);
 	processDatas(read2req);
-	// TODO cleanup Sound and Data in timewheel
+	// TODO cleanup Sound in timewheel
 }
 
 System::System(int n) :
@@ -75,7 +75,7 @@ System::System(int n) :
 System::~System()
 {
 	if (!cleanup) error("done not called",0,__FILE__,__LINE__);
-	processDatas(script2rsp);
+	processSounds(script2rsp);
 	PaError err = Pa_CloseStream(stream);
 	if (err != paNoError) error("close stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
 	err = Pa_Terminate();
@@ -149,8 +149,15 @@ void System::processSounds(Message<Sound> &message)
 			if (&message == &sound2req) {
 				// TODO add stock to state
 			}
+			if (&message == &script2rsp) {
+				sound->value = sound->result;
+				sound->pend = 0;
+			}
 		} else {
 			if (&message == &sound2req) {
+				rsp2sound[sound->file]->put(sound);
+			}
+			if (&message == &script2rsp) {
 				rsp2sound[sound->file]->put(sound);
 			}
 		}
@@ -162,9 +169,6 @@ void System::processDatas(Message<Data> &message)
 	Data *data; while (message.get(data)) {
 		if (!cleanup) {
 			if (&message == &read2req) {
-				if (data->conf == MetricConf) {
-					// TODO add macro to state
-				}
 				if (data->conf == TimewheelConf) {
 					if (data->subconf == StartSub) {
 						// TODO map ident to pointer in stodo and dtodo
@@ -177,17 +181,10 @@ void System::processDatas(Message<Data> &message)
 					}
 				}
 			}
-			if (&message == &script2rsp) {
-				// TODO update metric value from script result
-			}
 		} else {
 			if (&message == &read2req) {
 				rsp2read[data->file]->put(data);
 			}
-		}
-		if (&message == &script2rsp) {
-			chars.put(strlen(data->script)+1,data->script);
-			datas.put(data);
 		}
 	}
 }

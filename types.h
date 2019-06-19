@@ -120,7 +120,6 @@ enum Configure {
 	PauseConf, // Read->Script
 	MacroConf, // Read->Window->Script
 	HotkeyConf, // Read->Window->Script
-	MetricConf, // Read->System->Script
 	ConfigureConf, // Read->Window
 	TimewheelConf, // Read->System
 	Configures};
@@ -151,6 +150,10 @@ enum Identity {
 	NameIdent,
 	NumberIdent,
 	Identities};
+enum Syncrony {
+	MetricSync,
+	SoundSync,
+	Syncronies};
 enum Opcode {
 	// Thread
 	ReadOp, ManipOp, WriteOp, QueryOp, DisplayOp, WindowOp, CommandOp, PointerOp, 
@@ -292,8 +295,6 @@ struct Data // Read -> (Polytope,Window,Script,System)
 	float *matrix;
 	// Read->PlaneConf->Polytope
 	struct {int versor; float *vector;};
-	// Read->(MetricConf,NotifyConf)->System->Script
-	struct {float delay; int count; int *ident; double *value; char *metric;};
 	// Read->ConfigureConf->Window
 	// Read->TimewheelConf->System
 	struct {enum Subconf subconf; float setting;};
@@ -321,16 +322,24 @@ struct Equ
 };
 struct Sound // Read -> System
 {
-	// Read->Sound->System
 	struct Sound *next;
 	int file;
 	int ident;
-	double value; // tone envelope phrase or helper
-	struct Equ equat; // new value after delay
-	struct Equ delay; // wavelength
+	enum Syncrony sync;
+	double value; // tone envelope phrase helper metric
 	struct Equ sched; // sample rate
+	union {
+	struct {
+	struct Equ delay; // wavelength
+	struct Equ equat; // new value after delay
 	struct Equ left; // directly audible left
-	struct Equ right; // directly audible right
+	struct Equ right;}; // directly audible right
+	struct {
+	// Read->Sound->System->Script
+	int pend;
+	double result; // from script, copied to value by system
+	int count; int *idents; double *values; // to script
+	char *script;};}; // script to execute per sample rate
 };
 
 struct Query // (Read,Script) -> Polytope

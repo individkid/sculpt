@@ -35,11 +35,11 @@ class System : public Thread
 private:
 	Message<Sound> **rsp2sound;
 	Message<Data> **rsp2read;
-	Message<Data> *req2script;
+	Message<Sound> *req2script;
 public:
 	Message<Sound> sound2req;
 	Message<Data> read2req;
-	Message<Data> script2rsp;
+	Message<Sound> script2rsp;
 public:
 	void connect(int i, Read *ptr);
 	void connect(Script *ptr);

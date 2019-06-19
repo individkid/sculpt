@@ -44,13 +44,14 @@ The -- commands and messages between threads are as follows. Note that only mess
 --inflate (change polytope regions to all inside) Read->InflateConf->Polytope->Command->Window  
 --polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope->Command->Window
 --include (open given file and use as shared subspace) Read->IncludeConf->Polytope  
+--manipulate (send user action to polytope) Read->Manip->Polytope  
 --command (send microcode buffers and triggers) Read->Command->Window  
 --sound (add stock and flows to system) Read->Sound->System  
+--metric (send script and parameter indices for volatile stock) Read->Sound->System->Script  
 --script (send script to execute) Read->ScriptConf->Script  
 --pause (send script and wait for response) Read->PauseConf->Script
 --macro (send script to execute upon click) Read->MacroConf->Window->Script  
 --hotkey (send script to execute upon keypress) Read->HotkeyConf->Window->Script  
---metric (send script and parameter indices for volatile stock) Read->MetricConf->System->Script  
 --query (send script to execute upon topology change) Read->Query->Polytope->Script
 --configure (change constants like focal length) Read->ConfigureConf->Window  
 --timewheel (start and stop stock and flow system) Read->TimewheelConf->System  

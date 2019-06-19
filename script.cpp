@@ -66,7 +66,7 @@ void Script::call()
 	processDatas(read2req);
 	processQueries(polytope2rsp);
 	processStates(write2rsp);
-	processDatas(system2req);
+	processSounds(system2req);
 	processDatas(window2req);
 }
 
@@ -74,7 +74,7 @@ void Script::done()
 {
 	cleanup = 1;
 	processDatas(read2req);
-	processDatas(system2req);
+	processSounds(system2req);
 	processDatas(window2req);
 }
 
@@ -153,6 +153,22 @@ void Script::processStates(Message<State> &message)
             case (PlaneChange):
             case (RegionChange):
             default: error("invalid change",state->change,__FILE__,__LINE__);}}
+}
+
+void Script::processSounds(Message<Sound> &message)
+{
+	Sound *sound; while (message.get(sound)) {
+		if (!cleanup) {
+			if (&message == &system2req) {
+				// execute script
+				if (lua_load(state,reader,sound->script,"system2req",0) == LUA_OK) {
+				// TODO push sound parameters
+				lua_pushlightuserdata(state,this);
+				lua_call(state,1,0);} else {
+				error(lua_tostring(state,-1),0,__FILE__,__LINE__);
+				lua_pop(state,1);}}}
+		if (&message == &system2req) {
+			rsp2system->put(sound);}}
 }
 
 void Script::processDatas(Message<Data> &message)

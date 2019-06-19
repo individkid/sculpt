@@ -99,8 +99,14 @@ void Pools::put(Query *query)
 void Pools::put(Sound *sound)
 {
 	while (sound) {
-	put(&sound->equat); put(&sound->delay); put(&sound->sched);
-	put(&sound->left); put(&sound->right);
+	put(&sound->sched);
+	if (sound->sync == SoundSync) {
+	put(&sound->equat); put(&sound->delay);
+	put(&sound->left); put(&sound->right);}
+	else {
+	ints.put(sound->count,sound->idents);
+	doubles.put(sound->count,sound->values);
+	chars.put(strlen(sound->script)+1,sound->script);}
 	Sound *temp = sound; sound = sound->next; sounds.put(temp);}
 }
 
@@ -130,9 +136,6 @@ void Pools::put(Data *data)
 	case (PauseConf): chars.put(strlen(data->script)+1,data->script); break;
 	case (MacroConf): chars.put(strlen(data->script)+1,data->script); break;
 	case (HotkeyConf): chars.put(strlen(data->script)+1,data->script); break;
-	case (MetricConf): ints.put(data->count,data->ident);
-	doubles.put(data->count,data->value);
-	chars.put(strlen(data->metric)+1,data->metric); break;
 	case (ConfigureConf): break;
 	case (TimewheelConf): break;
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}

@@ -29,7 +29,7 @@ public:
 	int get(const char *&ptr, Render *&render);
 	int get(const char *&ptr, int file, Command *&command);
 	int get(const char *&ptr, int file, Manip *&manip);
-	int get(const char *&ptr, int file, Sound *&sound);
+	int get(const char *&ptr, int file, Syncrony sync, Sound *&sound);
 	int get(const char *&ptr, int file, Query *&query);
 	int get(const char *&ptr, int file, Command *&command, Data *&window, Manip *&manip,
 		Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script);

@@ -114,7 +114,7 @@ int Parse::get(const char *&ptr, int file, Manip *&manip)
 	return 0;
 }
 
-int Parse::get(const char *&ptr, int file, Sound *&sound)
+int Parse::get(const char *&ptr, int file, Syncrony sync, Sound *&sound)
 {
 	// TODO
 	return 0;
@@ -198,9 +198,13 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Man
 	if (literal(ptr,"--include") && alloc(polytope) && word(ptr,polytope->filename)) {
 	polytope->conf = IncludeConf; return 1;}
 	else {deloc(polytope); ptr = sav;}
+	if (literal(ptr,"--mainiplate") && get(ptr,file,manip)) return 1;
+	else {ptr = sav;}
 	if (literal(ptr,"--command") && get(ptr,file,command)) return 1;
 	else {ptr = sav;}
-	if (literal(ptr,"--sound") && get(ptr,file,sound)) return 1;
+	if (literal(ptr,"--sound") && get(ptr,file,SoundSync,sound)) return 1;
+	else {ptr = sav;}
+	if (literal(ptr,"--metric") && get(ptr,file,MetricSync,sound)) return 1;
 	else {ptr = sav;}
 	if (literal(ptr,"--script") && alloc(script) && text(ptr,script->script)) {
 	script->file = file; script->conf = ScriptConf; return 1;}
@@ -214,11 +218,6 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Man
 	if (literal(ptr,"--hotkey") && alloc(window) && text(ptr,window->script)) {
 	window->file = file; window->conf = HotkeyConf; return 1;}
 	else {deloc(window->script); deloc(window); ptr = sav;}
-	if (literal(ptr,"--metric") && alloc(system) && scalar(ptr,system->delay) &&
-	number(ptr,system->count) && identifiers(ptr,system->count,system->ident,stocks) &&
-	text(ptr,system->metric)) {
-	system->file = file; system->conf = MetricConf; return 1;}
-	else {deloc(system->count,system->ident); deloc(system->metric); deloc(system); ptr = sav;}
 	if (literal(ptr,"--query") && get(ptr,file,query)) return 1;
 	else {ptr = sav;}
 	if (literal(ptr,"--configure") && alloc(window) &&
