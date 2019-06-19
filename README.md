@@ -46,6 +46,7 @@ The -- commands and messages between threads are as follows. Note that only mess
 --include (open given file and use as shared subspace) Read->IncludeConf->Polytope  
 --manipulate (send user action to polytope) Read->Manip->Polytope  
 --command (send microcode buffers and triggers) Read->Command->Window  
+--timewheel (start and stop stock and flow system) Read->TimewheelConf->System  
 --sound (add stock and flows to system) Read->Sound->System  
 --metric (send script and parameter indices for volatile stock) Read->Sound->System->Script  
 --script (send script to execute) Read->ScriptConf->Script  
@@ -54,7 +55,6 @@ The -- commands and messages between threads are as follows. Note that only mess
 --hotkey (send script to execute upon keypress) Read->HotkeyConf->Window->Script  
 --query (send script to execute upon topology change) Read->Query->Polytope->Script
 --configure (change constants like focal length) Read->ConfigureConf->Window  
---timewheel (start and stop stock and flow system) Read->TimewheelConf->System  
 (send window transformation change to other processes) Window->GlobalConf->Write  
 (send polytope transformation change to other processes) Window->MatrixConf->Write  
 (send facet transformation for plane to other processses) Window->Manip->Polytope->PlaneConf->Write  

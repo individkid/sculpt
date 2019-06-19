@@ -34,11 +34,9 @@ class System : public Thread
 {
 private:
 	Message<Sound> **rsp2sound;
-	Message<Data> **rsp2read;
 	Message<Sound> *req2script;
 public:
 	Message<Sound> sound2req;
-	Message<Data> read2req;
 	Message<Sound> script2rsp;
 public:
 	void connect(int i, Read *ptr);

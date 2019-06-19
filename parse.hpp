@@ -32,7 +32,7 @@ public:
 	int get(const char *&ptr, int file, Syncrony sync, Sound *&sound);
 	int get(const char *&ptr, int file, Query *&query);
 	int get(const char *&ptr, int file, Command *&command, Data *&window, Manip *&manip,
-		Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script);
+		Query *&query, Data *&polytope, Sound *&sound, Data *&script);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(const char *left, char *right) {return ::concat(chars,left,right);}

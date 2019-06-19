@@ -137,7 +137,6 @@ void Pools::put(Data *data)
 	case (MacroConf): chars.put(strlen(data->script)+1,data->script); break;
 	case (HotkeyConf): chars.put(strlen(data->script)+1,data->script); break;
 	case (ConfigureConf): break;
-	case (TimewheelConf): break;
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
 	Data *temp = data; data = data->next; datas.put(data);}
 }

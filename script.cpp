@@ -167,6 +167,7 @@ void Script::processSounds(Message<Sound> &message)
 				lua_call(state,1,0);} else {
 				error(lua_tostring(state,-1),0,__FILE__,__LINE__);
 				lua_pop(state,1);}}}
+		// TODO allow script to supress response
 		if (&message == &system2req) {
 			rsp2system->put(sound);}}
 }
@@ -182,6 +183,7 @@ void Script::processDatas(Message<Data> &message)
 				lua_call(state,1,0);} else {
 				error(lua_tostring(state,-1),0,__FILE__,__LINE__);
 				lua_pop(state,1);}}}
+		// TODO allow script to supress response
 		if (&message == &read2req) {
 			rsp2read[data->file]->put(data);}}
 }

@@ -121,7 +121,6 @@ enum Configure {
 	MacroConf, // Read->Window->Script
 	HotkeyConf, // Read->Window->Script
 	ConfigureConf, // Read->Window
-	TimewheelConf, // Read->System
 	Configures};
 enum Subconf {
 	StartSub,
@@ -151,6 +150,8 @@ enum Identity {
 	NumberIdent,
 	Identities};
 enum Syncrony {
+	StartSync,
+	StopSync,
 	MetricSync,
 	SoundSync,
 	Syncronies};

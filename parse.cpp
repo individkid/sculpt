@@ -133,10 +133,10 @@ int Parse::get(const char *&ptr, int file, Query *&query)
 	else {deloc(window); ptr = sav;}
 
 int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Manip *&manip,
-	Query *&query, Data *&polytope, Sound *&sound, Data *&system, Data *&script)
+	Query *&query, Data *&polytope, Sound *&sound, Data *&script)
 {
 	command = 0; manip = 0; query = 0; sound = 0;
-	window = polytope = system = script = 0;
+	window = polytope = script = 0;
 	const char *sav = ptr;
 
 	CONF_SCULPT(click,additive,Click,Additive);
@@ -206,6 +206,10 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Man
 	else {ptr = sav;}
 	if (literal(ptr,"--metric") && get(ptr,file,MetricSync,sound)) return 1;
 	else {ptr = sav;}
+	if (literal(ptr,"--timewheel") && literal(ptr,"start") && get(ptr,file,StartSync,sound)) return 1;
+	else {ptr = sav;}
+	if (literal(ptr,"--timewheel") && literal(ptr,"stop") && get(ptr,file,StopSync,sound)) return 1;
+	else {ptr = sav;}
 	if (literal(ptr,"--script") && alloc(script) && text(ptr,script->script)) {
 	script->file = file; script->conf = ScriptConf; return 1;}
 	else {deloc(script->script); deloc(script); ptr = sav;}
@@ -224,10 +228,6 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&window, Man
 	subconf(ptr,window->subconf) && scalar(ptr,window->setting)) {
 	window->file = file; window->conf = ConfigureConf; return 1;}
 	else {deloc(window); ptr = sav;}
-	if (literal(ptr,"--timewheel") && alloc(system) &&
-	subconf(ptr,window->subconf) && scalar(ptr,system->setting)) {
-	system->file = file; system->conf = TimewheelConf; return 1;}
-	else {deloc(system); ptr = sav;}
 
 	if (ptr[0] == '-' && ptr[1] == '-') ptr += 2;
 	while (ptr[0] != 0 && !(ptr[0] == '-' && ptr[1] == '-')) ptr++;

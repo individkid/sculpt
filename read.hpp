@@ -33,7 +33,6 @@ private:
 	Message<Manip> *req2manip;
 	Message<Data> *req2polytope;
 	Message<Sound> *req2sound;
-	Message<Data> *req2system;
 	Message<Data> *req2script;
 public:
 	Message<Command> command2rsp;
@@ -42,7 +41,6 @@ public:
 	Message<Manip> manip2rsp;
 	Message<Data> polytope2rsp;
 	Message<Sound> sound2rsp;
-	Message<Data> system2rsp;
 	Message<Data> script2rsp;
 public:
 	void connect(Window *ptr);

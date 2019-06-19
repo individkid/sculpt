@@ -24,7 +24,6 @@ void System::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
     rsp2sound[i] = &ptr->sound2rsp;
-    rsp2read[i] = &ptr->system2rsp;
 }
 
 void System::connect(Script *ptr)
@@ -34,14 +33,13 @@ void System::connect(Script *ptr)
 
 void System::init()
 {
-	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+	for (int i = 0; i < nfile; i++) if (rsp2sound[i] == 0) error("unconnected rsp2sound",i,__FILE__,__LINE__);
 	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 }
 
 void System::call()
 {
 	processSounds(sound2req);
-	processDatas(read2req);
 	processSounds(script2rsp);
 }
 
@@ -49,13 +47,12 @@ void System::done()
 {
 	cleanup = 1;
 	processSounds(sound2req);
-	processDatas(read2req);
 	// TODO cleanup Sound in timewheel
 }
 
 System::System(int n) :
-	rsp2sound(new Message<Sound>*[n]), rsp2read(new Message<Data>*[n]),
-	sound2req(this,"Read->Sound->System"), read2req(this,"Read->Data->System"),
+	rsp2sound(new Message<Sound>*[n]),
+	sound2req(this,"Read->Sound->System"),
 	script2rsp(this,"System<-Data<-Script"),
 	nfile(n), cleanup(0), stodo(0), dtodo(0),
 	lwave(new float[WAVE_SIZE]), rwave(new float[WAVE_SIZE]),
@@ -147,7 +144,23 @@ void System::processSounds(Message<Sound> &message)
 	Sound *sound; while (message.get(sound)) {
 		if (!cleanup) {
 			if (&message == &sound2req) {
-				// TODO add stock to state
+				switch (sound->sync) {
+				case (StartSync): {
+					// TODO map ident to pointer in stodo and dtodo
+					PaError err = Pa_StartStream(stream);
+					if (err != paNoError) error("start stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
+					break;}
+				case (StopSync): {
+					PaError err = Pa_StopStream(stream);
+					if (err != paNoError) error("stop stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
+					break;}
+				case (MetricSync): {
+					// TODO
+					break;}
+				case (SoundSync): {
+					// TODO
+					break;}
+				default: error("invalid sync",sound->sync,__FILE__,__LINE__);}
 			}
 			if (&message == &script2rsp) {
 				sound->value = sound->result;
@@ -159,31 +172,6 @@ void System::processSounds(Message<Sound> &message)
 			}
 			if (&message == &script2rsp) {
 				rsp2sound[sound->file]->put(sound);
-			}
-		}
-	}
-}
-
-void System::processDatas(Message<Data> &message)
-{
-	Data *data; while (message.get(data)) {
-		if (!cleanup) {
-			if (&message == &read2req) {
-				if (data->conf == TimewheelConf) {
-					if (data->subconf == StartSub) {
-						// TODO map ident to pointer in stodo and dtodo
-						PaError err = Pa_StartStream(stream);
-						if (err != paNoError) error("start stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
-					}
-					if (data->subconf == StopSub) {
-						PaError err = Pa_StopStream(stream);
-						if (err != paNoError) error("stop stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
-					}
-				}
-			}
-		} else {
-			if (&message == &read2req) {
-				rsp2read[data->file]->put(data);
 			}
 		}
 	}
