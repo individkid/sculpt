@@ -32,6 +32,7 @@ protected:
 	Pool<Sound> sounds;
 	Pool<State> states;
 	Pool<Data> datas;
+	Pool<Smart> smarts;
 	Power<Term> terms;
 	Power<double*> pointers;
 	Power<double> doubles;
@@ -42,13 +43,11 @@ protected:
 	Holes stocks;
 public:
 	Pools(const char *file, int line) :
-		commands(file,line), updates(file,line),
-		renders(file,line), manips(file,line),
-		queries(file,line), sounds(file,line),
-		states(file,line), datas(file,line),
-		terms(file,line), pointers(file,line),
-		doubles(file,line), floats(file,line),
-		chars(file,line), ints(file,line) {}
+		commands(file,line), updates(file,line), renders(file,line),
+		manips(file,line), queries(file,line), sounds(file,line),
+		states(file,line), datas(file,line), smarts(file,line),
+		terms(file,line), pointers(file,line), doubles(file,line),
+		floats(file,line), chars(file,line), ints(file,line) {}
 	void put(Command *command);
 	void put(Manip *manip);
 	void put(Query *query);

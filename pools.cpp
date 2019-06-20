@@ -99,14 +99,29 @@ void Pools::put(Query *query)
 void Pools::put(Sound *sound)
 {
 	while (sound) {
-	put(&sound->sched);
-	if (sound->sync == SoundSync) {
-	put(&sound->equat); put(&sound->delay);
-	put(&sound->left); put(&sound->right);}
-	else {
-	ints.put(sound->count,sound->idents);
-	doubles.put(sound->count,sound->values);
-	chars.put(strlen(sound->script)+1,sound->script);}
+	switch (sound->sync) {
+	case (StartSync): break;
+	case (StopSync): break;
+	case (ScriptSync):
+	doubles.put(sound->params,sound->values);
+	if (sound->metric) {sound->metric->count--;
+	if (sound->metric->count == 0) {
+	chars.put(strlen(sound->metric->ptr)+1,sound->metric->ptr);
+	smarts.put(sound->metric);}}
+	break;
+	case (MetricSync):
+	ints.put(sound->count,sound->ids); pointers.put(sound->count,sound->ptrs);
+	chars.put(strlen(sound->script)+1,sound->script);
+	if (sound->smart) {sound->smart->count--;
+	if (sound->smart->count == 0) {
+	chars.put(strlen(sound->smart->ptr)+1,sound->smart->ptr);
+	smarts.put(sound->smart);}}
+	break;
+	case (UpdateSync): break;
+	case (SoundSync):
+	for (int i = 0; i < Equates; i++) put(&sound->equ[i]);
+	break;
+	default: error("invalid sync",sound->sync,__FILE__,__LINE__);}
 	Sound *temp = sound; sound = sound->next; sounds.put(temp);}
 }
 

@@ -39,6 +39,10 @@ void System::init()
 
 void System::call()
 {
+	// TODO map idents to pointers and reinsert to timewheel,
+	//  change value and move to sounds,
+	//  get from sounds to insert and reinsert,
+	//  or get from sounds to send to script and reinsert, 
 	processSounds(sound2req);
 	processSounds(script2rsp);
 }
@@ -47,7 +51,8 @@ void System::done()
 {
 	cleanup = 1;
 	processSounds(sound2req);
-	// TODO cleanup Sound in timewheel
+	// TODO send MetricSync and SoundSync Sound from timewheel to rsp2sound
+	// TODO put UpdateSync Sound from timewheel to sounds
 }
 
 System::System(int n) :
@@ -146,7 +151,6 @@ void System::processSounds(Message<Sound> &message)
 			if (&message == &sound2req) {
 				switch (sound->sync) {
 				case (StartSync): {
-					// TODO map ident to pointer in stodo and dtodo
 					PaError err = Pa_StartStream(stream);
 					if (err != paNoError) error("start stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
 					break;}
@@ -155,16 +159,15 @@ void System::processSounds(Message<Sound> &message)
 					if (err != paNoError) error("stop stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
 					break;}
 				case (MetricSync): {
-					// TODO
+					// TODO put in timewheel
 					break;}
 				case (SoundSync): {
-					// TODO
+					// TODO put in timewheel
 					break;}
 				default: error("invalid sync",sound->sync,__FILE__,__LINE__);}
 			}
 			if (&message == &script2rsp) {
-				sound->value = sound->result;
-				sound->pend = 0;
+				// TODO copy value to identified ound and put to sounds
 			}
 		} else {
 			if (&message == &sound2req) {

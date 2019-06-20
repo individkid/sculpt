@@ -106,21 +106,21 @@ enum Sculpt {
 	FixedUlpt,
 	Sculpts};
 enum Configure {
-	SculptConf, // Read->Window
-	GlobalConf, // Read->Window->Write
-	MatrixConf, // Read->Window->Write
-	PlaneConf, // Read->Polytope->Write
-	PictureConf, // Read->Polytope
-	SpaceConf, // Read->Polytope
-	RegionConf, // Read->Polytope->Write
-	InflateConf, // Read->Polytope
-	PolytopeConf, // Read->Polytope
-	IncludeConf, // Read->Polytope
-	ScriptConf, // Read->Script
-	PauseConf, // Read->Script
-	MacroConf, // Read->Window->Script
-	HotkeyConf, // Read->Window->Script
-	ConfigureConf, // Read->Window
+	SculptConf,
+	GlobalConf,
+	MatrixConf,
+	PlaneConf,
+	PictureConf,
+	SpaceConf,
+	RegionConf,
+	InflateConf,
+	PolytopeConf,
+	IncludeConf,
+	ScriptConf,
+	PauseConf,
+	MacroConf,
+	HotkeyConf,
+	ConfigureConf,
 	Configures};
 enum Subconf {
 	StartSub,
@@ -152,9 +152,18 @@ enum Identity {
 enum Syncrony {
 	StartSync,
 	StopSync,
+	ScriptSync,
 	MetricSync,
+	UpdateSync,
 	SoundSync,
 	Syncronies};
+enum Equate {
+	ValueEqu, // sample value
+	DelayEqu, // wave length
+	SchedEqu, // sample rate
+	LeftEqu, // left audio
+	RightEqu, // right audio
+	Equates};
 enum Opcode {
 	// Thread
 	ReadOp, ManipOp, WriteOp, QueryOp, DisplayOp, WindowOp, CommandOp, PointerOp, 
@@ -265,16 +274,18 @@ struct Manip // (Window,Read) -> Polytope
 };
 struct State // (Polytope,Window,Script)->Write
 {
-	// Polytope->(RegionState,PlaneState)->Write
-	// Window->(MatrixState,GlobalState)->Write
-	// Script->TextState->Write
 	struct State *next;
 	int file;
+	int plane;
 	enum Change change;
 	union {
-	int plane; struct {int side; int insides; int outsides; int *inside; int *outside;};
+	// Polytope->RegionChange->Write
+	struct {int side; int insides; int outsides; int *inside; int *outside;};
+	// Window->(MatrixChange,GlobalChange)->Write
 	float *matrix;
+	// Polytope->PlaneChange->Write
 	struct {int versor; float *vector;};
+	// Script->TextChange->Write
 	char *text;};
 };
 struct Data // Read -> (Polytope,Window,Script,System)
@@ -309,7 +320,7 @@ struct Data // Read -> (Polytope,Window,Script,System)
 struct Term
 {
 	double coef; enum Factor factor;
-	int *id; double **ptr;
+	union {int *id; double **ptr;};
 };
 struct Sum
 {
@@ -321,26 +332,35 @@ struct Equ
 	struct Sum numer;
 	struct Sum denom;
 };
-struct Sound // Read -> System
+struct Smart {
+	int count;
+	char *ptr;
+};
+struct Sound
 {
 	struct Sound *next;
 	int file;
 	int ident;
+	int done;
+	// Read->(StartSync,StopSync)->System
 	enum Syncrony sync;
 	double value; // tone envelope phrase helper metric
-	struct Equ sched; // sample rate
 	union {
-	struct {
-	struct Equ delay; // wavelength
-	struct Equ equat; // new value after delay
-	struct Equ left; // directly audible left
-	struct Equ right;}; // directly audible right
-	struct {
-	// Read->Sound->System->Script
-	int pend;
-	double result; // from script, copied to value by system
-	int count; int *idents; double *values; // to script
-	char *script;};}; // script to execute per sample rate
+	// Read->SoundSync->System
+	struct Equ equ[Equates];
+	// Read->MetricSync->System
+	struct {struct Equ sched; // sample rate
+	int id; double *ptr; // result pointer for script
+	int count; // number of parameters for script
+	int *ids; double **ptrs;
+	char *script; // init smart when setting done
+ 	struct Smart *smart;}; // smart copied to ScriptSync
+	// System->ScriptSync->Script
+	struct {double *result; // system copies value to *result
+	int params; double *values;
+ 	struct Smart *metric;}; // script to execute per sample rate
+ 	// UpdateSync on timewheel
+	double *update;};
 };
 
 struct Query // (Read,Script) -> Polytope
