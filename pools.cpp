@@ -119,14 +119,14 @@ void Pools::put(Data *data)
 	case (IncludeConf): chars.put(strlen(data->filename)+1,data->filename); break;
 	case (ScriptConf): chars.put(strlen(data->script)+1,data->script);
 	ints.put(data->count,data->specify); break;
-	case (KeyConf): break;
+	case (PressConf): break;
 	case (RelativeConf): floats.put(3,data->fixed); break;
 	case (AbsoluteConf): break;
 	case (RefineConf): floats.put(3,data->pierce); break;
 	case (ManipConf): floats.put(16,data->matrix); break;
+	case (ClickConf): break;
 	case (AdditiveConf): break;
 	case (SubtractiveConf): break;
-	case (PerformConf): break;
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
 	Data *temp = data; data = data->next; datas.put(data);}
 }

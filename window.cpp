@@ -197,7 +197,7 @@ extern "C" void sendFacet(int file, int plane, float *matrix)
 extern "C" void sendInvoke(int file, int plane, char key)
 {
     Data *data = datas.get();
-    data->file = file; data->plane = plane; data->key = key; data->conf = KeyConf;
+    data->file = file; data->plane = plane; data->key = key; data->conf = PressConf;
     window->sendPolytope(data);
 }
 
@@ -438,14 +438,14 @@ void Window::processDatas(Message<Data> &message)
 {
     Data *data; while (message.get(data)) {
         switch (data->conf) {
-        case (KeyConf): break;
         case (RelativeConf): floats.put(3,data->fixed); break;
         case (AbsoluteConf): break;
         case (RefineConf): floats.put(3,data->pierce); break;
         case (ManipConf): floats.put(16,data->matrix); break;
+        case (PressConf): break;
+        case (ClickConf): break;
         case (AdditiveConf): break;
         case (SubtractiveConf): break;
-        case (PerformConf): break;
         default: error("invalid conf",data->conf,__FILE__,__LINE__);}
         datas.put(data);}
 }
@@ -454,10 +454,9 @@ void Window::processStates(Message<State> &message)
 {
     State *state; while (message.get(state)) {
         switch (state->change) {
-            case (GlobalChange):
-            case (MatrixChange): floats.put(16,state->matrix); break;
-            case (PlaneChange):
-            case (RegionChange):
-            case (TextChange):
-            default: error("invalid change",state->change,__FILE__,__LINE__);}}
+        case (SculptChange): break;
+        case (GlobalChange): floats.put(16,state->matrix); break;
+        case (MatrixChange): floats.put(16,state->matrix); break;
+        default: error("invalid change",state->change,__FILE__,__LINE__);}
+        states.put(state);}
 }

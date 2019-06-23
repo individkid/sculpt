@@ -112,15 +112,16 @@ enum Configure {
 	PlaneConf,
 	PictureConf,
 	IncludeConf,
+	MacroConf,
 	ScriptConf,
-	KeyConf,
 	RelativeConf,
 	AbsoluteConf,
 	RefineConf,
 	ManipConf,
+	PressConf,
+	ClickConf,	
 	AdditiveConf,
 	SubtractiveConf,
-	PerformConf,
 	Configures};
 enum Subconf {
 	StartSub,
@@ -332,10 +333,10 @@ struct Data // (Read,Window) -> Polytope
 	struct {int versor; float *vector;};
 	// Read->(PictureConf,IncludeConf)->Polytope
 	char *filename;
+	// Read->MacroConf->Polytope
+	struct {enum When when; char *macro; enum Where where; int count; int *specify;};
 	// Read->ScriptConf->Polytope
-	struct {enum When when; char *script; enum Where where; int count; int *specify;};
-	// Window->KeyConf->Polytope
-	char key;
+	struct {char key; char *script;};
 	// Window->RelativeConf->Polytope
 	struct {float *fixed; enum TopologyMode relative;};
 	// Window->AbsoluteConf->Polytope
@@ -343,10 +344,12 @@ struct Data // (Read,Window) -> Polytope
 	// Window->RefineConf->Polytope
 	float *pierce;
 	// Window->ManipConf->Poltope
-	float *matrix;};
+	float *matrix;
+	// Window->PressConf->Polytope
+	char press;};
+	// Window->ClickConf->Polytope
 	// Window->AdditiveConf->Polytope
 	// Window->SubtractiveConf->Polytope
-	// Window->PerformConf->Polytope
 };
 
 struct Term

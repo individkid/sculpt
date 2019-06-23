@@ -35,28 +35,26 @@ The -- commands and messages between threads are as follows. Note that only mess
 --sculpt topology symbolic (tweak holds space invariant) Read->SideSource->Window  
 --sculpt fixed relative (tweak holds pierce point fixed) Read->SideSource->Window  
 --sculpt fixed absolute (tweak holds nothing fixed) Read->SideSource->Window  
---global (change transformation of display) Read->GlobalConf->Window  
---matrix (change transformation of polytope) Read->MatrixConf->Window  
---plane (add and classify plane from vector) Read->PlaneConf->Polytope->Command->Window  
---picture (decorate plane with texture from file) Read->PictureConf->Polytope->Command->Window  
---space (add planes sampled from sidednesses) Read->SpaceConf->Polytope->Command->Window  
---region (change whether region in polytope) Read->RegionConf->Polytope->Command->Window  
---inflate (change polytope regions to all inside) Read->InflateConf->Polytope->Command->Window  
---polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope->Command->Window
+--configure (change constants like focal length) Read->ConfigureSource->Window  
+--command (send microcode buffers and triggers) Read->PolytopeSource->Window  
+--global (change transformation of display) Read->GlobalSource->Window  
+--matrix (change transformation of polytope) Read->MatrixSource->Window  
+--plane (add and classify plane from vector) Read->PlaneConf->Polytope  
+--space (add planes sampled from sidednesses) Read->SpaceConf->Polytope  
+--region (change whether region in polytope) Read->RegionConf->Polytope  
+--inflate (change polytope regions to all inside) Read->InflateConf->Polytope  
+--polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope
 --include (open given file and use as shared subspace) Read->IncludeConf->Polytope  
---manipulate (send user action to polytope) Read->Manip->Polytope  
---command (send microcode buffers and triggers) Read->Command->Window  
---timewheel (start and stop stock and flow system) Read->TimewheelConf->System  
---sound (add stock and flows to system) Read->Sound->System  
---metric (send script and parameter indices for volatile stock) Read->Sound->System->Script  
---script (send script to execute) Read->ScriptConf->Script  
---pause (send script and wait for response) Read->PauseConf->Script
---macro (send script to execute upon click) Read->MacroConf->Window->Script  
---hotkey (send script to execute upon keypress) Read->HotkeyConf->Window->Script  
---query (send script to execute upon topology change) Read->Query->Polytope->Script
---configure (change constants like focal length) Read->ConfigureConf->Window  
-(send window transformation change to other processes) Window->GlobalConf->Write  
-(send polytope transformation change to other processes) Window->MatrixConf->Write  
-(send facet transformation for plane to other processses) Window->Manip->Polytope->PlaneConf->Write  
-(send region opacity change for other processes) Window->Manip->Polytope->RegionConf->Write
-(request topology information) Script->Query->Polytope  
+--picture (decorate plane with texture from file) Read->PictureConf->Polytope  
+--macro (send script to execute upon click) Read->MacroConf->Polytope  
+--hotkey (send script to execute upon keypress) Read->ScriptConf->Polytope  
+--start (start stock and flow system) Read->StartEvent->System  
+--stop (stop stock and flow system) Read->StopEvent->System  
+--sound (add stock and flows to system) Read->SoundEvent->System  
+--metric (send script and parameter indices for volatile stock) Read->ScriptEvent->System  
+--script (send script to execute) Read->Query->Script  
+(send window transformation change to other processes) Window->GlobalChange->Write  
+(send polytope transformation change to other processes) Window->MatrixChange->Write  
+(send facet transformation for plane to other processses) Polytope->PlaneChange->Write  
+(send region opacity change for other processes) Polytope->RegionChange->Write
+(request topology information) Script->MacroConf->Polytope  
