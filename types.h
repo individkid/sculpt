@@ -185,16 +185,32 @@ enum Opcode {
 	ReadOp, WriteOp, ScriptOp, QueryOp, WindowOp, CommandOp,
 	// Data
 	FileOp, PlaneOp, ConfOp,
-	SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,
 	BoundariesOp, RegionsOp, PlanesOp, SidesOp,
 	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
-	MatrixOp,
 	VersorOp, VectorOp,
-	SubconfOp, SettingOp,
 	FilenameOp,
-	/*ScriptOp,*/
+	WhenOp, MacroOp, WhereOp, CountOp, SpecifyOp,
+	KeyOp, /*ScriptOp,*/
+	FixedOp, RelativeOp,
+	AbsoluteOp,
+	PierceOp,
+	MatrixOp,
+	PressOp,
+	// State
+	/*FileOp, PlaneOp,*/
+	ChangeOp,
+	SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, /*FixedOp,*/
+	/*SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,*/
+	/*MatrixOp,*/
+	/*VersorOp, VectorOp,*/
+	TextOp,
 	// Command
-	/*FileOp,*/ FeedbackOp, FinishOp,
+	/*FileOp,*/
+	SourceOp,
+	SubconfOp, SettingOp,
+	/*SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,*/
+	/*MatrixOp,*/
+	FeedbackOp, FinishOp,
 	AllocOp, /*WriteOp,*/ BindOp, /*ReadOp,*/
 	// Update
 	/*FileOp,*/ /*FinishOp,*/
@@ -206,25 +222,25 @@ enum Opcode {
 	FunctionOp, FunctionsOp,
 	// Render
 	/*FileOp,*/
-	ProgramOp, BaseOp, CountOp, /*SizeOp,*/
+	ProgramOp, BaseOp, /*CountOp, SizeOp,*/
 	// Feedback
-	PierceOp, NormalOp, TagbitsOp, /*PlaneOp,*/
+	/*PierceOp,*/ NormalOp, TagbitsOp, /*PlaneOp,*/
 	// Format
 	CursorOp, AffineOp, PerplaneOp, BasisOp,
 	CutoffOp, SlopeOp, AspectOp,
 	FeatherOp, ArrowOp, EnableOp,
-	// Manip
-	/*FileOp,*/ /*PlaneOp,*/
-	/*ClickOp,*/ /*TopologyOp,*/ /*FixedOp,*/
-	/*VectorOp,*/ /*MatrixOp,*/
 	// Sound
-	/*FileOp,*/ IdentOp, WhenOp, /*ValueOp,*/
+	/*FileOp,*/ IdentOp, /*ValueOp,*/ EventOp,
+	/*ValueOp,*/ DelayOp, SchedOp, LeftOp, RightOp,
+	// Equ
+	NumerOp, DenomOp,
 	// Sum
 	/*CountOp,*/
 	// Term
-	CoefOp, FactorOp, SquareOp, CompOp,
+	CoefOp, FactorOp,
+	ConstOp, VaryOp, SquareOp, CompOp,
 	// Query
-	/*FileOp,*/ TextOp, WhereOp,
+	/*FileOp,*/ SmartOp, /*WhereOp,*/
 	Opcodes};
 
 struct Format

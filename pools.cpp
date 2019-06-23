@@ -65,6 +65,12 @@ int Holes::get(const char *nam)
 void Pools::put(Command *command)
 {
 	while (command) {
+	switch (command->source) {
+	case (ConfigureSource): break;
+	case (ModeSource): break;
+	case (MatrixSource): floats.put(16,command->matrix); break;
+	case (GlobalSource): floats.put(16,command->matrix); break;
+	case (PolytopeSource): {
 	for (int i = 0; i < Fields; i++) {
 	Update *update = command->update[i];
 	while (update) {updates.put(update); update = update->next;}}
@@ -72,12 +78,17 @@ void Pools::put(Command *command)
 	while (render) {renders.put(render); render = render->next;}
 	if (command->redraw) put(command->redraw);
 	if (command->pierce) put(command->pierce);
+	break;}
+	default: error("invalid source",command->source,__FILE__,__LINE__);}
 	Command *temp = command; command = command->next; commands.put(temp);}
 }
 
 void Pools::put(Query *query)
 {
-	// TODO
+	while (query) {
+	switch (query->where) {
+	default: error("invalid where",query->where,__FILE__,__LINE__);}
+	Query *temp = query; query = query->next; queries.put(temp);}
 }
 
 void Pools::put(Sound *sound)
@@ -101,8 +112,19 @@ void Pools::put(Sound *sound)
 
 void Pools::put(State *state)
 {
-	// TODO
-	states.put(state);
+	while (state) {
+	switch (state->change) {
+	case (SculptChange): break;
+	case (GlobalChange): floats.put(16,state->matrix); break;
+	case (MatrixChange): floats.put(16,state->matrix); break;
+	case (PlaneChange): floats.put(3,state->vector); break;
+	case (RegionChange):
+	ints.put(state->insides,state->inside);
+	ints.put(state->outsides,state->outside);
+	break;
+	case (TextChange): chars.put(strlen(state->text)+1,state->text); break;
+	default: error("invalid change",state->change,__FILE__,__LINE__);}
+	State *temp = state; state = state->next; states.put(temp);}
 }
 
 void Pools::put(Data *data)
@@ -114,7 +136,7 @@ void Pools::put(Data *data)
 	ints.put(data->boundaries*data->regions,data->sides); break;
 	case (RegionConf): ints.put(data->insides,data->inside); 
 	ints.put(data->outsides,data->outside); break;
-	case (PlaneConf): floats.put(3,data->matrix); break;
+	case (PlaneConf): floats.put(3,data->vector); break;
 	case (PictureConf): chars.put(strlen(data->filename)+1,data->filename); break;
 	case (IncludeConf): chars.put(strlen(data->filename)+1,data->filename); break;
 	case (ScriptConf): chars.put(strlen(data->script)+1,data->script);
