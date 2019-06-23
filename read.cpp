@@ -36,59 +36,45 @@ static Parse parse(__FILE__,__LINE__);
 
 void Read::connect(Window *ptr)
 {
-	req2command = &ptr->command2req;
-	req2window = &ptr->read2req;
+	req2command = &ptr->read2req;
 }
 
 void Read::connect(Polytope *ptr)
 {
-	req2manip = &ptr->manip2req;
-	req2query = &ptr->query2req;
-	req2polytope = &ptr->read2req;
+	req2data = &ptr->read2req;
 }
 
 void Read::connect(System *ptr)
 {
-	req2sound = &ptr->sound2req;
+	req2sound = &ptr->read2req;
 }
 
 void Read::connect(Script *ptr)
 {
-	req2script = &ptr->read2req;
+	req2query = &ptr->read2req;
 }
 
 void Read::init()
 {
 	if (req2command == 0) error("unconnected req2command",0,__FILE__,__LINE__);
-	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
-	if (req2query == 0) error("unconnected req2query",0,__FILE__,__LINE__);
-	if (req2manip == 0) error("unconnected req2manip",0,__FILE__,__LINE__);
-	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
+	if (req2data == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
 	if (req2sound == 0) error("unconnected req2sound",0,__FILE__,__LINE__);
-	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
+	if (req2query == 0) error("unconnected req2query",0,__FILE__,__LINE__);
 }
 
 void Read::call()
 {
-    Command *command; Data *window;
-    Manip *manip; Query *query; Data *polytope;
-    Sound *sound; Data *script; char *include;
+    Command *command; Data *data; Sound *sound; Query *query;
 	while (command2rsp.get(command)) parse.put(command);
-	while (window2rsp.get(window)) parse.put(window);
-	while (manip2rsp.get(manip)) parse.put(manip);
-	while (query2rsp.get(query)) parse.put(query);
-    while (polytope2rsp.get(polytope)) parse.put(polytope);
+    while (data2rsp.get(data)) parse.put(data);
     while (sound2rsp.get(sound)) parse.put(sound);
-    while (script2rsp.get(script)) parse.put(script);
+	while (query2rsp.get(query)) parse.put(query);
 	const char *str = buffer;
-	while (parse.get(str,self,command,window,manip,query,polytope,sound,script)) {
+	while (parse.get(str,self,command,data,sound,query)) {
 	if (command) req2command->put(command);
-	if (window) req2window->put(window);
-	if (manip) req2manip->put(manip);
-	if (query) req2query->put(query);
-	if (polytope) req2polytope->put(polytope);
+	if (data) req2data->put(data);
 	if (sound) req2sound->put(sound);
-	if (script) req2script->put(script);}
+	if (query) req2query->put(query);}
 	int length = str-buffer;
 	buffer = parse.postfix(buffer,length);
 }
@@ -106,22 +92,20 @@ void Read::done()
 }
 
 Read::Read(int s, File *f) : Thread(),
-	command2rsp(this,"Read<-Data<-Command"), window2rsp(this,"Read<-Data<-Window"),
-	query2rsp(this,"Read<-Query<-Polytope"), manip2rsp(this,"Read<-Manip<-Polytope"),
-	polytope2rsp(this,"Read<-Data<-Polytope"), sound2rsp(this,"Read<-Sound<-System"),
-	script2rsp(this,"Read<-Data<-Script"), self(s), file(f)
+	command2rsp(this,"Read<-Data<-Command"),
+	data2rsp(this,"Read<-Data<-Data"),
+	sound2rsp(this,"Read<-Sound<-System"), 
+	query2rsp(this,"Read<-Query<-Script"),
+	self(s), file(f)
 {
 	buffer = parse.setup("");
 }
 
 Read::~Read()
 {
-	Command *command; Manip *manip; Query *query; Sound *sound; Data *data;
+	Command *command; Data *data; Sound *sound; Query *query;
 	while (command2rsp.get(command)) parse.put(command);
-	while (window2rsp.get(data)) parse.put(data);
-	while (manip2rsp.get(manip)) parse.put(manip);
-	while (query2rsp.get(query)) parse.put(query);
-    while (polytope2rsp.get(data)) parse.put(data);
+    while (data2rsp.get(data)) parse.put(data);
     while (sound2rsp.get(sound)) parse.put(sound);
-    while (script2rsp.get(data)) parse.put(data);
+	while (query2rsp.get(query)) parse.put(query);
 }

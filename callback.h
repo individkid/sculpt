@@ -51,12 +51,12 @@ struct Mode
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
 void sendState(int file, enum Change change, float *matrix);
-void sendSculpt(int file, int plane, enum ClickMode click);
+void sendSculpt(int file, int plane, enum Configure conf);
 void sendRefine(int file, int plane, float *pierce);
 void sendRelative(int file, int plane, enum TopologyMode topology, float *pierce);
 void sendAbsolute(int file, int plane, enum TopologyMode topology);
 void sendFacet(int file, int plane, float *matrix);
-void sendInvoke(int file, int plane);
+void sendInvoke(int file, int plane, char key);
 void maybeKill(int seq);
 
 int isSuspend();
@@ -65,7 +65,7 @@ void getUniform(struct Update *update);
 void firstUniform(struct Update *update);
 void putUniform(struct Update *update);
 void checkQuery(struct Update *update);
-void changeState(struct Data *data);
+void changeState(struct Command *command);
 void displayError(int error, const char *description);
 void displayKey(struct GLFWwindow* ptr, int key, int scancode, int action, int mode);
 void displayCursor(struct GLFWwindow *ptr, double xpos, double ypos);

@@ -23,7 +23,7 @@
 void System::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    rsp2sound[i] = &ptr->sound2rsp;
+    rsp2read[i] = &ptr->sound2rsp;
 }
 
 void System::connect(Script *ptr)
@@ -33,7 +33,7 @@ void System::connect(Script *ptr)
 
 void System::init()
 {
-	for (int i = 0; i < nfile; i++) if (rsp2sound[i] == 0) error("unconnected rsp2sound",i,__FILE__,__LINE__);
+	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
 	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 }
 
@@ -43,21 +43,21 @@ void System::call()
 	//  change value and move to sounds,
 	//  get from sounds to insert and reinsert,
 	//  or get from sounds to send to script and reinsert, 
-	processSounds(sound2req);
-	processSounds(script2rsp);
+	processSounds(read2req);
+	processQueries(script2rsp);
 }
 
 void System::done()
 {
 	cleanup = 1;
-	processSounds(sound2req);
-	// TODO send MetricSync and SoundSync Sound from timewheel to rsp2sound
-	// TODO put UpdateSync Sound from timewheel to sounds
+	processSounds(read2req);
+	// TODO send ScriptEvent and SoundEvent Sound from timewheel to rsp2read
+	// TODO put UpdateEvent Sound from timewheel to sounds
 }
 
 System::System(int n) :
-	rsp2sound(new Message<Sound>*[n]),
-	sound2req(this,"Read->Sound->System"),
+	rsp2read(new Message<Sound>*[n]),
+	read2req(this,"Read->Sound->System"),
 	script2rsp(this,"System<-Data<-Script"),
 	nfile(n), cleanup(0), stodo(0), dtodo(0),
 	lwave(new float[WAVE_SIZE]), rwave(new float[WAVE_SIZE]),
@@ -77,7 +77,7 @@ System::System(int n) :
 System::~System()
 {
 	if (!cleanup) error("done not called",0,__FILE__,__LINE__);
-	processSounds(script2rsp);
+	processQueries(script2rsp);
 	PaError err = Pa_CloseStream(stream);
 	if (err != paNoError) error("close stream failed",Pa_GetErrorText(err),__FILE__,__LINE__);
 	err = Pa_Terminate();
@@ -148,33 +148,42 @@ void System::processSounds(Message<Sound> &message)
 {
 	Sound *sound; while (message.get(sound)) {
 		if (!cleanup) {
-			if (&message == &sound2req) {
-				switch (sound->sync) {
-				case (StartSync): {
+			if (&message == &read2req) {
+				switch (sound->event) {
+				case (StartEvent): {
 					PaError err = Pa_StartStream(stream);
 					if (err != paNoError) error("start stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
 					break;}
-				case (StopSync): {
+				case (StopEvent): {
 					PaError err = Pa_StopStream(stream);
 					if (err != paNoError) error("stop stream error",Pa_GetErrorText(err),__FILE__,__LINE__);
 					break;}
-				case (MetricSync): {
+				case (ScriptEvent): {
 					// TODO put in timewheel
 					break;}
-				case (SoundSync): {
+				case (SoundEvent): {
 					// TODO put in timewheel
 					break;}
-				default: error("invalid sync",sound->sync,__FILE__,__LINE__);}
-			}
-			if (&message == &script2rsp) {
-				// TODO copy value to identified ound and put to sounds
+				default: error("invalid event",sound->event,__FILE__,__LINE__);}
 			}
 		} else {
-			if (&message == &sound2req) {
-				rsp2sound[sound->file]->put(sound);
+			if (&message == &read2req) {
+				rsp2read[sound->file]->put(sound);
 			}
+		}
+	}
+}
+
+void System::processQueries(Message<Query> &message)
+{
+	Query *query; while (message.get(query)) {
+		if (!cleanup) {
 			if (&message == &script2rsp) {
-				rsp2sound[sound->file]->put(sound);
+				// TODO copy value to identified Sound and put to sounds
+			}
+		} else {
+			if (&message == &script2rsp) {
+				// TODO put to sounds
 			}
 		}
 	}

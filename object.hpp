@@ -32,8 +32,7 @@ struct Handle
 
 struct Object
 {
-	Message<Command> *rsp2command;
-	Message<Data> *rsp2read;
+	Message<Command> *rsp2read;
 	Message<State> *req2write;
 	Handle handle[Buffers];
 	MYuint vao[Programs];

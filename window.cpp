@@ -31,7 +31,6 @@
 #include "write.hpp"
 #include "polytope.hpp"
 #include "read.hpp"
-#include "script.hpp"
 extern "C" {
 #include "arithmetic.h"
 #include "callback.h"
@@ -40,8 +39,7 @@ extern "C" {
 void Window::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].rsp2command = &ptr->command2rsp;
-    object[i].rsp2read = &ptr->window2rsp;
+    object[i].rsp2read = &ptr->command2rsp;
 }
 
 void Window::connect(int i, Write *ptr)
@@ -56,19 +54,12 @@ void Window::connect(Polytope *ptr)
     req2polytope = &ptr->window2req;
 }
 
-void Window::connect(Script *ptr)
-{
-    req2script = &ptr->window2req;
-}
-
 void Window::init()
 {
-    for (int i = 0; i < nfile; i++) if (object[i].rsp2command == 0) error("unconnected rsp2command",i,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].rsp2read == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
     if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
     if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
-    if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
     if (sizeof(GLuint) != sizeof(MYuint)) error("sizeof uint",sizeof(GLuint),__FILE__,__LINE__);
     if (sizeof(GLfloat) != sizeof(float)) error("sizeof float",sizeof(GLfloat),__FILE__,__LINE__);
@@ -105,12 +96,10 @@ void Window::call()
 {
     processQueues(read);
     processQueues(polytope);
-    processCommands(command2req,read);
+    processCommands(read2req,read);
     processCommands(polytope2req,polytope);
-    processManips(polytope2rsp);
-    processDatas(read2req);
+    processDatas(polytope2rsp);
     processStates(write2rsp);
-    processDatas(script2rsp);
 }
 
 void Window::wait()
@@ -129,18 +118,17 @@ void Window::done()
 {
     processQueues(read);
     processQueues(polytope);
-    processCommands(command2req,read);
+    processCommands(read2req,read);
     processCommands(polytope2req,polytope);
-    processDatas(read2req);
-    processMacros();
     glfwTerminate(); window = 0;
 }
 
-Window::Window(int n) : Thread(1), object(new Object[n]),
-    req2polytope(0), rsp2polytope(0), req2script(0),
-    command2req(this,"Read->Command->Window"), read2req(this,"Read->Data->Window"),
-    polytope2req(this,"Polytope->Data->Window"), polytope2rsp(this,"Window<-Manip<-Polytope"),
-    write2rsp(this,"Window<-Data<-Write"), script2rsp(this,"Window->Data->Script"),
+Window::Window(int n) : Thread(1),
+    object(new Object[n]), rsp2polytope(0), req2polytope(0),
+    read2req(this,"Read->Command->Window"),
+    write2rsp(this,"Window<-State<-Write"),
+    polytope2req(this,"Polytope->Data->Window"),
+    polytope2rsp(this,"Window<-Data<-Polytope"),
     window(0), finish(0), nfile(n)
 {
     Object obj = {0}; for (int i = 0; i < n; i++) object[i] = obj;
@@ -150,18 +138,15 @@ Window::Window(int n) : Thread(1), object(new Object[n]),
 Window::~Window()
 {
     if (window) error("done not called",0,__FILE__,__LINE__);
-    processManips(polytope2rsp);
+    processDatas(polytope2rsp);
     processStates(write2rsp);
-    processDatas(script2rsp);
 }
 
 extern Window *window;
 
-static Pool<Data> datas(__FILE__,__LINE__);
 static Pool<State> states(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
-static std::map<std::pair<int,int>,Data*> macros;
-static Pool<Manip> manips(__FILE__,__LINE__);
+static Pool<Data> datas(__FILE__,__LINE__);
 
 extern "C" void sendState(int file, enum Change change, float *matrix)
 {
@@ -171,51 +156,49 @@ extern "C" void sendState(int file, enum Change change, float *matrix)
     window->sendWrite(state);
 }
 
-extern "C" void sendSculpt(int file, int plane, enum ClickMode click)
+extern "C" void sendSculpt(int file, int plane, enum Configure conf)
 {
-    Manip *manip = manips.get();
-    manip->file = file; manip->plane = plane; manip->click = click;
-    window->sendPolytope(manip);
+    Data *data = datas.get();
+    data->file = file; data->plane = plane; data->conf = conf;
+    window->sendPolytope(data);
 }
 
 extern "C" void sendRefine(int file, int plane, float *vector)
 {
-    Manip *manip = manips.get(); manip->vector = floats.get(3);
-    manip->file = file; manip->plane = plane; manip->click = RefineMode;
-    for (int i = 0; i < 3; i++) manip->vector[i] = vector[i];
-    window->sendPolytope(manip);
+    Data *data = datas.get(); data->pierce = floats.get(3);
+    data->file = file; data->plane = plane; data->conf = RefineConf;
+    for (int i = 0; i < 3; i++) data->pierce[i] = vector[i];
+    window->sendPolytope(data);
 }
 
 extern "C" void sendRelative(int file, int plane, enum TopologyMode topology, float *vector)
 {
-    Manip *manip = manips.get(); manip->vector = floats.get(3);
-    manip->file = file; manip->plane = plane; manip->click = TweakMode;
-    manip->topology = topology; manip->fixed = RelativeMode;
-    for (int i = 0; i < 3; i++) manip->vector[i] = vector[i];
-    window->sendPolytope(manip);
+    Data *data = datas.get(); data->vector = floats.get(3);
+    data->file = file; data->plane = plane; data->conf = AbsoluteConf; data->relative = topology;
+    for (int i = 0; i < 3; i++) data->fixed[i] = vector[i];
+    window->sendPolytope(data);
 }
 
 extern "C" void sendAbsolute(int file, int plane, enum TopologyMode topology)
 {
-    Manip *manip = manips.get();
-    manip->file = file; manip->plane = plane; manip->click = TweakMode;
-    manip->topology = topology; manip->fixed = AbsoluteMode;
-    window->sendPolytope(manip);
+    Data *data = datas.get();
+    data->file = file; data->plane = plane; data->conf = RelativeConf; data->absolute = topology;
+    window->sendPolytope(data);
 }
 
 extern "C" void sendFacet(int file, int plane, float *matrix)
 {
-    Manip *manip = manips.get(); manip->matrix = floats.get(16);
-    manip->file = file; manip->plane = plane; manip->click = TransformMode;
-    for (int i = 0; i < 16; i++) manip->matrix[i] = matrix[i];
-    window->sendPolytope(manip);
+    Data *data = datas.get(); data->matrix = floats.get(16);
+    data->file = file; data->plane = plane; data->conf = ManipConf;
+    for (int i = 0; i < 16; i++) data->matrix[i] = matrix[i];
+    window->sendPolytope(data);
 }
 
-extern "C" void sendInvoke(int file, int plane)
+extern "C" void sendInvoke(int file, int plane, char key)
 {
-    std::pair<int,int> pair; pair.first = file; pair.second = plane;
-    if (macros.find(pair) == macros.end()) error("invalid tagbits",0,__FILE__,__LINE__);
-    window->sendScript(macros[pair]);
+    Data *data = datas.get();
+    data->file = file; data->plane = plane; data->key = key; data->conf = KeyConf;
+    window->sendPolytope(data);
 }
 
 extern "C" void warpCursor(float *cursor)
@@ -241,14 +224,9 @@ void Window::sendWrite(State *state)
     object[state->file].req2write->put(state);
 }
 
-void Window::sendPolytope(Manip *manip)
+void Window::sendPolytope(Data *data)
 {
-    req2polytope->put(manip);
-}
-
-void Window::sendScript(Data *data)
-{
-    req2script->put(data);
+    req2polytope->put(data);
 }
 
 void Window::warpCursor(float *cursor)
@@ -431,7 +409,7 @@ void Window::processQueue(Queue &queue, Queues &queues)
         if (!command->finish) {
             remove(queue.first,queue.last,command);
             if (&queue == &queues.query) {
-                if (&queues == &read) object[command->file].rsp2command->put(command);
+                if (&queues == &read) object[command->file].rsp2read->put(command);
                 if (&queues == &polytope) rsp2polytope->put(command);}
             else enque(queue.first,queue.last,command);}
         if (command->finish && &queue != &queues.query) break;
@@ -443,28 +421,33 @@ void Window::processQueue(Queue &queue, Queues &queues)
 void Window::processCommands(Message<Command> &message, Queues &queues)
 {
     Command *command; while (message.get(command)) {
+        if (command->source != PolytopeSource) {
+            changeState(command);
+            object[command->file].rsp2read->put(command);}
         if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
         if (!command->finish) startCommand(*command);
         if (command->finish) finishCommand(*command,queues);
         if (command->finish) {
-            if (&message == &command2req) enque(read.query.first,read.query.last,command);
+            if (&message == &read2req) enque(read.query.first,read.query.last,command);
             if (&message == &polytope2req) enque(polytope.query.first,polytope.query.last,command);}
         else {
-            if (&message == &command2req) object[command->file].rsp2command->put(command);}}
+            if (&message == &read2req) object[command->file].rsp2read->put(command);}}
 }
 
-void Window::processManips(Message<Manip> &message)
+void Window::processDatas(Message<Data> &message)
 {
-    Manip *manip; while (message.get(manip)) {
-        switch (manip->click) {
-        case (RefineMode): floats.put(3,manip->vector); break;
-        case (TweakMode): switch (manip->fixed) {
-        case (RelativeMode): floats.put(3,manip->vector); break;
-        case (AbsoluteMode): break;
-        default: error("invalid fixed",manip->fixed,__FILE__,__LINE__);}
-        case (TransformMode): floats.put(16,manip->matrix); break;
-        default: error("invalid click",manip->click,__FILE__,__LINE__);}
-        manips.put(manip);}
+    Data *data; while (message.get(data)) {
+        switch (data->conf) {
+        case (KeyConf): break;
+        case (RelativeConf): floats.put(3,data->fixed); break;
+        case (AbsoluteConf): break;
+        case (RefineConf): floats.put(3,data->pierce); break;
+        case (ManipConf): floats.put(16,data->matrix); break;
+        case (AdditiveConf): break;
+        case (SubtractiveConf): break;
+        case (PerformConf): break;
+        default: error("invalid conf",data->conf,__FILE__,__LINE__);}
+        datas.put(data);}
 }
 
 void Window::processStates(Message<State> &message)
@@ -477,29 +460,4 @@ void Window::processStates(Message<State> &message)
             case (RegionChange):
             case (TextChange):
             default: error("invalid change",state->change,__FILE__,__LINE__);}}
-}
-
-void Window::processDatas(Message<Data> &message)
-{
-    Data *data; while (message.get(data)) {
-        if (&message == &read2req) {
-            if (data->conf == MacroConf) {
-                std::pair<int,int> pair; pair.first = data->file; pair.second = data->plane;
-                if (macros.find(pair) != macros.end()) object[data->file].rsp2read->put(macros[pair]);
-                macros[pair] = data;}
-            else {
-                changeState(data);
-                object[data->file].rsp2read->put(data);}}
-        if (&message == &script2rsp) {
-            // nothing to do
-        }}
-}
-
-void Window::processMacros()
-{
-    while (macros.begin() != macros.end()) {
-    std::map<std::pair<int,int>,Data*>::iterator iter = macros.begin();
-    Data *data = (*iter).second;
-    macros.erase(iter);
-    object[data->file].rsp2read->put(data);}
 }

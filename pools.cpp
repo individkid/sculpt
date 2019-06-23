@@ -75,53 +75,27 @@ void Pools::put(Command *command)
 	Command *temp = command; command = command->next; commands.put(temp);}
 }
 
-void Pools::put(Manip *manip)
-{
-	while (manip) {
-	switch (manip->click) {
-	case (AdditiveMode): break;
-	case (SubtractiveMode): break;
-	case (RefineMode): floats.put(3,manip->vector); break;
-	case (TweakMode): floats.put(3,manip->vector); break;
-	case (PerformMode): break;
-	case (TransformMode): floats.put(16,manip->vector); break;
-	default: error("invalid click",manip->click,__FILE__,__LINE__);}
-	Manip *temp = manip; manip = manip->next; manips.put(temp);}
-}
-
 void Pools::put(Query *query)
 {
-	while (query) {
-	if (query->text) chars.put(strlen(query->text)+1,query->text);
-	Query *temp = query; query = query->next; queries.put(temp);}
+	// TODO
 }
 
 void Pools::put(Sound *sound)
 {
 	while (sound) {
-	switch (sound->sync) {
-	case (StartSync): break;
-	case (StopSync): break;
-	case (ScriptSync):
-	doubles.put(sound->params,sound->values);
-	if (sound->metric) {sound->metric->count--;
-	if (sound->metric->count == 0) {
-	chars.put(strlen(sound->metric->ptr)+1,sound->metric->ptr);
-	smarts.put(sound->metric);}}
-	break;
-	case (MetricSync):
-	ints.put(sound->count,sound->ids); pointers.put(sound->count,sound->ptrs);
+	switch (sound->event) {
+	case (StartEvent): break;
+	case (StopEvent): break;
+	case (ScriptEvent):
+	ints.put(sound->count,sound->ids);
+	pointers.put(sound->count,sound->ptrs);
 	chars.put(strlen(sound->script)+1,sound->script);
-	if (sound->smart) {sound->smart->count--;
-	if (sound->smart->count == 0) {
-	chars.put(strlen(sound->smart->ptr)+1,sound->smart->ptr);
-	smarts.put(sound->smart);}}
 	break;
-	case (UpdateSync): break;
-	case (SoundSync):
+	case (UpdateEvent): break;
+	case (SoundEvent):
 	for (int i = 0; i < Equates; i++) put(&sound->equ[i]);
 	break;
-	default: error("invalid sync",sound->sync,__FILE__,__LINE__);}
+	default: error("invalid event",sound->event,__FILE__,__LINE__);}
 	Sound *temp = sound; sound = sound->next; sounds.put(temp);}
 }
 
@@ -135,23 +109,24 @@ void Pools::put(Data *data)
 {
 	while (data) {
 	switch (data->conf) {
-	case (SculptConf): break;
-	case (GlobalConf): floats.put(16,data->matrix); break;
-	case (MatrixConf): floats.put(16,data->matrix); break;
-	case (PlaneConf): floats.put(3,data->matrix); break;
-	case (PictureConf): chars.put(strlen(data->filename)+1,data->filename); break;
+	case (InflateConf): break;
 	case (SpaceConf): ints.put(data->boundaries,data->planes);
 	ints.put(data->boundaries*data->regions,data->sides); break;
 	case (RegionConf): ints.put(data->insides,data->inside); 
 	ints.put(data->outsides,data->outside); break;
-	case (InflateConf): break;
-	case (PolytopeConf): /*TODO*/ break;
-	case (IncludeConf): break;
-	case (ScriptConf): chars.put(strlen(data->script)+1,data->script); break;
-	case (PauseConf): chars.put(strlen(data->script)+1,data->script); break;
-	case (MacroConf): chars.put(strlen(data->script)+1,data->script); break;
-	case (HotkeyConf): chars.put(strlen(data->script)+1,data->script); break;
-	case (ConfigureConf): break;
+	case (PlaneConf): floats.put(3,data->matrix); break;
+	case (PictureConf): chars.put(strlen(data->filename)+1,data->filename); break;
+	case (IncludeConf): chars.put(strlen(data->filename)+1,data->filename); break;
+	case (ScriptConf): chars.put(strlen(data->script)+1,data->script);
+	ints.put(data->count,data->specify); break;
+	case (KeyConf): break;
+	case (RelativeConf): floats.put(3,data->fixed); break;
+	case (AbsoluteConf): break;
+	case (RefineConf): floats.put(3,data->pierce); break;
+	case (ManipConf): floats.put(16,data->matrix); break;
+	case (AdditiveConf): break;
+	case (SubtractiveConf): break;
+	case (PerformConf): break;
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}
 	Data *temp = data; data = data->next; datas.put(data);}
 }

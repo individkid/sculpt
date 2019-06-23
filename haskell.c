@@ -69,21 +69,15 @@ const char *enamerate(enum Opcode opcode)
 	case (MatrixOp): return "MatrixOp";
 	case (VersorOp): return "VersorOp";
 	case (VectorOp): return "VectorOp";
-	case (DelayOp): return "DelayOp";
 	case (CountOp): return "CountOp";
 	case (IdentOp): return "IdentOp";
-	case (ValueOp): return "ValueOp";
-	case (MetricOp): return "MetricOp";
 	case (SubconfOp): return "SubconfOp";
 	case (SettingOp): return "SettingOp";
 	case (FilenameOp): return "FilenameOp";
 	case (ScriptOp): return "ScriptOp";
 	case (QueryOp): return "QueryOp";
-	case (DisplayOp): return "DisplayOp";
 	case (TextOp): return "TextOp";
-	case (ManipOp): return "ManipOp";
 	case (CommandOp): return "CommandOp";
-	case (PointerOp): return "PointerOp";
 	default: fatal("unknown opcode",opcode,__FILE__,__LINE__);}
 	return 0;
 }
@@ -114,21 +108,15 @@ int enumerate(char *name)
 	if (strcmp(name,"MatrixOp") == 0) return MatrixOp;
 	if (strcmp(name,"VersorOp") == 0) return VersorOp;
 	if (strcmp(name,"VectorOp") == 0) return VectorOp;
-	if (strcmp(name,"DelayOp") == 0) return DelayOp;
 	if (strcmp(name,"CountOp") == 0) return CountOp;
 	if (strcmp(name,"IdentOp") == 0) return IdentOp;
-	if (strcmp(name,"ValueOp") == 0) return ValueOp;
-	if (strcmp(name,"MetricOp") == 0) return MetricOp;
 	if (strcmp(name,"SubconfOp") == 0) return SubconfOp;
 	if (strcmp(name,"SettingOp") == 0) return SettingOp;
 	if (strcmp(name,"FilenameOp") == 0) return FilenameOp;
 	if (strcmp(name,"ScriptOp") == 0) return ScriptOp;
 	if (strcmp(name,"QueryOp") == 0) return QueryOp;
-	if (strcmp(name,"DisplayOp") == 0) return DisplayOp;
 	if (strcmp(name,"TextOp") == 0) return TextOp;
-	if (strcmp(name,"ManipOp") == 0) return ManipOp;
 	if (strcmp(name,"CommandOp") == 0) return CommandOp;
-	if (strcmp(name,"PointerOp") == 0) return PointerOp; 
 	fatal("unknown name",0,__FILE__,__LINE__);
 	return -1;
 }

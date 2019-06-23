@@ -106,27 +106,28 @@ enum Sculpt {
 	FixedUlpt,
 	Sculpts};
 enum Configure {
-	SculptConf,
-	GlobalConf,
-	MatrixConf,
-	PlaneConf,
-	PictureConf,
+	InflateConf,
 	SpaceConf,
 	RegionConf,
-	InflateConf,
-	PolytopeConf,
+	PlaneConf,
+	PictureConf,
 	IncludeConf,
 	ScriptConf,
-	PauseConf,
-	MacroConf,
-	HotkeyConf,
-	ConfigureConf,
+	KeyConf,
+	RelativeConf,
+	AbsoluteConf,
+	RefineConf,
+	ManipConf,
+	AdditiveConf,
+	SubtractiveConf,
+	PerformConf,
 	Configures};
 enum Subconf {
 	StartSub,
 	StopSub,
 	Subconfs};
 enum Change {
+	SculptChange,
 	GlobalChange,
 	MatrixChange,
 	PlaneChange,
@@ -139,6 +140,13 @@ enum Field {
 	BindField,
 	ReadField,
 	Fields};
+enum Source {
+	ConfigureSource,
+	ModeSource,
+	MatrixSource,
+	GlobalSource,
+	PolytopeSource,
+	Sources};
 enum Factor {
 	ConstFactor,
 	VaryFactor,
@@ -149,14 +157,13 @@ enum Identity {
 	NameIdent,
 	NumberIdent,
 	Identities};
-enum Syncrony {
-	StartSync,
-	StopSync,
-	ScriptSync,
-	MetricSync,
-	UpdateSync,
-	SoundSync,
-	Syncronies};
+enum Event {
+	StartEvent,
+	StopEvent,
+	SoundEvent,
+	ScriptEvent,
+	UpdateEvent,
+	Events};
 enum Equate {
 	ValueEqu, // sample value
 	DelayEqu, // wave length
@@ -164,9 +171,17 @@ enum Equate {
 	LeftEqu, // left audio
 	RightEqu, // right audio
 	Equates};
+enum When {
+	OnceWhen,
+	OftenWhen,
+	EverWhen,
+	Whens};
+enum Where {
+	FileWhere,
+	Wheres};
 enum Opcode {
-	// Thread
-	ReadOp, ManipOp, WriteOp, QueryOp, DisplayOp, WindowOp, CommandOp, PointerOp, 
+	// Message
+	ReadOp, WriteOp, ScriptOp, QueryOp, WindowOp, CommandOp,
 	// Data
 	FileOp, PlaneOp, ConfOp,
 	SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,
@@ -174,12 +189,9 @@ enum Opcode {
 	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
 	MatrixOp,
 	VersorOp, VectorOp,
-	DelayOp, CountOp, IdentOp, ValueOp, MetricOp,
 	SubconfOp, SettingOp,
 	FilenameOp,
-	ScriptOp,
-	// Query
-	/*FileOp,*/ TextOp,
+	/*ScriptOp,*/
 	// Command
 	/*FileOp,*/ FeedbackOp, FinishOp,
 	AllocOp, /*WriteOp,*/ BindOp, /*ReadOp,*/
@@ -193,7 +205,7 @@ enum Opcode {
 	FunctionOp, FunctionsOp,
 	// Render
 	/*FileOp,*/
-	ProgramOp, BaseOp, /*CountOp,*/ /*SizeOp,*/
+	ProgramOp, BaseOp, CountOp, /*SizeOp,*/
 	// Feedback
 	PierceOp, NormalOp, TagbitsOp, /*PlaneOp,*/
 	// Format
@@ -205,11 +217,13 @@ enum Opcode {
 	/*ClickOp,*/ /*TopologyOp,*/ /*FixedOp,*/
 	/*VectorOp,*/ /*MatrixOp,*/
 	// Sound
-	/*FileOp,*/ /*IdentOp,*/ /*ValueOp,*/
+	/*FileOp,*/ IdentOp, WhenOp, /*ValueOp,*/
 	// Sum
 	/*CountOp,*/
 	// Term
 	CoefOp, FactorOp, SquareOp, CompOp,
+	// Query
+	/*FileOp,*/ TextOp, WhereOp,
 	Opcodes};
 
 struct Format
@@ -226,6 +240,10 @@ struct Format
 	MYuint enable;
 	char filler1[4-sizeof(MYuint)]; MYuint tagplane;
 	char filler2[4-sizeof(MYuint)]; MYuint taggraph;
+};
+struct Smart {
+	int count;
+	char *ptr;
 };
 struct Feedback
 {
@@ -256,29 +274,41 @@ struct Render
 };
 struct Command // (Polytope,Read) -> Window
 {
-	struct Command *next;
-	int file; int feedback; int finish;
-	struct Update *update[Fields];
+	struct Command *next; int file;
+	enum Source source;
+	union {
+	// Read->ConfigureSource->Window
+	struct {enum Subconf subconf; float setting;};
+	// Read->ModeSource->Window
+	struct {enum Sculpt sculpt; union {
+	enum ClickMode click;
+	enum MouseMode mouse;
+	enum RollerMode roller;
+	enum TargetMode target;
+	enum TopologyMode topology;
+	enum FixedMode fixed;};};
+	// Read->(MatrixSource,GlobalSource)->Window
+	float *matrix;
+	// Command->PolytopeSource->Window
+ 	struct {int feedback; int finish;
+ 	struct Update *update[Fields];
 	struct Render *render;
 	struct Command *redraw;
-	struct Command *pierce;
-};
-struct Manip // (Window,Read) -> Polytope
-{
-	struct Manip *next;
-	int file; int plane;
-	enum ClickMode click;
-	enum TopologyMode topology;
-	enum FixedMode fixed;
-	union {float *vector; float *matrix;};
+	struct Command *pierce;};};
 };
 struct State // (Polytope,Window,Script)->Write
 {
-	struct State *next;
-	int file;
-	int plane;
+	struct State *next; int file; int plane;
 	enum Change change;
 	union {
+	// Window->SculptChange->Write
+	struct {enum Sculpt sculpt; union {
+	enum ClickMode click;
+	enum MouseMode mouse;
+	enum RollerMode roller;
+	enum TargetMode target;
+	enum TopologyMode topology;
+	enum FixedMode fixed;};};
 	// Polytope->RegionChange->Write
 	struct {int side; int insides; int outsides; int *inside; int *outside;};
 	// Window->(MatrixChange,GlobalChange)->Write
@@ -288,33 +318,35 @@ struct State // (Polytope,Window,Script)->Write
 	// Script->TextChange->Write
 	char *text;};
 };
-struct Data // Read -> (Polytope,Window,Script,System)
+struct Data // (Read,Window) -> Polytope
 {
-	struct Data *next;
-	int file; int plane;
+	struct Data *next; int file; int plane;
 	enum Configure conf;
 	// Read->InflateConf->Polytope
 	union {
-	// Read->SculptConf->Window
-	struct {enum Sculpt sculpt; union {
-	enum ClickMode click; enum MouseMode mouse; enum RollerMode roller;
-	enum TargetMode target; enum TopologyMode topology; enum FixedMode fixed;};};
 	// Read->SpaceConf->Polytope
 	struct {int boundaries; int regions; int *planes; int *sides;};
 	// Read->RegionConf->Polytope
 	struct {int side; int insides; int outsides; int *inside; int *outside;};
-	// Read->(MatrixConf,GlobalConf)->Window
-	float *matrix;
 	// Read->PlaneConf->Polytope
 	struct {int versor; float *vector;};
-	// Read->ConfigureConf->Window
-	// Read->TimewheelConf->System
-	struct {enum Subconf subconf; float setting;};
 	// Read->(PictureConf,IncludeConf)->Polytope
 	char *filename;
-	// Read->(ScriptConf,PauseConf)->Script
-	// Read->(MacroConf,HotkeyConf)->Window->Script
-	char *script;};
+	// Read->ScriptConf->Polytope
+	struct {enum When when; char *script; enum Where where; int count; int *specify;};
+	// Window->KeyConf->Polytope
+	char key;
+	// Window->RelativeConf->Polytope
+	struct {float *fixed; enum TopologyMode relative;};
+	// Window->AbsoluteConf->Polytope
+	enum TopologyMode absolute;
+	// Window->RefineConf->Polytope
+	float *pierce;
+	// Window->ManipConf->Poltope
+	float *matrix;};
+	// Window->AdditiveConf->Polytope
+	// Window->SubtractiveConf->Polytope
+	// Window->PerformConf->Polytope
 };
 
 struct Term
@@ -332,44 +364,35 @@ struct Equ
 	struct Sum numer;
 	struct Sum denom;
 };
-struct Smart {
-	int count;
-	char *ptr;
-};
 struct Sound
 {
-	struct Sound *next;
-	int file;
-	int ident;
-	int done;
-	// Read->(StartSync,StopSync)->System
-	enum Syncrony sync;
+	struct Sound *next; int file; int ident;
+	int done; // initialize ptrs if not done
 	double value; // tone envelope phrase helper metric
+	enum Event event;
+	// Read->(StartEvent,StopEvent)->System
 	union {
-	// Read->SoundSync->System
+	// Read->SoundEvent->System
 	struct Equ equ[Equates];
-	// Read->MetricSync->System
+	// Read->ScriptEvent->System
 	struct {struct Equ sched; // sample rate
-	int id; double *ptr; // result pointer for script
 	int count; // number of parameters for script
-	int *ids; double **ptrs;
-	char *script; // init smart when setting done
- 	struct Smart *smart;}; // smart copied to ScriptSync
-	// System->ScriptSync->Script
-	struct {double *result; // system copies value to *result
-	int params; double *values;
- 	struct Smart *metric;}; // script to execute per sample rate
- 	// UpdateSync on timewheel
-	double *update;};
+	int *ids; double **ptrs; // initialize to set done
+	enum When when; char *script;}; // init Smart for Query
+ 	// UpdateEvent on timewheel
+	double *update;}; // assign when UpdateSync allocated
 };
 
-struct Query // (Read,Script) -> Polytope
+struct Query
 {
-	// Script->Query->Polytope
-	// Read->Query->Polytope->Script
-	struct Query *next;
-	int file;
-	char *text;
+	struct Query *next; int file;
+ 	struct Smart smart;
+	enum Where where;
+	union {
+	int empty;
+	// TODO fields to specify toplogical feature
+	//  or fields for symbolic and numerical changes
+	};
 };
 
 #endif

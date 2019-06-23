@@ -37,11 +37,6 @@ void Stream::get(int fd, Render *&render)
 	// TODO
 }
 
-void Stream::get(int fd, Manip *&manip)
-{
-	// TODO
-}
-
 void Stream::get(int fd, Query *&query)
 {
 	// TODO
@@ -72,9 +67,9 @@ void Stream::put(int fd, char *text)
 	wrChars(fd,count,text);
 }
 
-Opcode Stream::get(int fd, Data *&data, Query *&query, Manip *&manip, Command *&command)
+Opcode Stream::get(int fd, Data *&data, Query *&query, Command *&command)
 {
-	data = 0; query = 0; manip = 0; command = 0;
+	data = 0; query = 0; command = 0;
 	Opcode opcode = (Opcode)rdOpcode(fd);
 	switch (opcode) {
 	// TODO for responses with data read into the struct pointed to by rdPointer
@@ -87,11 +82,6 @@ Opcode Stream::get(int fd, Data *&data, Query *&query, Manip *&manip, Command *&
 }
 
 void Stream::put(int fd, Opcode opcode, Command *command)
-{
-	// TODO
-}
-
-void Stream::put(int fd, Opcode opcode, Manip *manip)
 {
 	// TODO
 }

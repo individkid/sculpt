@@ -27,7 +27,6 @@ protected:
 	Pool<Command> commands;
 	Pool<Update> updates;
 	Pool<Render> renders;
-	Pool<Manip> manips;
 	Pool<Query> queries;
 	Pool<Sound> sounds;
 	Pool<State> states;
@@ -44,12 +43,11 @@ protected:
 public:
 	Pools(const char *file, int line) :
 		commands(file,line), updates(file,line), renders(file,line),
-		manips(file,line), queries(file,line), sounds(file,line),
-		states(file,line), datas(file,line), smarts(file,line),
-		terms(file,line), pointers(file,line), doubles(file,line),
-		floats(file,line), chars(file,line), ints(file,line) {}
+		queries(file,line), sounds(file,line), states(file,line),
+		datas(file,line), smarts(file,line), terms(file,line),
+		pointers(file,line), doubles(file,line), floats(file,line),
+		chars(file,line), ints(file,line) {}
 	void put(Command *command);
-	void put(Manip *manip);
 	void put(Query *query);
 	void put(Sound *sound);
 	void put(State *state);

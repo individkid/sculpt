@@ -33,11 +33,11 @@ extern "C" int systemFunc(
 class System : public Thread
 {
 private:
-	Message<Sound> **rsp2sound;
-	Message<Sound> *req2script;
+	Message<Sound> **rsp2read;
+	Message<Query> *req2script;
 public:
-	Message<Sound> sound2req;
-	Message<Sound> script2rsp;
+	Message<Sound> read2req;
+	Message<Query> script2rsp;
 public:
 	void connect(int i, Read *ptr);
 	void connect(Script *ptr);
@@ -75,5 +75,5 @@ private:
 	void callinit(float value, float *wave, int *count);
 	double evaluate(Equ &equation);
 	void processSounds(Message<Sound> &message);
-	void processDatas(Message<Data> &message);
+	void processQueries(Message<Query> &message);
 };

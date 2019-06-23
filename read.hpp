@@ -28,20 +28,14 @@ class Read : public Thread
 {
 private:
 	Message<Command> *req2command;
-	Message<Data> *req2window;
-	Message<Query> *req2query;
-	Message<Manip> *req2manip;
-	Message<Data> *req2polytope;
+	Message<Data> *req2data;
 	Message<Sound> *req2sound;
-	Message<Data> *req2script;
+	Message<Query> *req2query;
 public:
 	Message<Command> command2rsp;
-	Message<Data> window2rsp;
-	Message<Query> query2rsp;
-	Message<Manip> manip2rsp;
-	Message<Data> polytope2rsp;
+	Message<Data> data2rsp;
 	Message<Sound> sound2rsp;
-	Message<Data> script2rsp;
+	Message<Query> query2rsp;
 public:
 	void connect(Window *ptr);
 	void connect(Polytope *ptr);

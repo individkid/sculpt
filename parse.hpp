@@ -28,11 +28,7 @@ public:
 	int get(const char *&ptr, Update *&update);
 	int get(const char *&ptr, Render *&render);
 	int get(const char *&ptr, int file, Command *&command);
-	int get(const char *&ptr, int file, Manip *&manip);
-	int get(const char *&ptr, int file, Syncrony sync, Sound *&sound);
-	int get(const char *&ptr, int file, Query *&query);
-	int get(const char *&ptr, int file, Command *&command, Data *&window, Manip *&manip,
-		Query *&query, Data *&polytope, Sound *&sound, Data *&script);
+	int get(const char *&ptr, int file, Command *&command, Data *&data, Sound *&sound, Query *&query);
 	char *concat(const char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(char *left, const char *right) {return ::concat(chars,left,right);}
 	char *concat(const char *left, char *right) {return ::concat(chars,left,right);}
@@ -60,11 +56,17 @@ public:
 	int numbers(const char *&str, int siz, int *&val);
 	int scalars(const char *&str, int siz, float *&val);
 	int subconf(const char *&str, enum Subconf &val);
+	int alloc(Command *&val);
 	int alloc(Data *&val);
+	int alloc(Sound *&val);
+	int alloc(Query *&val);
 	int deloc(int siz, int *&val);
 	int deloc(int siz, float *&val);
 	int deloc(char *&val);
+	int deloc(Command *&val);
 	int deloc(Data *&val);
+	int deloc(Sound *&val);
+	int deloc(Query *&val);
 };
 
 #endif

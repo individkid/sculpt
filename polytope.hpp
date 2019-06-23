@@ -27,19 +27,17 @@ class Polytope : public Thread
 {
 private:
 	Message<Data> **rsp2read;
-	Message<Manip> **rsp2manip;
-	Message<Query> **rsp2query;
 	Message<State> **req2write;
-	Message<Query> *rsp2script;
-	Message<Manip> *rsp2window;
+	Message<Data> *rsp2script;
+	Message<Query> *req2script;
+	Message<Data> *rsp2window;
 	Message<Command> *req2window;
 public:
 	Message<Data> read2req;
-	Message<Manip> manip2req;
-	Message<Query> query2req;
 	Message<State> write2rsp;
-	Message<Query> script2req;
-	Message<Manip> window2req;
+	Message<Data> script2req;
+	Message<Query> script2rsp;
+	Message<Data> window2req;
 	Message<Command> window2rsp;
 public:
 	void connect(int i, Read *ptr);

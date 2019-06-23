@@ -28,23 +28,22 @@ struct lua_State;
 class Script : public Thread
 {
 private:
-	Message<Data> **rsp2read;
-	Message<Query> *req2polytope;
+	Message<Query> **rsp2read;
+	Message<Data> *req2polytope;
+	Message<Query> *rsp2polytope;
 	Message<State> **req2write;
-	Message<Sound> *rsp2system;
-	Message<Data> *rsp2window;
+	Message<Query> *rsp2system;
 public:
-	Message<Data> read2req;
-	Message<Query> polytope2rsp;
+	Message<Query> read2req;
+	Message<Data> polytope2rsp;
+	Message<Query> polytope2req;
 	Message<State> write2rsp;
-	Message<Sound> system2req;
-	Message<Data> window2req;
+	Message<Query> system2req;
 public:
 	void connect(int i, Read *ptr);
 	void connect(Polytope *ptr);
 	void connect(int i, Write *ptr);
 	void connect(System *ptr);
-	void connect(Window *ptr);
 private:
 	virtual void init();
 	virtual void call();

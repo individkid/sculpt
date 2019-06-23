@@ -318,26 +318,26 @@ void changeFixed(enum FixedMode mod)
 	mode.fixed = mod;
 }
 
-void changeState(struct Data *data)
+void changeState(struct Command *command)
 {
-	switch (data->conf) {
-	case (SculptConf): switch (data->sculpt) {
-	case (ClickUlpt): changeClick(data->click); break;
-	case (MouseUlpt): changeMouse(data->mouse); break;
-	case (RollerUlpt): changeRoller(data->roller); break;
-	case (TargetUlpt): changeTarget(data->target); break;
-	case (TopologyUlpt): changeTopology(data->topology); break;
-	case (FixedUlpt): changeFixed(data->fixed); break;
-	default: displayError(data->sculpt,"invalid data->sculpt");}
-	case (MatrixConf): {
-	float invert[16]; invmat(copymat(invert,last.polytope[data->file],4),4);
-	float delta[16]; timesmat(copymat(delta,matrix.polytope[data->file],4),invert,4);
-	timesmat(copymat(matrix.polytope[data->file],data->matrix,4),delta,4); break;}
-	case (GlobalConf): {
+	switch (command->source) {
+	case (ModeSource): switch (command->sculpt) {
+	case (ClickUlpt): changeClick(command->click); break;
+	case (MouseUlpt): changeMouse(command->mouse); break;
+	case (RollerUlpt): changeRoller(command->roller); break;
+	case (TargetUlpt): changeTarget(command->target); break;
+	case (TopologyUlpt): changeTopology(command->topology); break;
+	case (FixedUlpt): changeFixed(command->fixed); break;
+	default: displayError(command->sculpt,"invalid command->sculpt");}
+	case (MatrixSource): {
+	float invert[16]; invmat(copymat(invert,last.polytope[command->file],4),4);
+	float delta[16]; timesmat(copymat(delta,matrix.polytope[command->file],4),invert,4);
+	timesmat(copymat(matrix.polytope[command->file],command->matrix,4),delta,4); break;}
+	case (GlobalSource): {
 	float invert[16]; invmat(copymat(invert,last.session,4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
-	timesmat(copymat(matrix.session,data->matrix,4),delta,4); break;}
-	default: displayError(data->conf,"invalid data->conf");}
+	timesmat(copymat(matrix.session,command->matrix,4),delta,4); break;}
+	default: displayError(command->source,"invalid command->source");}
 }
 
 void changeToggle(int toggle)
@@ -348,16 +348,15 @@ void changeToggle(int toggle)
 
 void triggerAction()
 {
-	if (current.tagbits) sendInvoke(current.file,current.plane);
 	switch (mode.click) {
-	case (AdditiveMode): sendSculpt(current.file,current.plane,AdditiveMode); break;
-	case (SubtractiveMode): sendSculpt(current.file,current.plane,SubtractiveMode); break;
+	case (AdditiveMode): sendSculpt(current.file,current.plane,AdditiveConf); break;
+	case (SubtractiveMode): sendSculpt(current.file,current.plane,SubtractiveConf); break;
 	case (RefineMode): sendRefine(current.file,current.plane,current.pierce); break;	
 	case (TweakMode): switch (mode.fixed) {
 	case (RelativeMode): sendRelative(current.file,current.plane,mode.topology,current.pierce); break;	
 	case (AbsoluteMode): sendAbsolute(current.file,current.plane,mode.topology); break;
 	default: displayError(mode.fixed,"invalid mode.fixed");}
-	case (PerformMode): break;
+	case (PerformMode): sendSculpt(current.file,current.plane,PerformConf); break;
 	case (TransformMode): changeClick(PierceMode); break;
 	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
 	default: displayError(mode.click,"invalid mode.click");}

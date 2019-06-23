@@ -27,16 +27,14 @@ private:
 	void get(int fd, Command *&command);
 	void get(int fd, Update *&update);
 	void get(int fd, Render *&render);
-	void get(int fd, Manip *&manip);
 	void get(int fd, Query *&query);
 	void get(int fd, Data *&data);
 	void get(int fd, char *&text);
 	void put(int fd, char *text);
 public:
 	Stream(const char *file, int line) : Pools(file,line) {}
-	Opcode get(int fd, Data *&data, Query *&query, Manip *&manip, Command *&command);
+	Opcode get(int fd, Data *&data, Query *&query, Command *&command);
 	void put(int fd, Opcode opcode, Command *command);
-	void put(int fd, Opcode opcode, Manip *manip);
 	void put(int fd, Opcode opcode, Query *query);
 	void put(int fd, Opcode opcode, State *state);
 	void put(int fd, Opcode opcode, Data *data);

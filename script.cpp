@@ -27,7 +27,7 @@
 void Script::connect(int i, Read *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    rsp2read[i] = &ptr->script2rsp;
+    rsp2read[i] = &ptr->query2rsp;
 }
 
 void Script::connect(Polytope *ptr)
@@ -46,11 +46,6 @@ void Script::connect(System *ptr)
 	rsp2system = &ptr->script2rsp;
 }
 
-void Script::connect(Window *ptr)
-{
-	rsp2window = &ptr->script2rsp;
-}
-
 void Script::init()
 {
 	state = luaL_newstate();
@@ -58,41 +53,41 @@ void Script::init()
 	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
 	if (rsp2system == 0) error("unconnected rsp2system",0,__FILE__,__LINE__);
-	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
 }
 
 void Script::call()
 {
-	processDatas(read2req);
-	processQueries(polytope2rsp);
+	processQueries(read2req);
+	processDatas(polytope2rsp);
+	processQueries(polytope2req);
 	processStates(write2rsp);
-	processSounds(system2req);
-	processDatas(window2req);
+	processQueries(system2req);
 }
 
 void Script::done()
 {
 	cleanup = 1;
-	processDatas(read2req);
-	processSounds(system2req);
-	processDatas(window2req);
+	processQueries(read2req);
+	processQueries(polytope2req);
+	processQueries(system2req);
 }
 
 Script::Script(int n) :
-	rsp2read(new Message<Data>*[n]), req2write(new Message<State>*[n]),
-	read2req(this,"Read->Data->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
-	write2rsp(this,"Script<-Data<-Write"), system2req(this,"System->Data->Script"),
-	window2req(this,"Window->Data->Script"), state(0), nfile(n), cleanup(0)
+	rsp2read(new Message<Query>*[n]), req2write(new Message<State>*[n]),
+	read2req(this,"Read->Query->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
+	polytope2req(this,"Polytope->Query->Script"), write2rsp(this,"Script<-State<-Write"),
+	system2req(this,"System->Query->Script"), state(0), nfile(n), cleanup(0)
 {
 }
 
 Script::~Script()
 {
-	processQueries(polytope2rsp);
+	processDatas(polytope2rsp);
 	processStates(write2rsp);
 }
 
-static Pool<Query> queries(__FILE__,__LINE__);
+static Pool<Data> datas(__FILE__,__LINE__);
+static Pool<State> states(__FILE__,__LINE__);
 static Power<char> chars(__FILE__,__LINE__);
 
 #define POP_ERROR(MESSAGE,LINE) { \
@@ -137,10 +132,24 @@ void Script::processQueries(Message<Query> &message)
 {
 	Query *query; while (message.get(query)) {
 		if (!cleanup) {
-			// TODO execute script with response
+			// execute script
+			if (lua_load(state,reader,query->smart.ptr,"script",0) == LUA_OK) {
+			lua_pushlightuserdata(state,this);
+			lua_call(state,1,0);} else {
+			error(lua_tostring(state,-1),0,__FILE__,__LINE__);
+			lua_pop(state,1);}
 		}
-		if (&message == &polytope2rsp) {
-			queries.put(query);}}
+		// TODO allow script to supress response
+		if (&message == &read2req) {
+			rsp2read[query->file]->put(query);
+		}
+		if (&message == &polytope2req) {
+			rsp2polytope->put(query);
+		}
+		if (&message == &system2req) {
+			rsp2system->put(query);
+		}
+	}
 }
 
 void Script::processStates(Message<State> &message)
@@ -152,38 +161,15 @@ void Script::processStates(Message<State> &message)
             case (MatrixChange):
             case (PlaneChange):
             case (RegionChange):
-            default: error("invalid change",state->change,__FILE__,__LINE__);}}
-}
-
-void Script::processSounds(Message<Sound> &message)
-{
-	Sound *sound; while (message.get(sound)) {
-		if (!cleanup) {
-			if (&message == &system2req) {
-				// execute script
-				if (lua_load(state,reader,sound->script,"system2req",0) == LUA_OK) {
-				// TODO push sound parameters
-				lua_pushlightuserdata(state,this);
-				lua_call(state,1,0);} else {
-				error(lua_tostring(state,-1),0,__FILE__,__LINE__);
-				lua_pop(state,1);}}}
-		// TODO allow script to supress response
-		if (&message == &system2req) {
-			rsp2system->put(sound);}}
+            default: error("invalid change",state->change,__FILE__,__LINE__);
+        }
+        states.put(state);
+    }
 }
 
 void Script::processDatas(Message<Data> &message)
 {
 	Data *data; while (message.get(data)) {
-		if (!cleanup) {
-			if (&message == &read2req) {
-				// execute script
-				if (lua_load(state,reader,data->script,"read2req",0) == LUA_OK) {
-				lua_pushlightuserdata(state,this);
-				lua_call(state,1,0);} else {
-				error(lua_tostring(state,-1),0,__FILE__,__LINE__);
-				lua_pop(state,1);}}}
-		// TODO allow script to supress response
-		if (&message == &read2req) {
-			rsp2read[data->file]->put(data);}}
+		// put data to datas
+	}
 }

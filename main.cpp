@@ -46,7 +46,6 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < argc; i++) {write[i]->connect(script); script->connect(i,write[i]);}
 	for (int i = 0; i < argc; i++) {write[i]->connect(window); window->connect(i,write[i]);}
 	system->connect(script); script->connect(system);
-	script->connect(window); window->connect(script);
 	for (int i = 0; i < argc; i++) {polytope->connect(i,write[i]); write[i]->connect(polytope);}
 	polytope->connect(script); script->connect(polytope);
 	polytope->connect(window); window->connect(polytope);

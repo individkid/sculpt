@@ -45,20 +45,16 @@ class Window : public Thread
 private:
 	Object *object;
 	Message<Command> *rsp2polytope;
-	Message<Manip> *req2polytope;
-	Message<Data> *req2script;
+	Message<Data> *req2polytope;
 public:
-	Message<Command> command2req;
-	Message<Data> read2req;
-	Message<Command> polytope2req;
-	Message<Manip> polytope2rsp;
+	Message<Command> read2req;
 	Message<State> write2rsp;
-	Message<Data> script2rsp;
+	Message<Command> polytope2req;
+	Message<Data> polytope2rsp;
 public:
 	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
 	void connect(Polytope *ptr);
-	void connect(Script *ptr);
 private:
 	virtual void init();
 	virtual void call();
@@ -70,8 +66,7 @@ public:
 	virtual ~Window();
 public:
 	void sendWrite(State *state);
-	void sendPolytope(Manip *manip);
-	void sendScript(Data *data);
+	void sendPolytope(Data *data);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);
 private:
@@ -97,8 +92,6 @@ private:
 	void processQueues(Queues &queues);
 	void processQueue(Queue &queue, Queues &queues);
 	void processCommands(Message<Command> &message, Queues &queues);
-	void processManips(Message<Manip> &message);
-	void processStates(Message<State> &message);
 	void processDatas(Message<Data> &message);
-	void processMacros();
+	void processStates(Message<State> &message);
 };

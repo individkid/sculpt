@@ -11,30 +11,30 @@ Initially before blocking on read from the unnamed pipe, Read sends location/pid
 Before sending data to the io thread, the window thread saves what it sends. When fields from the middle of the file are sent, the window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
 
 The -- commands and messages between threads are as follows. Note that only messages from the thread that reads files from the command line has side effects.  
---sculpt click additive (add region over clicked faced) Read->SculptConf->Window  
---sculpt click subtractive (remove region under clicked faced) Read->SculptConf->Window  
---sculpt click refine (add random plane through clicked point on facet) Read->SculptConf->Window  
---sculpt click tweak (randomize clicked facet plane) Read->SculptConf->Window  
---sculpt click perform (trigger script of clicked facet) Read->SculptConf->Window  
---sculpt click transform (click starts transformation) Read->SculptConf->Window  
---sculpt click suspend (stop transformation by mouse motion) Read->SculptConf->Window  
---sculpt click pierce (click changes fixed pierce point) Read->SculptConf->Window  
---sculpt mouse rotate (rotate about fixed pierce point) Read->SculptConf->Window  
---sculpt mouse tangent (translate parallel to fixed facet) Read->SculptConf->Window  
---sculpt mouse translate (translate parallel to picture plane) Read->SculptConf->Window  
---sculpt roller cylinder (rotate with rotated fixed axis) Read->SculptConf->Window  
---sculpt roller clock (rotate with fixed normal to picture plane) Read->SculptConf->Window  
---sculpt roller normal (rotate with fixed normal to facet) Read->SculptConf->Window  
---sculpt roller parallel (translate with fixed normal to facet) Read->SculptConf->Window  
---sculpt roller scale (scale with fixed pierce point) Read->SculptConf->Window  
---sculpt target session (transform display) Read->SculptConf->Window  
---sculpt target polytope (transform clicked polytope) Read->SculptConf->Window  
---sculpt target facet (transform clicked facet) Read->SculptConf->Window  
---sculpt topology numeric (tweak holds nothing invariant) Read->SculptConf->Window  
---sculpt topology invariant (tweak holds polytope invariant) Read->SculptConf->Window  
---sculpt topology symbolic (tweak holds space invariant) Read->SculptConf->Window  
---sculpt fixed relative (tweak holds pierce point fixed) Read->SculptConf->Window  
---sculpt fixed absolute (tweak holds nothing fixed) Read->SculptConf->Window  
+--sculpt click additive (add region over clicked faced) Read->SideSource->Window  
+--sculpt click subtractive (remove region under clicked faced) Read->SideSource->Window  
+--sculpt click refine (add random plane through clicked point on facet) Read->SideSource->Window  
+--sculpt click tweak (randomize clicked facet plane) Read->SideSource->Window  
+--sculpt click perform (trigger script of clicked facet) Read->SideSource->Window  
+--sculpt click transform (click starts transformation) Read->SideSource->Window  
+--sculpt click suspend (stop transformation by mouse motion) Read->SideSource->Window  
+--sculpt click pierce (click changes fixed pierce point) Read->SideSource->Window  
+--sculpt mouse rotate (rotate about fixed pierce point) Read->SideSource->Window  
+--sculpt mouse tangent (translate parallel to fixed facet) Read->SideSource->Window  
+--sculpt mouse translate (translate parallel to picture plane) Read->SideSource->Window  
+--sculpt roller cylinder (rotate with rotated fixed axis) Read->SideSource->Window  
+--sculpt roller clock (rotate with fixed normal to picture plane) Read->SideSource->Window  
+--sculpt roller normal (rotate with fixed normal to facet) Read->SideSource->Window  
+--sculpt roller parallel (translate with fixed normal to facet) Read->SideSource->Window  
+--sculpt roller scale (scale with fixed pierce point) Read->SideSource->Window  
+--sculpt target session (transform display) Read->SideSource->Window  
+--sculpt target polytope (transform clicked polytope) Read->SideSource->Window  
+--sculpt target facet (transform clicked facet) Read->SideSource->Window  
+--sculpt topology numeric (tweak holds nothing invariant) Read->SideSource->Window  
+--sculpt topology invariant (tweak holds polytope invariant) Read->SideSource->Window  
+--sculpt topology symbolic (tweak holds space invariant) Read->SideSource->Window  
+--sculpt fixed relative (tweak holds pierce point fixed) Read->SideSource->Window  
+--sculpt fixed absolute (tweak holds nothing fixed) Read->SideSource->Window  
 --global (change transformation of display) Read->GlobalConf->Window  
 --matrix (change transformation of polytope) Read->MatrixConf->Window  
 --plane (add and classify plane from vector) Read->PlaneConf->Polytope->Command->Window  
