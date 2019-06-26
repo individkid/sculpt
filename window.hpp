@@ -24,7 +24,6 @@ class Object;
 class Read;
 class Write;
 class Polytope;
-class Script;
 
 struct Queue
 {
@@ -74,8 +73,8 @@ private:
 	int finish;
 	int nfile;
 	Microcode microcode[Programs];
-	Queues read;
 	Queues polytope;
+	Queues read;
 private:
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);

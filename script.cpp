@@ -24,21 +24,9 @@
 #include "polytope.hpp"
 #include "write.hpp"
 
-void Script::connect(int i, Read *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    rsp2read[i] = &ptr->query2rsp;
-}
-
 void Script::connect(Polytope *ptr)
 {
-    req2polytope = &ptr->script2req;
-}
-
-void Script::connect(int i, Write *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    req2write[i] = &ptr->script2req;
+    rsp2polytope = &ptr->script2rsp;
 }
 
 void Script::connect(System *ptr)
@@ -46,49 +34,46 @@ void Script::connect(System *ptr)
 	rsp2system = &ptr->script2rsp;
 }
 
+void Script::connect(int i, Read *ptr)
+{
+	rsp2read[i] = &ptr->query2rsp;
+}
+
 void Script::init()
 {
 	state = luaL_newstate();
-	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
-	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
-	for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
+	if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
 	if (rsp2system == 0) error("unconnected rsp2system",0,__FILE__,__LINE__);
+	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
 }
 
 void Script::call()
 {
-	processQueries(read2req);
-	processDatas(polytope2rsp);
 	processQueries(polytope2req);
-	processStates(write2rsp);
 	processQueries(system2req);
+	processQueries(read2req);
 }
 
 void Script::done()
 {
 	cleanup = 1;
-	processQueries(read2req);
 	processQueries(polytope2req);
 	processQueries(system2req);
+	processQueries(read2req);
 }
 
 Script::Script(int n) :
-	rsp2read(new Message<Query>*[n]), req2write(new Message<State>*[n]),
-	read2req(this,"Read->Query->Script"), polytope2rsp(this,"Script<-Data<-Polytope"),
-	polytope2req(this,"Polytope->Query->Script"), write2rsp(this,"Script<-State<-Write"),
-	system2req(this,"System->Query->Script"), state(0), nfile(n), cleanup(0)
+	rsp2read(new Message<Query>*[n]),
+	polytope2req(this,"Polytope->Query->Script"),
+	system2req(this,"System->Query->Script"),
+	read2req(this,"Read->Query->Script"),
+	state(0), nfile(n), cleanup(0)
 {
 }
 
 Script::~Script()
 {
-	processDatas(polytope2rsp);
-	processStates(write2rsp);
 }
-
-static Pool<Data> datas(__FILE__,__LINE__);
-static Pool<State> states(__FILE__,__LINE__);
-static Power<char> chars(__FILE__,__LINE__);
 
 #define POP_ERROR(MESSAGE,LINE) { \
 	message(MESSAGE,LINE,__FILE__,__LINE__); \
@@ -138,10 +123,7 @@ void Script::processQueries(Message<Query> &message)
 			lua_call(state,1,0);} else {
 			error(lua_tostring(state,-1),0,__FILE__,__LINE__);
 			lua_pop(state,1);}
-		}
-		// TODO allow script to supress response
-		if (&message == &read2req) {
-			rsp2read[query->file]->put(query);
+			// TODO allow script to supress response
 		}
 		if (&message == &polytope2req) {
 			rsp2polytope->put(query);
@@ -149,27 +131,8 @@ void Script::processQueries(Message<Query> &message)
 		if (&message == &system2req) {
 			rsp2system->put(query);
 		}
-	}
-}
-
-void Script::processStates(Message<State> &message)
-{
-    State *state; while (message.get(state)) {
-        switch (state->change) {
-            case (TextChange): chars.put(strlen(state->text)+1,state->text); break;
-            case (GlobalChange):
-            case (MatrixChange):
-            case (PlaneChange):
-            case (RegionChange):
-            default: error("invalid change",state->change,__FILE__,__LINE__);
-        }
-        states.put(state);
-    }
-}
-
-void Script::processDatas(Message<Data> &message)
-{
-	Data *data; while (message.get(data)) {
-		// put data to datas
+		if (&message == &read2req) {
+			rsp2read[query->file]->put(query);
+		}
 	}
 }

@@ -86,8 +86,6 @@ void Pools::put(Command *command)
 void Pools::put(Query *query)
 {
 	while (query) {
-	switch (query->where) {
-	default: error("invalid where",query->where,__FILE__,__LINE__);}
 	Query *temp = query; query = query->next; queries.put(temp);}
 }
 
@@ -139,8 +137,6 @@ void Pools::put(Data *data)
 	case (PlaneConf): floats.put(3,data->vector); break;
 	case (PictureConf): chars.put(strlen(data->filename)+1,data->filename); break;
 	case (IncludeConf): chars.put(strlen(data->filename)+1,data->filename); break;
-	case (ScriptConf): chars.put(strlen(data->script)+1,data->script);
-	ints.put(data->count,data->specify); break;
 	case (PressConf): break;
 	case (RelativeConf): floats.put(3,data->fixed); break;
 	case (AbsoluteConf): break;

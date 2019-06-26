@@ -34,11 +34,6 @@ void Write::connect(Polytope *ptr)
 	rsp2polytope = &ptr->write2rsp;
 }
 
-void Write::connect(Script *ptr)
-{
-	rsp2script = &ptr->write2rsp;
-}
-
 void Write::connect(Window *ptr)
 {
 	rsp2window = &ptr->write2rsp;
@@ -47,7 +42,6 @@ void Write::connect(Window *ptr)
 void Write::init()
 {
 	if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
-	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
 	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
 }
 
@@ -55,7 +49,6 @@ void Write::call()
 {
 	State *state;
 	while (polytope2req.get(state)) {/*TODO unparse and send*/ rsp2polytope->put(state);}
-	while (script2req.get(state)) {/*TODO unparse and send*/ rsp2script->put(state);}
 	while (window2req.get(state)) {/*TODO unparse and send*/ rsp2window->put(state);}
 }
 
@@ -63,13 +56,13 @@ void Write::done()
 {
 	State *state;
 	while (polytope2req.get(state)) rsp2polytope->put(state);
-	while (script2req.get(state)) rsp2script->put(state);
 	while (window2req.get(state)) rsp2window->put(state);
 }
 
 Write::Write(int i, File *f) : Thread(),
-	rsp2polytope(0), rsp2script(0), rsp2window(0),
-	polytope2req(this,"Polytope->State->Write"), script2req(this,"Script->State->Write"),
-	window2req(this,"Window->State->Write"), self(i), file(f)
+	rsp2polytope(0), rsp2window(0),
+	polytope2req(this,"Polytope->State->Write"),
+	window2req(this,"Window->State->Write"),
+	self(i), file(f)
 {
 }

@@ -28,14 +28,12 @@ class Polytope : public Thread
 private:
 	Message<Data> **rsp2read;
 	Message<State> **req2write;
-	Message<Data> *rsp2script;
 	Message<Query> *req2script;
 	Message<Data> *rsp2window;
 	Message<Command> *req2window;
 public:
 	Message<Data> read2req;
 	Message<State> write2rsp;
-	Message<Data> script2req;
 	Message<Query> script2rsp;
 	Message<Data> window2req;
 	Message<Command> window2rsp;

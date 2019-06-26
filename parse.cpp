@@ -175,7 +175,7 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&data, Sound
 	if (literal(ptr,"--command") && get(ptr,file,command)) return 1;
 	else {ptr = sav;}
 	if (literal(ptr,"--script") && alloc(query) && text(ptr,query->smart.ptr)) {
-	query->file = file; query->where = FileWhere; query->smart.count = 1; return 1;}
+	query->file = file; query->smart.count = 1; return 1;}
 	else {deloc(query->smart.ptr); deloc(query); ptr = sav;}
 	if (literal(ptr,"--configure") && alloc(command) &&
 	subconf(ptr,command->subconf) && scalar(ptr,command->setting)) {

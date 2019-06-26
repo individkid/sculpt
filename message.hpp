@@ -29,6 +29,10 @@ extern "C" {
 #include <set>
 #include <map>
 
+enum Identity {
+	NameIdent,
+	NumberIdent,
+	Identities};
 struct Unique
 {
 	enum Identity ident;

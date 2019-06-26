@@ -262,14 +262,6 @@ data Enumeration = Enumeration {
    regionChange :: CInt,
    textChange :: CInt,
    changes :: CInt,
-   -- Where
-   fileWhere :: CInt,
-   wheres :: CInt,
-   -- When
-   onceWhen :: CInt,
-   oftenWhen :: CInt,
-   everWhen :: CInt,
-   whens :: CInt,
    -- Factor
    constFactor :: CInt,
    varyFactor :: CInt,
@@ -545,6 +537,9 @@ main = do
    changesV <- (newCString "Changes") >>= enumerate
    -- Where
    fileWhereV <- (newCString "FileWhere") >>= enumerate
+   symbolicWhere <- (newCString "SymbolicWhere") >>= enumerate
+   numericWhere <- (newCString "NumericWhere") >>= enumerate
+   metricWhere <- (newCString "MetricWhere") >>= enumerate
    wheresV <- (newCString "Wheres") >>= enumerate
    -- When
    onceWhenV <- (newCString "OnceWhen") >>= enumerate
@@ -814,14 +809,6 @@ main = do
    regionChange = regionChangeV,
    textChange = textChangeV,
    changes = changesV,
-   -- Where
-   fileWhere = fileWhereV,
-   wheres = wheresV,
-   -- When
-   onceWhen = onceWhenV,
-   oftenWhen = oftenWhenV,
-   everWhen = everWhenV,
-   whens = whensV,
    -- Factor
    constFactor = constFactorV,
    varyFactor = varyFactorV,
@@ -907,12 +894,6 @@ main = do
 mainLoop :: CInt -> CInt -> Enumeration -> IO ()
 mainLoop rdfd wrfd en = do
    src <- rdOpcode rdfd
-   mainIter rdfd wrfd en src
-   mainLoop rdfd wrfd en
-
-mainIter :: CInt -> CInt -> Enumeration -> CInt -> IO ()
-mainIter rdfd wrfd en src
-   | src == (readOp en) = do
    ptr <- rdPointer rdfd
    exOpcode rdfd (fileOp en)
    file <- rdInt rdfd
@@ -920,13 +901,25 @@ mainIter rdfd wrfd en src
    plane <- rdInt rdfd
    exOpcode rdfd (confOp en)
    conf <- rdConfigure rdfd
-   readIter rdfd wrfd en file plane conf
+   mainIter rdfd wrfd en src file plane conf
    wrOpcode wrfd src
    wrPointer wrfd ptr
+   mainLoop rdfd wrfd en
+
+mainIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> CInt -> IO ()
+mainIter rdfd wrfd en src file plane conf
+   | src == (readOp en) = readIter rdfd wrfd en file plane conf
+   | src == (windowOp en) = windowIter rdfd wrfd en file plane conf
    | otherwise = undefined
 
 readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO ()
 readIter rdfd wrfd en file plane conf
-   | conf == (includeConf en) = undefined
-   -- TODO rdString for null terminated IO (Ptr CChar)
+   | conf == (scriptConf en) = undefined
+   -- TODO allocate Query, and save in IO
+   | otherwise = undefined
+
+windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO ()
+windowIter rdfd wrfd en file plane conf
+   | conf == (pressConf en) = undefined
+   -- TODO send smart copy of previously allocated Query
    | otherwise = undefined

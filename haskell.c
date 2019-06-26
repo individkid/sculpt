@@ -45,75 +45,27 @@ void setDebug(int val)
 const char *enamerate(enum Opcode opcode)
 {
 	switch (opcode) {
+	// Sideband
+	// TODO for new Query pointer
 	// Message
 	case (ReadOp): return "ReadOp";
 	case (WriteOp): return "WriteOp";
 	case (ScriptOp): return "ScriptOp";
-	case (QueryOp): return "QueryOp";
 	case (WindowOp): return "WindowOp";
 	case (CommandOp): return "CommandOp";
-	// Data
+	// Command
 	case (FileOp): return "FileOp";
-	case (PlaneOp): return "PlaneOp";
-	case (ConfOp): return "ConfOp";
-	case (BoundariesOp): return "BoundariesOp";
-	case (RegionsOp): return "RegionsOp";
-	case (PlanesOp): return "PlanesOp";
-	case (SidesOp): return "SidesOp";
-	case (SideOp): return "SideOp";
-	case (InsidesOp): return "InsidesOp";
-	case (OutsidesOp): return "OutsidesOp";
-	case (InsideOp): return "InsideOp";
-	case (OutsideOp): return "OutsideOp";
-	case (VersorOp): return "VersorOp";
-	case (VectorOp): return "VectorOp";
-	case (FilenameOp): return "FilenameOp";
-	case (WhenOp): return "WhenOp";
-	case (MacroOp): return "MacroOp";
-	case (WhereOp): return "WhereOp";
-	case (CountOp): return "CountOp";
-	case (SpecifyOp): return "SpecifyOp";
-	case (KeyOp): return "KeyOp";
-	/*case (ScriptOp): return "ScriptOp";*/
-	case (FixedOp): return "FixedOp";
-	case (RelativeOp): return "RelativeOp";
-	case (AbsoluteOp): return "AbsoluteOp";
-	case (PierceOp): return "PierceOp";
-	case (MatrixOp): return "MatrixOp";
-	case (PressOp): return "PressOp";
-	// State
-	/*case (FileOp): return "FileOp";
-	case (PlaneOp): return "PlaneOp";*/
-	case (ChangeOp): return "ChangeOp";
+	case (SourceOp): return "SourceOp";
+	case (SubconfOp): return "SubconfOp";
+	case (SettingOp): return "SettingOp";
 	case (SculptOp): return "SculptOp";
 	case (ClickOp): return "ClickOp";
 	case (MouseOp): return "MouseOp";
 	case (RollerOp): return "RollerOp";
 	case (TargetOp): return "TargetOp";
 	case (TopologyOp): return "TopologyOp";
-	/*case (FixedOp): return "FixedOp";*/
-	/*case (SideOp): return "SideOp";
-	case (InsidesOp): return "InsidesOp";
-	case (OutsidesOp): return "OutsidesOp";
-	case (InsideOp): return "InsideOp";
-	case (OutsideOp): return "OutsideOp";*/
-	/*case (MatrixOp): return "MatrixOp";*/
-	/*case (VersorOp): return "VersorOp";
-	case (VectorOp): return "VectorOp";*/
-	case (TextOp): return "TextOp";
-	// Command
-	/*case (FileOp): return "FileOp";*/
-	case (SourceOp): return "SourceOp";
-	case (SubconfOp): return "SubconfOp";
-	case (SettingOp): return "SettingOp";
-	/*case (SculptOp): return "SculptOp";
-	case (ClickOp): return "ClickOp";
-	case (MouseOp): return "MouseOp";
-	case (RollerOp): return "RollerOp";
-	case (TargetOp): return "TargetOp";
-	case (TopologyOp): return "TopologyOp";
-	case (FixedOp): return "FixedOp";*/
-	/*case (MatrixOp): return "MatrixOp";*/
+	case (FixedOp): return "FixedOp";
+	case (MatrixOp): return "MatrixOp";
 	case (FeedbackOp): return "FeedbackOp";
 	case (FinishOp): return "FinishOp";
 	case (AllocOp): return "AllocOp";
@@ -129,9 +81,9 @@ const char *enamerate(enum Opcode opcode)
 	case (SizeOp): return "SizeOp";
 	case (HeightOp): return "HeightOp";
 	case (DataOp): return "DataOp";
-	/*case (TextOp): return "TextOp";*/
+	case (TextOp): return "TextOp";
 	case (ScalarOp): return "ScalarOp";
-	/*case (QueryOp): return "QueryOp";*/
+	case (QueryOp): return "QueryOp";
 	case (FormatOp): return "FormatOp";
 	/*case (FeedbackOp): return "FeedbackOp";*/
 	case (DatasOp): return "DatasOp";
@@ -141,13 +93,13 @@ const char *enamerate(enum Opcode opcode)
 	/*case (FileOp): return "FileOp";*/
 	case (ProgramOp): return "ProgramOp";
 	case (BaseOp): return "BaseOp";
-	/*case (CountOp): return "CountOp";
-	case (SizeOp): return "SizeOp";*/
+	case (CountOp): return "CountOp";
+	/*case (SizeOp): return "SizeOp";*/
 	// Feedback
-	/*case (PierceOp): return "PierceOp";*/
+	case (PierceOp): return "PierceOp";
 	case (NormalOp): return "NormalOp";
 	case (TagbitsOp): return "TagbitsOp";
-	/*case (PlaneOp): return "PlaneOp";*/
+	case (PlaneOp): return "PlaneOp";
 	// Format
 	case (CursorOp): return "CursorOp";
 	case (AffineOp): return "AffineOp";
@@ -159,10 +111,38 @@ const char *enamerate(enum Opcode opcode)
 	case (FeatherOp): return "FeatherOp";
 	case (ArrowOp): return "ArrowOp";
 	case (EnableOp): return "EnableOp";
+	// Data
+	/*case (FileOp): return "FileOp";
+	case (PlaneOp): return "PlaneOp";*/
+	case (ConfOp): return "ConfOp";
+	case (BoundariesOp): return "BoundariesOp";
+	case (RegionsOp): return "RegionsOp";
+	case (PlanesOp): return "PlanesOp";
+	case (SidesOp): return "SidesOp";
+	case (SideOp): return "SideOp";
+	case (InsidesOp): return "InsidesOp";
+	case (OutsidesOp): return "OutsidesOp";
+	case (InsideOp): return "InsideOp";
+	case (OutsideOp): return "OutsideOp";
+	case (VersorOp): return "VersorOp";
+	case (VectorOp): return "VectorOp";
+	case (FilenameOp): return "FilenameOp";
+	case (FuncOp): return "FuncOp";
+	/*case (CountOp): return "CountOp";*/
+	case (SpecifyOp): return "SpecifyOp";
+	case (KeyOp): return "KeyOp";
+	/*case (ScriptOp): return "ScriptOp";*/
+	/*case (FixedOp): return "FixedOp";*/
+	case (RelativeOp): return "RelativeOp";
+	case (AbsoluteOp): return "AbsoluteOp";
+	/*case (PierceOp): return "PierceOp";*/
+	/*case (MatrixOp): return "MatrixOp";*/
+	case (PressOp): return "PressOp";
 	// Sound
 	/*case (FileOp): return "FileOp";*/
 	case (IdentOp): return "IdentOp";
-	/*case (ValueOp): return "ValueOp";*/
+	case (DoneOp): return "DoneOp";
+	case (ValueOp): return "ValueOp";
 	case (EventOp): return "EventOp";
 	/*case (ValueOp): return "ValueOp";*/
 	case (DelayOp): return "DelayOp";
@@ -181,10 +161,32 @@ const char *enamerate(enum Opcode opcode)
 	case (VaryOp): return "VaryOp";
 	case (SquareOp): return "SquareOp";
 	case (CompOp): return "CompOp";
+	// State
+	/*case (FileOp): return "FileOp";
+	case (PlaneOp): return "PlaneOp";*/
+	case (ChangeOp): return "ChangeOp";
+	/*case (SculptOp): return "SculptOp";
+	case (ClickOp): return "ClickOp";
+	case (MouseOp): return "MouseOp";
+	case (RollerOp): return "RollerOp";
+	case (TargetOp): return "TargetOp";
+	case (TopologyOp): return "TopologyOp";
+	case (FixedOp): return "FixedOp";*/
+	/*case (SideOp): return "SideOp";
+	case (InsidesOp): return "InsidesOp";
+	case (OutsidesOp): return "OutsidesOp";
+	case (InsideOp): return "InsideOp";
+	case (OutsideOp): return "OutsideOp";*/
+	/*case (MatrixOp): return "MatrixOp";*/
+	/*case (VersorOp): return "VersorOp";
+	case (VectorOp): return "VectorOp";*/
+	/*case (TextOp): return "TextOp";*/
 	// Query
 	/*case (FileOp): return "FileOp";*/
 	case (SmartOp): return "SmartOp";
-	/*case (WhereOp): return "WhereOp";*/
+	/*case (ValueOp): return "ValueOp";*/
+	case (LengthOp): return "LengthOp";
+	case (StreamOp): return "StreamOp";
 	case (Opcodes): return "Opcodes";
 	default: fatal("unknown opcode",opcode,__FILE__,__LINE__);}
 	return 0;
@@ -192,16 +194,71 @@ const char *enamerate(enum Opcode opcode)
 
 int enumerate(char *name)
 {
+	// Sideband
+	// TODO for new Query pointer
 	// Message
 	if (strcmp(name,"ReadOp") == 0) return ReadOp;
 	if (strcmp(name,"WriteOp") == 0) return WriteOp;
 	if (strcmp(name,"ScriptOp") == 0) return ScriptOp;
-	if (strcmp(name,"QueryOp") == 0) return QueryOp;
 	if (strcmp(name,"WindowOp") == 0) return WindowOp;
 	if (strcmp(name,"CommandOp") == 0) return CommandOp;
-	// Data
+	// Command
 	if (strcmp(name,"FileOp") == 0) return FileOp;
+	if (strcmp(name,"SourceOp") == 0) return SourceOp;
+	if (strcmp(name,"SubconfOp") == 0) return SubconfOp;
+	if (strcmp(name,"SettingOp") == 0) return SettingOp;
+	if (strcmp(name,"SculptOp") == 0) return SculptOp;
+	if (strcmp(name,"ClickOp") == 0) return ClickOp;
+	if (strcmp(name,"MouseOp") == 0) return MouseOp;
+	if (strcmp(name,"RollerOp") == 0) return RollerOp;
+	if (strcmp(name,"TargetOp") == 0) return TargetOp;
+	if (strcmp(name,"TopologyOp") == 0) return TopologyOp;
+	if (strcmp(name,"FixedOp") == 0) return FixedOp;
+	if (strcmp(name,"MatrixOp") == 0) return MatrixOp;
+	if (strcmp(name,"FeedbackOp") == 0) return FeedbackOp;
+	if (strcmp(name,"FinishOp") == 0) return FinishOp;
+	// Update
+	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
+	/*if (strcmp(name,"FinishOp") == 0) return FinishOp;*/
+	if (strcmp(name,"BufferOp") == 0) return BufferOp;
+	if (strcmp(name,"OffsetOp") == 0) return OffsetOp;
+	if (strcmp(name,"WidthOp") == 0) return WidthOp;
+	if (strcmp(name,"SizeOp") == 0) return SizeOp;
+	if (strcmp(name,"HeightOp") == 0) return HeightOp;
+	if (strcmp(name,"DataOp") == 0) return DataOp;
+	if (strcmp(name,"TextOp") == 0) return TextOp;
+	if (strcmp(name,"ScalarOp") == 0) return ScalarOp;
+	if (strcmp(name,"QueryOp") == 0) return QueryOp;
+	if (strcmp(name,"FormatOp") == 0) return FormatOp;
+	/*if (strcmp(name,"FeedbackOp") == 0) return FeedbackOp;*/
+	if (strcmp(name,"DatasOp") == 0) return DatasOp;
+	if (strcmp(name,"FunctionOp") == 0) return FunctionOp;
+	if (strcmp(name,"FunctionsOp") == 0) return FunctionsOp;
+	// Render
+	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
+	if (strcmp(name,"ProgramOp") == 0) return ProgramOp;
+	if (strcmp(name,"BaseOp") == 0) return BaseOp;
+	if (strcmp(name,"CountOp") == 0) return CountOp;
+	/*if (strcmp(name,"SizeOp") == 0) return SizeOp;*/
+	// Feedback
+	if (strcmp(name,"PierceOp") == 0) return PierceOp;
+	if (strcmp(name,"NormalOp") == 0) return NormalOp;
+	if (strcmp(name,"TagbitsOp") == 0) return TagbitsOp;
 	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;
+	// Format
+	if (strcmp(name,"CursorOp") == 0) return CursorOp;
+	if (strcmp(name,"AffineOp") == 0) return AffineOp;
+	if (strcmp(name,"PerplaneOp") == 0) return PerplaneOp;
+	if (strcmp(name,"BasisOp") == 0) return BasisOp;
+	if (strcmp(name,"CutoffOp") == 0) return CutoffOp;
+	if (strcmp(name,"SlopeOp") == 0) return SlopeOp;
+	if (strcmp(name,"AspectOp") == 0) return AspectOp;
+	if (strcmp(name,"FeatherOp") == 0) return FeatherOp;
+	if (strcmp(name,"ArrowOp") == 0) return ArrowOp;
+	if (strcmp(name,"EnableOp") == 0) return EnableOp;
+	// Data
+	/*if (strcmp(name,"FileOp") == 0) return FileOp;
+	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;*/
 	if (strcmp(name,"ConfOp") == 0) return ConfOp;
 	if (strcmp(name,"BoundariesOp") == 0) return BoundariesOp;
 	if (strcmp(name,"RegionsOp") == 0) return RegionsOp;
@@ -215,107 +272,23 @@ int enumerate(char *name)
 	if (strcmp(name,"VersorOp") == 0) return VersorOp;
 	if (strcmp(name,"VectorOp") == 0) return VectorOp;
 	if (strcmp(name,"FilenameOp") == 0) return FilenameOp;
-	if (strcmp(name,"WhenOp") == 0) return WhenOp;
-	if (strcmp(name,"MacroOp") == 0) return MacroOp;
-	if (strcmp(name,"WhereOp") == 0) return WhereOp;
-	if (strcmp(name,"CountOp") == 0) return CountOp;
+	if (strcmp(name,"FuncOp") == 0) return FuncOp;
+	/*if (strcmp(name,"CountOp") == 0) return CountOp;*/
 	if (strcmp(name,"SpecifyOp") == 0) return SpecifyOp;
 	if (strcmp(name,"KeyOp") == 0) return KeyOp;
 	/*if (strcmp(name,"ScriptOp") == 0) return ScriptOp;*/
-	if (strcmp(name,"FixedOp") == 0) return FixedOp;
+	/*if (strcmp(name,"FixedOp") == 0) return FixedOp;*/
 	if (strcmp(name,"RelativeOp") == 0) return RelativeOp;
 	if (strcmp(name,"AbsoluteOp") == 0) return AbsoluteOp;
-	if (strcmp(name,"PierceOp") == 0) return PierceOp;
-	if (strcmp(name,"MatrixOp") == 0) return MatrixOp;
-	if (strcmp(name,"PressOp") == 0) return PressOp;
-	// State
-	/*if (strcmp(name,"FileOp") == 0) return FileOp;
-	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;*/
-	if (strcmp(name,"ChangeOp") == 0) return ChangeOp;
-	if (strcmp(name,"SculptOp") == 0) return SculptOp;
-	if (strcmp(name,"ClickOp") == 0) return ClickOp;
-	if (strcmp(name,"MouseOp") == 0) return MouseOp;
-	if (strcmp(name,"RollerOp") == 0) return RollerOp;
-	if (strcmp(name,"TargetOp") == 0) return TargetOp;
-	if (strcmp(name,"TopologyOp") == 0) return TopologyOp;
-	/*if (strcmp(name,"FixedOp") == 0) return FixedOp;*/
-	/*if (strcmp(name,"SideOp") == 0) return SideOp;
-	if (strcmp(name,"InsidesOp") == 0) return InsidesOp;
-	if (strcmp(name,"OutsidesOp") == 0) return OutsidesOp;
-	if (strcmp(name,"InsideOp") == 0) return InsideOp;
-	if (strcmp(name,"OutsideOp") == 0) return OutsideOp;*/
-	/*if (strcmp(name,"MatrixOp") == 0) return MatrixOp;*/
-	/*if (strcmp(name,"VersorOp") == 0) return VersorOp;
-	if (strcmp(name,"VectorOp") == 0) return VectorOp;*/
-	if (strcmp(name,"TextOp") == 0) return TextOp;
-	// Command
-	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
-	if (strcmp(name,"SourceOp") == 0) return SourceOp;
-	if (strcmp(name,"SubconfOp") == 0) return SubconfOp;
-	if (strcmp(name,"SettingOp") == 0) return SettingOp;
-	/*if (strcmp(name,"SculptOp") == 0) return SculptOp;
-	if (strcmp(name,"ClickOp") == 0) return ClickOp;
-	if (strcmp(name,"MouseOp") == 0) return MouseOp;
-	if (strcmp(name,"RollerOp") == 0) return RollerOp;
-	if (strcmp(name,"TargetOp") == 0) return TargetOp;
-	if (strcmp(name,"TopologyOp") == 0) return TopologyOp;
-	if (strcmp(name,"FixedOp") == 0) return FixedOp;*/
-	/*if (strcmp(name,"MatrixOp") == 0) return MatrixOp;*/
-	if (strcmp(name,"FeedbackOp") == 0) return FeedbackOp;
-	if (strcmp(name,"FinishOp") == 0) return FinishOp;
-	if (strcmp(name,"AllocOp") == 0) return AllocOp;
-	/*if (strcmp(name,"WriteOp") == 0) return WriteOp;*/
-	if (strcmp(name,"BindOp") == 0) return BindOp;
-	/*if (strcmp(name,"ReadOp") == 0) return ReadOp;*/
-	// Update
-	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
-	/*if (strcmp(name,"FinishOp") == 0) return FinishOp;*/
-	if (strcmp(name,"BufferOp") == 0) return BufferOp;
-	if (strcmp(name,"OffsetOp") == 0) return OffsetOp;
-	if (strcmp(name,"WidthOp") == 0) return WidthOp;
-	if (strcmp(name,"SizeOp") == 0) return SizeOp;
-	if (strcmp(name,"HeightOp") == 0) return HeightOp;
-	if (strcmp(name,"DataOp") == 0) return DataOp;
-	/*if (strcmp(name,"TextOp") == 0) return TextOp;*/
-	if (strcmp(name,"ScalarOp") == 0) return ScalarOp;
-	/*if (strcmp(name,"QueryOp") == 0) return QueryOp;*/
-	if (strcmp(name,"FormatOp") == 0) return FormatOp;
-	/*if (strcmp(name,"FeedbackOp") == 0) return FeedbackOp;*/
-	if (strcmp(name,"DatasOp") == 0) return DatasOp;
-	if (strcmp(name,"FunctionOp") == 0) return FunctionOp;
-	if (strcmp(name,"FunctionsOp") == 0) return FunctionsOp;
-	// Render
-	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
-	if (strcmp(name,"ProgramOp") == 0) return ProgramOp;
-	if (strcmp(name,"BaseOp") == 0) return BaseOp;
-	/*if (strcmp(name,"CountOp") == 0) return CountOp;
-	if (strcmp(name,"SizeOp") == 0) return SizeOp;*/
-	// Feedback
 	/*if (strcmp(name,"PierceOp") == 0) return PierceOp;*/
-	if (strcmp(name,"NormalOp") == 0) return NormalOp;
-	if (strcmp(name,"TagbitsOp") == 0) return TagbitsOp;
-	/*if (strcmp(name,"PlaneOp") == 0) return PlaneOp;*/
-	// Format
-	if (strcmp(name,"CursorOp") == 0) return CursorOp;
-	if (strcmp(name,"AffineOp") == 0) return AffineOp;
-	if (strcmp(name,"PerplaneOp") == 0) return PerplaneOp;
-	if (strcmp(name,"BasisOp") == 0) return BasisOp;
-	if (strcmp(name,"CutoffOp") == 0) return CutoffOp;
-	if (strcmp(name,"SlopeOp") == 0) return SlopeOp;
-	if (strcmp(name,"AspectOp") == 0) return AspectOp;
-	if (strcmp(name,"FeatherOp") == 0) return FeatherOp;
-	if (strcmp(name,"ArrowOp") == 0) return ArrowOp;
-	if (strcmp(name,"EnableOp") == 0) return EnableOp;
+	/*if (strcmp(name,"MatrixOp") == 0) return MatrixOp;*/
+	if (strcmp(name,"PressOp") == 0) return PressOp;
 	// Sound
 	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
 	if (strcmp(name,"IdentOp") == 0) return IdentOp;
-	/*if (strcmp(name,"ValueOp") == 0) return ValueOp;*/
+	if (strcmp(name,"DoneOp") == 0) return DoneOp;
+	if (strcmp(name,"ValueOp") == 0) return ValueOp;
 	if (strcmp(name,"EventOp") == 0) return EventOp;
-	/*if (strcmp(name,"ValueOp") == 0) return ValueOp;*/
-	if (strcmp(name,"DelayOp") == 0) return DelayOp;
-	if (strcmp(name,"SchedOp") == 0) return SchedOp;
-	if (strcmp(name,"LeftOp") == 0) return LeftOp;
-	if (strcmp(name,"RightOp") == 0) return RightOp;
 	// Equ
 	if (strcmp(name,"NumerOp") == 0) return NumerOp;
 	if (strcmp(name,"DenomOp") == 0) return DenomOp;
@@ -328,29 +301,33 @@ int enumerate(char *name)
 	if (strcmp(name,"VaryOp") == 0) return VaryOp;
 	if (strcmp(name,"SquareOp") == 0) return SquareOp;
 	if (strcmp(name,"CompOp") == 0) return CompOp;
+	// State
+	/*if (strcmp(name,"FileOp") == 0) return FileOp;
+	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;*/
+	if (strcmp(name,"ChangeOp") == 0) return ChangeOp;
+	/*if (strcmp(name,"SculptOp") == 0) return SculptOp;
+	if (strcmp(name,"ClickOp") == 0) return ClickOp;
+	if (strcmp(name,"MouseOp") == 0) return MouseOp;
+	if (strcmp(name,"RollerOp") == 0) return RollerOp;
+	if (strcmp(name,"TargetOp") == 0) return TargetOp;
+	if (strcmp(name,"TopologyOp") == 0) return TopologyOp;
+	if (strcmp(name,"FixedOp") == 0) return FixedOp;*/
+	/*if (strcmp(name,"SideOp") == 0) return SideOp;
+	if (strcmp(name,"InsidesOp") == 0) return InsidesOp;
+	if (strcmp(name,"OutsidesOp") == 0) return OutsidesOp;
+	if (strcmp(name,"InsideOp") == 0) return InsideOp;
+	if (strcmp(name,"OutsideOp") == 0) return OutsideOp;*/
+	/*if (strcmp(name,"MatrixOp") == 0) return MatrixOp;*/
+	/*if (strcmp(name,"VersorOp") == 0) return VersorOp;
+	if (strcmp(name,"VectorOp") == 0) return VectorOp;*/
+	/*if (strcmp(name,"TextOp") == 0) return TextOp;*/
 	// Query
 	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
 	if (strcmp(name,"SmartOp") == 0) return SmartOp;
-	/*if (strcmp(name,"WhereOp") == 0) return WhereOp;*/
+	/*if (strcmp(name,"ValueOp") == 0) return ValueOp;*/
+	if (strcmp(name,"LengthOp") == 0) return LengthOp;
+	if (strcmp(name,"StreamOp") == 0) return StreamOp;
 	if (strcmp(name,"Opcodes") == 0) return Opcodes;
-	// Configure
-	if (strcmp(name,"InflateConf") == 0) return InflateConf;
-	if (strcmp(name,"SpaceConf") == 0) return SpaceConf;
-	if (strcmp(name,"RegionConf") == 0) return RegionConf;
-	if (strcmp(name,"PlaneConf") == 0) return PlaneConf;
-	if (strcmp(name,"PictureConf") == 0) return PictureConf;
-	if (strcmp(name,"IncludeConf") == 0) return IncludeConf;
-	if (strcmp(name,"MacroConf") == 0) return MacroConf;
-	if (strcmp(name,"ScriptConf") == 0) return ScriptConf;
-	if (strcmp(name,"RelativeConf") == 0) return RelativeConf;
-	if (strcmp(name,"AbsoluteConf") == 0) return AbsoluteConf;
-	if (strcmp(name,"RefineConf") == 0) return RefineConf;
-	if (strcmp(name,"ManipConf") == 0) return ManipConf;
-	if (strcmp(name,"PressConf") == 0) return PressConf;
-	if (strcmp(name,"ClickConf") == 0) return ClickConf;
-	if (strcmp(name,"AdditiveConf") == 0) return AdditiveConf;
-	if (strcmp(name,"SubtractiveConf") == 0) return SubtractiveConf;
-	if (strcmp(name,"Configures") == 0) return Configures;
 	// Source
 	if (strcmp(name,"ConfigureSource") == 0) return ConfigureSource;
 	if (strcmp(name,"ModeSource") == 0) return ModeSource;
@@ -358,63 +335,7 @@ int enumerate(char *name)
 	if (strcmp(name,"GlobalSource") == 0) return GlobalSource;
 	if (strcmp(name,"PolytopeSource") == 0) return PolytopeSource;
 	if (strcmp(name,"Sources") == 0) return Sources;
-	// Event
-	if (strcmp(name,"StartEvent") == 0) return StartEvent;
-	if (strcmp(name,"StopEvent") == 0) return StopEvent;
-	if (strcmp(name,"SoundEvent") == 0) return SoundEvent;
-	if (strcmp(name,"ScriptEvent") == 0) return ScriptEvent;
-	if (strcmp(name,"UpdateEvent") == 0) return UpdateEvent;
-	if (strcmp(name,"Events") == 0) return Events;
-	// Change
-	if (strcmp(name,"SculptChange") == 0) return SculptChange;
-	if (strcmp(name,"GlobalChange") == 0) return GlobalChange;
-	if (strcmp(name,"MatrixChange") == 0) return MatrixChange;
-	if (strcmp(name,"PlaneChange") == 0) return PlaneChange;
-	if (strcmp(name,"RegionChange") == 0) return RegionChange;
-	if (strcmp(name,"TextChange") == 0) return TextChange;
-	if (strcmp(name,"Changes") == 0) return Changes;
-	// Where
-	if (strcmp(name,"FileWhere") == 0) return FileWhere;
-	if (strcmp(name,"Wheres") == 0) return Wheres;
-	// When
-	if (strcmp(name,"OnceWhen") == 0) return OnceWhen;
-	if (strcmp(name,"OftenWhen") == 0) return OftenWhen;
-	if (strcmp(name,"EverWhen") == 0) return EverWhen;
-	if (strcmp(name,"Whens") == 0) return Whens;
-	// Factor
-	if (strcmp(name,"ConstFactor") == 0) return ConstFactor;
-	if (strcmp(name,"VaryFactor") == 0) return VaryFactor;
-	if (strcmp(name,"SquareFactor") == 0) return SquareFactor;
-	if (strcmp(name,"CompFactor") == 0) return CompFactor;
-	if (strcmp(name,"Factors") == 0) return Factors;
-	// Buffer
-	if (strcmp(name,"Point0") == 0) return Point0;
-	if (strcmp(name,"Versor") == 0) return Versor;
-	if (strcmp(name,"Point1") == 0) return Point1;
-	if (strcmp(name,"Normal") == 0) return Normal;
-	if (strcmp(name,"Coordinate") == 0) return Coordinate;
-	if (strcmp(name,"Color") == 0) return Color;
-	if (strcmp(name,"Weight") == 0) return Weight;
-	if (strcmp(name,"Tag") == 0) return Tag;
-	if (strcmp(name,"Point2") == 0) return Point2;
-	if (strcmp(name,"Face1") == 0) return Face1;
-	if (strcmp(name,"Triple0") == 0) return Triple0;
-	if (strcmp(name,"Triple1") == 0) return Triple1;
-	if (strcmp(name,"Feedback") == 0) return Feedback;
-	if (strcmp(name,"Uniform") == 0) return Uniform;
-	if (strcmp(name,"Inquery") == 0) return Inquery;
-	if (strcmp(name,"Texture0") == 0) return Texture0;
-	if (strcmp(name,"Texture1") == 0) return Texture1;
-	if (strcmp(name,"Buffers") == 0) return Buffers;
-	// Program
-    if (strcmp(name,"Draw") == 0) return Draw;
-    if (strcmp(name,"Pierce") == 0) return Pierce;
-    if (strcmp(name,"Sect0") == 0) return Sect0;
-    if (strcmp(name,"Sect1") == 0) return Sect1;
-    if (strcmp(name,"Side1") == 0) return Side1;
-    if (strcmp(name,"Side2") == 0) return Side2;
-    if (strcmp(name,"Programs") == 0) return Programs;
-    // Subconf
+	// Subconf
 	if (strcmp(name,"StartSub") == 0) return StartSub;
 	if (strcmp(name,"StopSub") == 0) return StopSub;
 	if (strcmp(name,"Subconfs") == 0) return Subconfs;
@@ -462,6 +383,89 @@ int enumerate(char *name)
 	if (strcmp(name,"RelativeMode") == 0) return RelativeMode;
 	if (strcmp(name,"AbsoluteMode") == 0) return AbsoluteMode;
 	if (strcmp(name,"FixedModes") == 0) return FixedModes;
+	// Field
+	if (strcmp(name,"AllocField") == 0) return AllocField;
+	if (strcmp(name,"WriteField") == 0) return WriteField;
+	if (strcmp(name,"BindField") == 0) return BindField;
+	if (strcmp(name,"ReadField") == 0) return ReadField;
+	if (strcmp(name,"Fields") == 0) return Fields;
+	// Buffer
+	if (strcmp(name,"Point0") == 0) return Point0;
+	if (strcmp(name,"Versor") == 0) return Versor;
+	if (strcmp(name,"Point1") == 0) return Point1;
+	if (strcmp(name,"Normal") == 0) return Normal;
+	if (strcmp(name,"Coordinate") == 0) return Coordinate;
+	if (strcmp(name,"Color") == 0) return Color;
+	if (strcmp(name,"Weight") == 0) return Weight;
+	if (strcmp(name,"Tag") == 0) return Tag;
+	if (strcmp(name,"Point2") == 0) return Point2;
+	if (strcmp(name,"Face1") == 0) return Face1;
+	if (strcmp(name,"Triple0") == 0) return Triple0;
+	if (strcmp(name,"Triple1") == 0) return Triple1;
+	if (strcmp(name,"Feedback") == 0) return Feedback;
+	if (strcmp(name,"Uniform") == 0) return Uniform;
+	if (strcmp(name,"Inquery") == 0) return Inquery;
+	if (strcmp(name,"Texture0") == 0) return Texture0;
+	if (strcmp(name,"Texture1") == 0) return Texture1;
+	if (strcmp(name,"Buffers") == 0) return Buffers;
+	// Program
+    if (strcmp(name,"Draw") == 0) return Draw;
+    if (strcmp(name,"Pierce") == 0) return Pierce;
+    if (strcmp(name,"Sect0") == 0) return Sect0;
+    if (strcmp(name,"Sect1") == 0) return Sect1;
+    if (strcmp(name,"Side1") == 0) return Side1;
+    if (strcmp(name,"Side2") == 0) return Side2;
+    if (strcmp(name,"Programs") == 0) return Programs;
+	// Configure
+	if (strcmp(name,"InflateConf") == 0) return InflateConf;
+	if (strcmp(name,"SpaceConf") == 0) return SpaceConf;
+	if (strcmp(name,"RegionConf") == 0) return RegionConf;
+	if (strcmp(name,"PlaneConf") == 0) return PlaneConf;
+	if (strcmp(name,"PictureConf") == 0) return PictureConf;
+	if (strcmp(name,"IncludeConf") == 0) return IncludeConf;
+	if (strcmp(name,"OnceConf") == 0) return OnceConf;
+	if (strcmp(name,"ChangeConf") == 0) return ChangeConf;
+	if (strcmp(name,"MacroConf") == 0) return MacroConf;
+	if (strcmp(name,"HotkeyConf") == 0) return HotkeyConf;
+	if (strcmp(name,"RelativeConf") == 0) return RelativeConf;
+	if (strcmp(name,"AbsoluteConf") == 0) return AbsoluteConf;
+	if (strcmp(name,"RefineConf") == 0) return RefineConf;
+	if (strcmp(name,"ManipConf") == 0) return ManipConf;
+	if (strcmp(name,"PressConf") == 0) return PressConf;
+	if (strcmp(name,"ClickConf") == 0) return ClickConf;	
+	if (strcmp(name,"AdditiveConf") == 0) return AdditiveConf;
+	if (strcmp(name,"SubtractiveConf") == 0) return SubtractiveConf;
+	if (strcmp(name,"Configures") == 0) return Configures;
+	// Function
+	if (strcmp(name,"Functions") == 0) return Functions;
+	// Event
+	if (strcmp(name,"StartEvent") == 0) return StartEvent;
+	if (strcmp(name,"StopEvent") == 0) return StopEvent;
+	if (strcmp(name,"SoundEvent") == 0) return SoundEvent;
+	if (strcmp(name,"ScriptEvent") == 0) return ScriptEvent;
+	if (strcmp(name,"UpdateEvent") == 0) return UpdateEvent;
+	if (strcmp(name,"Events") == 0) return Events;
+	// Equate
+	if (strcmp(name,"ValueEqu") == 0) return ValueEqu;
+	if (strcmp(name,"DelayEqu") == 0) return DelayEqu;
+	if (strcmp(name,"SchedEqu") == 0) return SchedEqu;
+	if (strcmp(name,"LeftEqu") == 0) return LeftEqu;
+	if (strcmp(name,"RightEqu") == 0) return RightEqu;
+	if (strcmp(name,"Equates") == 0) return Equates;
+	// Factor
+	if (strcmp(name,"ConstFactor") == 0) return ConstFactor;
+	if (strcmp(name,"VaryFactor") == 0) return VaryFactor;
+	if (strcmp(name,"SquareFactor") == 0) return SquareFactor;
+	if (strcmp(name,"CompFactor") == 0) return CompFactor;
+	if (strcmp(name,"Factors") == 0) return Factors;
+	// Change
+	if (strcmp(name,"SculptChange") == 0) return SculptChange;
+	if (strcmp(name,"GlobalChange") == 0) return GlobalChange;
+	if (strcmp(name,"MatrixChange") == 0) return MatrixChange;
+	if (strcmp(name,"PlaneChange") == 0) return PlaneChange;
+	if (strcmp(name,"RegionChange") == 0) return RegionChange;
+	if (strcmp(name,"TextChange") == 0) return TextChange;
+	if (strcmp(name,"Changes") == 0) return Changes;
 	fatal("unknown name",0,__FILE__,__LINE__);
 	return -1;
 }
@@ -512,22 +516,6 @@ int rdChange(int fd)
 	if (read(fd,&change,sizeof(change)) != sizeof(change)) error ("read failed",errno,__FILE__,__LINE__);
 	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),change);
 	return change;
-}
-
-int rdWhere(int fd)
-{
-	enum Where where;
-	if (read(fd,&where,sizeof(where)) != sizeof(where)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),where);
-	return where;
-}
-
-int rdWhen(int fd)
-{
-	enum When when;
-	if (read(fd,&when,sizeof(when)) != sizeof(when)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),when);
-	return when;
 }
 
 int rdFactor(int fd)
@@ -705,20 +693,6 @@ void wrChange(int fd, int val)
 	enum Change change = val;
 	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
 	if (write(fd,&change,sizeof(change)) != sizeof(change)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrWhere(int fd, int val)
-{
-	enum Where where = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrWhere %d %d\n",getpid(),val);
-	if (write(fd,&where,sizeof(where)) != sizeof(where)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrWhen(int fd, int val)
-{
-	enum When when = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrWhen %d %d\n",getpid(),val);
-	if (write(fd,&when,sizeof(when)) != sizeof(when)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrFactor(int fd, int val)

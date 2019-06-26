@@ -43,24 +43,26 @@ struct GLFWwindow;
 typedef unsigned MYenum;
 typedef unsigned MYuint;
 
-enum Buffer {
-	Point0, // planes from file, only appended to
-	Versor, // suppliment to Point0
-	Point1, // intersections of Point0, only appended to
-	Normal, Coordinate, Color, Weight, Tag, // supplement to Point1
-	Point2, // intersections of threat vertices, from Point1 as planes
-	Face1, // corners of facets, rewritten when polytope changes
-	Triple0, // every triple in Point0, is only appended to
-	Triple1, // triples of threat points of boundary to sample
-	Feedback, Uniform, Inquery, Texture0, Texture1, Buffers};
-enum Program {
-    Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
-    Pierce, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> Pierce,Normal,Color,Plane,Tagbits
-    Sect0, // Point0,Versor,Triple0 -> Vertex
-    Sect1, // Point1,Triple1 -> Vertex
-    Side1, // Point1 -> Scalar
-    Side2, // Point2 -> Scalar
-    Programs};
+// Command
+enum Source {
+	ConfigureSource,
+	ModeSource,
+	MatrixSource,
+	GlobalSource,
+	PolytopeSource,
+	Sources};
+enum Subconf {
+	StartSub,
+	StopSub,
+	Subconfs};
+enum Sculpt {
+	ClickUlpt,
+	MouseUlpt,
+	RollerUlpt,
+	TargetUlpt,
+	TopologyUlpt,
+	FixedUlpt,
+	Sculpts};
 enum ClickMode {
 	AdditiveMode,
 	SubtractiveMode,
@@ -97,152 +99,30 @@ enum FixedMode {
 	RelativeMode,
 	AbsoluteMode,
 	FixedModes};
-enum Sculpt {
-	ClickUlpt,
-	MouseUlpt,
-	RollerUlpt,
-	TargetUlpt,
-	TopologyUlpt,
-	FixedUlpt,
-	Sculpts};
-enum Configure {
-	InflateConf,
-	SpaceConf,
-	RegionConf,
-	PlaneConf,
-	PictureConf,
-	IncludeConf,
-	MacroConf,
-	ScriptConf,
-	RelativeConf,
-	AbsoluteConf,
-	RefineConf,
-	ManipConf,
-	PressConf,
-	ClickConf,	
-	AdditiveConf,
-	SubtractiveConf,
-	Configures};
-enum Subconf {
-	StartSub,
-	StopSub,
-	Subconfs};
-enum Change {
-	SculptChange,
-	GlobalChange,
-	MatrixChange,
-	PlaneChange,
-	RegionChange,
-	TextChange,
-	Changes};
 enum Field {
 	AllocField,
 	WriteField,
 	BindField,
 	ReadField,
 	Fields};
-enum Source {
-	ConfigureSource,
-	ModeSource,
-	MatrixSource,
-	GlobalSource,
-	PolytopeSource,
-	Sources};
-enum Factor {
-	ConstFactor,
-	VaryFactor,
-	SquareFactor,
-	CompFactor,
-	Factors};
-enum Identity {
-	NameIdent,
-	NumberIdent,
-	Identities};
-enum Event {
-	StartEvent,
-	StopEvent,
-	SoundEvent,
-	ScriptEvent,
-	UpdateEvent,
-	Events};
-enum Equate {
-	ValueEqu, // sample value
-	DelayEqu, // wave length
-	SchedEqu, // sample rate
-	LeftEqu, // left audio
-	RightEqu, // right audio
-	Equates};
-enum When {
-	OnceWhen,
-	OftenWhen,
-	EverWhen,
-	Whens};
-enum Where {
-	FileWhere,
-	Wheres};
-enum Opcode {
-	// Message
-	ReadOp, WriteOp, ScriptOp, QueryOp, WindowOp, CommandOp,
-	// Data
-	FileOp, PlaneOp, ConfOp,
-	BoundariesOp, RegionsOp, PlanesOp, SidesOp,
-	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
-	VersorOp, VectorOp,
-	FilenameOp,
-	WhenOp, MacroOp, WhereOp, CountOp, SpecifyOp,
-	KeyOp, /*ScriptOp,*/
-	FixedOp, RelativeOp,
-	AbsoluteOp,
-	PierceOp,
-	MatrixOp,
-	PressOp,
-	// State
-	/*FileOp, PlaneOp,*/
-	ChangeOp,
-	SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, /*FixedOp,*/
-	/*SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,*/
-	/*MatrixOp,*/
-	/*VersorOp, VectorOp,*/
-	TextOp,
-	// Command
-	/*FileOp,*/
-	SourceOp,
-	SubconfOp, SettingOp,
-	/*SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,*/
-	/*MatrixOp,*/
-	FeedbackOp, FinishOp,
-	AllocOp, /*WriteOp,*/ BindOp, /*ReadOp,*/
-	// Update
-	/*FileOp,*/ /*FinishOp,*/
-	BufferOp,
-	OffsetOp, WidthOp,
-	SizeOp, HeightOp,
-	DataOp, /*TextOp,*/ ScalarOp, /*QueryOp,*/
-	FormatOp, /*FeedbackOp,*/ DatasOp,
-	FunctionOp, FunctionsOp,
-	// Render
-	/*FileOp,*/
-	ProgramOp, BaseOp, /*CountOp, SizeOp,*/
-	// Feedback
-	/*PierceOp,*/ NormalOp, TagbitsOp, /*PlaneOp,*/
-	// Format
-	CursorOp, AffineOp, PerplaneOp, BasisOp,
-	CutoffOp, SlopeOp, AspectOp,
-	FeatherOp, ArrowOp, EnableOp,
-	// Sound
-	/*FileOp,*/ IdentOp, /*ValueOp,*/ EventOp,
-	/*ValueOp,*/ DelayOp, SchedOp, LeftOp, RightOp,
-	// Equ
-	NumerOp, DenomOp,
-	// Sum
-	/*CountOp,*/
-	// Term
-	CoefOp, FactorOp,
-	ConstOp, VaryOp, SquareOp, CompOp,
-	// Query
-	/*FileOp,*/ SmartOp, /*WhereOp,*/
-	Opcodes};
-
+enum Buffer {
+	Point0, // planes from file, only appended to
+	Versor, // suppliment to Point0
+	Point1, // intersections of Point0, only appended to
+	Normal, Coordinate, Color, Weight, Tag, // supplement to Point1
+	Point2, // intersections of threat vertices, from Point1 as planes
+	Face1, // corners of facets, rewritten when polytope changes
+	Triple0, // every triple in Point0, is only appended to
+	Triple1, // triples of threat points of boundary to sample
+	Feedback, Uniform, Inquery, Texture0, Texture1, Buffers};
+enum Program {
+    Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
+    Pierce, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> Pierce,Normal,Color,Plane,Tagbits
+    Sect0, // Point0,Versor,Triple0 -> Vertex
+    Sect1, // Point1,Triple1 -> Vertex
+    Side1, // Point1 -> Scalar
+    Side2, // Point2 -> Scalar
+    Programs};
 struct Format
 {
 	float cursor[2];
@@ -257,10 +137,6 @@ struct Format
 	MYuint enable;
 	char filler1[4-sizeof(MYuint)]; MYuint tagplane;
 	char filler2[4-sizeof(MYuint)]; MYuint taggraph;
-};
-struct Smart {
-	int count;
-	char *ptr;
 };
 struct Feedback
 {
@@ -313,28 +189,30 @@ struct Command // (Polytope,Read) -> Window
 	struct Command *redraw;
 	struct Command *pierce;};};
 };
-struct State // (Polytope,Window,Script)->Write
-{
-	struct State *next; int file; int plane;
-	enum Change change;
-	union {
-	// Window->SculptChange->Write
-	struct {enum Sculpt sculpt; union {
-	enum ClickMode click;
-	enum MouseMode mouse;
-	enum RollerMode roller;
-	enum TargetMode target;
-	enum TopologyMode topology;
-	enum FixedMode fixed;};};
-	// Polytope->RegionChange->Write
-	struct {int side; int insides; int outsides; int *inside; int *outside;};
-	// Window->(MatrixChange,GlobalChange)->Write
-	float *matrix;
-	// Polytope->PlaneChange->Write
-	struct {int versor; float *vector;};
-	// Script->TextChange->Write
-	char *text;};
-};
+
+// Data
+enum Configure {
+	InflateConf,
+	SpaceConf,
+	RegionConf,
+	PlaneConf,
+	PictureConf,
+	IncludeConf,
+	OnceConf,
+	ChangeConf,
+	MacroConf,
+	HotkeyConf,
+	RelativeConf,
+	AbsoluteConf,
+	RefineConf,
+	ManipConf,
+	PressConf,
+	ClickConf,	
+	AdditiveConf,
+	SubtractiveConf,
+	Configures};
+enum Function {
+	Functions};
 struct Data // (Read,Window) -> Polytope
 {
 	struct Data *next; int file; int plane;
@@ -349,10 +227,8 @@ struct Data // (Read,Window) -> Polytope
 	struct {int versor; float *vector;};
 	// Read->(PictureConf,IncludeConf)->Polytope
 	char *filename;
-	// Read->MacroConf->Polytope
-	struct {enum When when; char *macro; enum Where where; int count; int *specify;};
-	// Read->ScriptConf->Polytope
-	struct {char key; char *script;};
+	// Read->(OnceConf,ChangeConf,MacroConf,HotkeyConf)->Polytope
+	struct {enum Function func; int count; int *specify; char key; char *script;};
 	// Window->RelativeConf->Polytope
 	struct {float *fixed; enum TopologyMode relative;};
 	// Window->AbsoluteConf->Polytope
@@ -368,6 +244,27 @@ struct Data // (Read,Window) -> Polytope
 	// Window->SubtractiveConf->Polytope
 };
 
+// Sound
+enum Event {
+	StartEvent,
+	StopEvent,
+	SoundEvent,
+	ScriptEvent,
+	UpdateEvent,
+	Events};
+enum Equate {
+	ValueEqu, // sample value
+	DelayEqu, // wave length
+	SchedEqu, // sample rate
+	LeftEqu, // left audio
+	RightEqu, // right audio
+	Equates};
+enum Factor {
+	ConstFactor,
+	VaryFactor,
+	SquareFactor,
+	CompFactor,
+	Factors};
 struct Term
 {
 	double coef; enum Factor factor;
@@ -397,21 +294,122 @@ struct Sound
 	struct {struct Equ sched; // sample rate
 	int count; // number of parameters for script
 	int *ids; double **ptrs; // initialize to set done
-	enum When when; char *script;}; // init Smart for Query
+	char *script;}; // init Smart for Query
  	// UpdateEvent on timewheel
 	double *update;}; // assign when UpdateSync allocated
 };
 
+// State
+enum Change {
+	SculptChange,
+	GlobalChange,
+	MatrixChange,
+	PlaneChange,
+	RegionChange,
+	TextChange,
+	Changes};
+struct State // (Polytope,Window,Script)->Write
+{
+	struct State *next; int file; int plane;
+	enum Change change;
+	union {
+	// Window->SculptChange->Write
+	struct {enum Sculpt sculpt; union {
+	enum ClickMode click;
+	enum MouseMode mouse;
+	enum RollerMode roller;
+	enum TargetMode target;
+	enum TopologyMode topology;
+	enum FixedMode fixed;};};
+	// Polytope->RegionChange->Write
+	struct {int side; int insides; int outsides; int *inside; int *outside;};
+	// Window->(MatrixChange,GlobalChange)->Write
+	float *matrix;
+	// Polytope->PlaneChange->Write
+	struct {int versor; float *vector;};
+	// Script->TextChange->Write
+	char *text;};
+};
+
+// Query
+struct Smart {
+	int count;
+	char *ptr;
+};
 struct Query
 {
 	struct Query *next; int file;
  	struct Smart smart;
-	enum Where where;
 	union {
-	int empty;
-	// TODO fields to specify toplogical feature
-	//  or fields for symbolic and numerical changes
-	};
+	// no response to Read
+	double value; // for response to System
+	struct {int length; char *stream;};}; // for response to Polytope
 };
+
+enum Opcode {
+	// Sideband
+	// TODO for new Query pointer
+	// Message
+	ReadOp, WriteOp, ScriptOp, WindowOp, CommandOp,
+	// Command
+	FileOp,
+	SourceOp,
+	SubconfOp, SettingOp,
+	SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,
+	MatrixOp,
+	FeedbackOp, FinishOp,
+	AllocOp, /*WriteOp,*/ BindOp, /*ReadOp,*/
+	// Update
+	/*FileOp,*/ /*FinishOp,*/
+	BufferOp,
+	OffsetOp, WidthOp,
+	SizeOp, HeightOp,
+	DataOp, TextOp, ScalarOp, QueryOp,
+	FormatOp, /*FeedbackOp,*/ DatasOp,
+	FunctionOp, FunctionsOp,
+	// Render
+	/*FileOp,*/
+	ProgramOp, BaseOp, CountOp, /*SizeOp,*/
+	// Feedback
+	PierceOp, NormalOp, TagbitsOp, PlaneOp,
+	// Format
+	CursorOp, AffineOp, PerplaneOp, BasisOp,
+	CutoffOp, SlopeOp, AspectOp,
+	FeatherOp, ArrowOp, EnableOp,
+	// Data
+	/*FileOp, PlaneOp,*/ ConfOp,
+	BoundariesOp, RegionsOp, PlanesOp, SidesOp,
+	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
+	VersorOp, VectorOp,
+	FilenameOp,
+	FuncOp, /*CountOp,*/ SpecifyOp, KeyOp, /*ScriptOp,*/
+	/*FixedOp,*/ RelativeOp,
+	AbsoluteOp,
+	/*PierceOp,*/
+	/*MatrixOp,*/
+	PressOp,
+	// Sound
+	/*FileOp,*/ IdentOp, DoneOp, ValueOp, EventOp,
+	/*ValueOp,*/ DelayOp, SchedOp, LeftOp, RightOp,
+	// Equ
+	NumerOp, DenomOp,
+	// Sum
+	/*CountOp,*/
+	// Term
+	CoefOp, FactorOp,
+	ConstOp, VaryOp, SquareOp, CompOp,
+	// State
+	/*FileOp, PlaneOp,*/
+	ChangeOp,
+	/*SculptOp, ClickOp, MouseOp, RollerOp, TargetOp, TopologyOp, FixedOp,*/
+	/*SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,*/
+	/*MatrixOp,*/
+	/*VersorOp, VectorOp,*/
+	/*TextOp,*/
+	// Query
+	/*FileOp,*/ SmartOp,
+	/*ValueOp,*/
+	LengthOp, StreamOp,
+	Opcodes};
 
 #endif

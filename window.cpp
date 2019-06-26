@@ -28,9 +28,9 @@
 
 #include "window.hpp"
 #include "object.hpp"
+#include "read.hpp"
 #include "write.hpp"
 #include "polytope.hpp"
-#include "read.hpp"
 extern "C" {
 #include "arithmetic.h"
 #include "callback.h"
@@ -94,12 +94,12 @@ void Window::init()
 
 void Window::call()
 {
-    processQueues(read);
     processQueues(polytope);
-    processCommands(read2req,read);
     processCommands(polytope2req,polytope);
     processDatas(polytope2rsp);
     processStates(write2rsp);
+    processQueues(read);
+    processCommands(read2req,read);
 }
 
 void Window::wait()
@@ -116,10 +116,10 @@ void Window::wake()
 
 void Window::done()
 {
-    processQueues(read);
     processQueues(polytope);
-    processCommands(read2req,read);
     processCommands(polytope2req,polytope);
+    processQueues(read);
+    processCommands(read2req,read);
     glfwTerminate(); window = 0;
 }
 
@@ -127,12 +127,12 @@ Window::Window(int n) : Thread(1),
     object(new Object[n]), rsp2polytope(0), req2polytope(0),
     read2req(this,"Read->Command->Window"),
     write2rsp(this,"Window<-State<-Write"),
-    polytope2req(this,"Polytope->Data->Window"),
+    polytope2req(this,"Polytope->Command->Window"),
     polytope2rsp(this,"Window<-Data<-Polytope"),
     window(0), finish(0), nfile(n)
 {
     Object obj = {0}; for (int i = 0; i < n; i++) object[i] = obj;
-    Queues que = {0}; read = polytope = que;
+    Queues que = {0}; polytope = que;
 }
 
 Window::~Window()
@@ -194,10 +194,10 @@ extern "C" void sendFacet(int file, int plane, float *matrix)
     window->sendPolytope(data);
 }
 
-extern "C" void sendInvoke(int file, int plane, char key)
+extern "C" void sendInvoke(int file, int plane, char press)
 {
     Data *data = datas.get();
-    data->file = file; data->plane = plane; data->key = key; data->conf = PressConf;
+    data->file = file; data->plane = plane; data->conf = PressConf; data->press = press;
     window->sendPolytope(data);
 }
 
@@ -409,7 +409,6 @@ void Window::processQueue(Queue &queue, Queues &queues)
         if (!command->finish) {
             remove(queue.first,queue.last,command);
             if (&queue == &queues.query) {
-                if (&queues == &read) object[command->file].rsp2read->put(command);
                 if (&queues == &polytope) rsp2polytope->put(command);}
             else enque(queue.first,queue.last,command);}
         if (command->finish && &queue != &queues.query) break;
@@ -422,16 +421,12 @@ void Window::processCommands(Message<Command> &message, Queues &queues)
 {
     Command *command; while (message.get(command)) {
         if (command->source != PolytopeSource) {
-            changeState(command);
-            object[command->file].rsp2read->put(command);}
+            changeState(command);}
         if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
         if (!command->finish) startCommand(*command);
         if (command->finish) finishCommand(*command,queues);
         if (command->finish) {
-            if (&message == &read2req) enque(read.query.first,read.query.last,command);
-            if (&message == &polytope2req) enque(polytope.query.first,polytope.query.last,command);}
-        else {
-            if (&message == &read2req) object[command->file].rsp2read->put(command);}}
+            if (&message == &polytope2req) enque(polytope.query.first,polytope.query.last,command);}}
 }
 
 void Window::processDatas(Message<Data> &message)
