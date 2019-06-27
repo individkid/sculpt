@@ -957,7 +957,7 @@ mainIter rdfd wrfd en src file plane conf
 
 readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO ()
 readIter rdfd wrfd en file plane conf
-   | conf == (scriptConf en) = undefined
+   | conf == (onceConf en) = undefined
    -- TODO allocate Query, and save in IO
    | otherwise = undefined
 
