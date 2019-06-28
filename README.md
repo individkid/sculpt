@@ -11,30 +11,30 @@ Initially before blocking on read from the unnamed pipe, Read sends location/pid
 Before sending data to the io thread, the window thread saves what it sends. When fields from the middle of the file are sent, the window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
 
 The -- commands and messages between threads are as follows. Note that only messages from the thread that reads files from the command line has side effects.  
---sculpt click additive (add region over clicked faced) Read->SideSource->Window  
---sculpt click subtractive (remove region under clicked faced) Read->SideSource->Window  
---sculpt click refine (add random plane through clicked point on facet) Read->SideSource->Window  
---sculpt click tweak (randomize clicked facet plane) Read->SideSource->Window  
---sculpt click perform (trigger script of clicked facet) Read->SideSource->Window  
---sculpt click transform (click starts transformation) Read->SideSource->Window  
---sculpt click suspend (stop transformation by mouse motion) Read->SideSource->Window  
---sculpt click pierce (click changes fixed pierce point) Read->SideSource->Window  
---sculpt mouse rotate (rotate about fixed pierce point) Read->SideSource->Window  
---sculpt mouse tangent (translate parallel to fixed facet) Read->SideSource->Window  
---sculpt mouse translate (translate parallel to picture plane) Read->SideSource->Window  
---sculpt roller cylinder (rotate with rotated fixed axis) Read->SideSource->Window  
---sculpt roller clock (rotate with fixed normal to picture plane) Read->SideSource->Window  
---sculpt roller normal (rotate with fixed normal to facet) Read->SideSource->Window  
---sculpt roller parallel (translate with fixed normal to facet) Read->SideSource->Window  
---sculpt roller scale (scale with fixed pierce point) Read->SideSource->Window  
---sculpt target session (transform display) Read->SideSource->Window  
---sculpt target polytope (transform clicked polytope) Read->SideSource->Window  
---sculpt target facet (transform clicked facet) Read->SideSource->Window  
---sculpt topology numeric (tweak holds nothing invariant) Read->SideSource->Window  
---sculpt topology invariant (tweak holds polytope invariant) Read->SideSource->Window  
---sculpt topology symbolic (tweak holds space invariant) Read->SideSource->Window  
---sculpt fixed relative (tweak holds pierce point fixed) Read->SideSource->Window  
---sculpt fixed absolute (tweak holds nothing fixed) Read->SideSource->Window  
+--sculpt click additive (add region over clicked faced) Read->ModeSource->Window  
+--sculpt click subtractive (remove region under clicked faced) Read->ModeSource->Window  
+--sculpt click refine (add random plane through clicked point on facet) Read->ModeSource->Window  
+--sculpt click tweak (randomize clicked facet plane) Read->ModeSource->Window  
+--sculpt click perform (trigger script of clicked facet) Read->ModeSource->Window  
+--sculpt click transform (click starts transformation) Read->ModeSource->Window  
+--sculpt click suspend (stop transformation by mouse motion) Read->ModeSource->Window  
+--sculpt click pierce (click changes fixed pierce point) Read->ModeSource->Window  
+--sculpt mouse rotate (rotate about fixed pierce point) Read->ModeSource->Window  
+--sculpt mouse tangent (translate parallel to fixed facet) Read->ModeSource->Window  
+--sculpt mouse translate (translate parallel to picture plane) Read->ModeSource->Window  
+--sculpt roller cylinder (rotate with rotated fixed axis) Read->ModeSource->Window  
+--sculpt roller clock (rotate with fixed normal to picture plane) Read->ModeSource->Window  
+--sculpt roller normal (rotate with fixed normal to facet) Read->ModeSource->Window  
+--sculpt roller parallel (translate with fixed normal to facet) Read->ModeSource->Window  
+--sculpt roller scale (scale with fixed pierce point) Read->ModeSource->Window  
+--sculpt target session (transform display) Read->ModeSource->Window  
+--sculpt target polytope (transform clicked polytope) Read->ModeSource->Window  
+--sculpt target facet (transform clicked facet) Read->ModeSource->Window  
+--sculpt topology numeric (tweak holds nothing invariant) Read->ModeSource->Window  
+--sculpt topology invariant (tweak holds polytope invariant) Read->ModeSource->Window  
+--sculpt topology symbolic (tweak holds space invariant) Read->ModeSource->Window  
+--sculpt fixed relative (tweak holds pierce point fixed) Read->ModeSource->Window  
+--sculpt fixed absolute (tweak holds nothing fixed) Read->ModeSource->Window  
 --configure (change constants like focal length) Read->ConfigureSource->Window  
 --command (send microcode buffers and triggers) Read->PolytopeSource->Window  
 --global (change transformation of display) Read->GlobalSource->Window  
@@ -43,11 +43,12 @@ The -- commands and messages between threads are as follows. Note that only mess
 --space (add planes sampled from sidednesses) Read->SpaceConf->Polytope  
 --region (change whether region in polytope) Read->RegionConf->Polytope  
 --inflate (change polytope regions to all inside) Read->InflateConf->Polytope  
---polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope
---include (open given file and use as shared subspace) Read->IncludeConf->Polytope  
+--polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope  
 --picture (decorate plane with texture from file) Read->PictureConf->Polytope  
+--once (send script to with data from polytope) Read->OnceConf->Polytope  
+--change (send script for change of polytopr) Read->ChangeConf->Polytope  
 --macro (send script to execute upon click) Read->MacroConf->Polytope  
---hotkey (send script to execute upon keypress) Read->ScriptConf->Polytope  
+--hotkey (send script to execute upon keypress) Read->HotkeyConf->Polytope  
 --start (start stock and flow system) Read->StartEvent->System  
 --stop (stop stock and flow system) Read->StopEvent->System  
 --sound (add stock and flows to system) Read->SoundEvent->System  

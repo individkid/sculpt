@@ -136,7 +136,6 @@ void Pools::put(Data *data)
 	ints.put(data->outsides,data->outside); break;
 	case (PlaneConf): floats.put(3,data->vector); break;
 	case (PictureConf): chars.put(strlen(data->filename)+1,data->filename); break;
-	case (IncludeConf): chars.put(strlen(data->filename)+1,data->filename); break;
 	case (PressConf): break;
 	case (RelativeConf): floats.put(3,data->fixed); break;
 	case (AbsoluteConf): break;

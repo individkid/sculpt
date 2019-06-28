@@ -130,8 +130,10 @@ const char *enamerate(enum Opcode opcode)
 	case (FuncOp): return "FuncOp";
 	/*case (CountOp): return "CountOp";*/
 	case (SpecifyOp): return "SpecifyOp";
-	case (KeyOp): return "KeyOp";
 	/*case (ScriptOp): return "ScriptOp";*/
+	case (KeyOp): return "KeyOp";
+	case (HotkeyOp): return "HotkeyOp";
+	case (MacroOp): return "MacroOp";
 	/*case (FixedOp): return "FixedOp";*/
 	case (RelativeOp): return "RelativeOp";
 	case (AbsoluteOp): return "AbsoluteOp";
@@ -275,8 +277,10 @@ int enumerate(char *name)
 	if (strcmp(name,"FuncOp") == 0) return FuncOp;
 	/*if (strcmp(name,"CountOp") == 0) return CountOp;*/
 	if (strcmp(name,"SpecifyOp") == 0) return SpecifyOp;
-	if (strcmp(name,"KeyOp") == 0) return KeyOp;
 	/*if (strcmp(name,"ScriptOp") == 0) return ScriptOp;*/
+	if (strcmp(name,"KeyOp") == 0) return KeyOp;
+	if (strcmp(name,"HotkeyOp") == 0) return HotkeyOp;
+	if (strcmp(name,"MacroOp") == 0) return MacroOp;
 	/*if (strcmp(name,"FixedOp") == 0) return FixedOp;*/
 	if (strcmp(name,"RelativeOp") == 0) return RelativeOp;
 	if (strcmp(name,"AbsoluteOp") == 0) return AbsoluteOp;
@@ -422,7 +426,6 @@ int enumerate(char *name)
 	if (strcmp(name,"RegionConf") == 0) return RegionConf;
 	if (strcmp(name,"PlaneConf") == 0) return PlaneConf;
 	if (strcmp(name,"PictureConf") == 0) return PictureConf;
-	if (strcmp(name,"IncludeConf") == 0) return IncludeConf;
 	if (strcmp(name,"OnceConf") == 0) return OnceConf;
 	if (strcmp(name,"ChangeConf") == 0) return ChangeConf;
 	if (strcmp(name,"MacroConf") == 0) return MacroConf;
@@ -606,6 +609,14 @@ int rdFixedMode(int fd)
 	return fixedMode;
 }
 
+char rdChar(int fd)
+{
+	char val;
+	if (read(fd,&val,sizeof(val)) != sizeof(val)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdChar: %d %c\n",getpid(),val);
+	return val;
+}
+
 int rdInt(int fd)
 {
 	int val;
@@ -770,6 +781,12 @@ void wrFixedMode(int fd, int val)
 	if (DEBUG & HASKELL_DEBUG) printf("wrFixedMode %d %d\n",getpid(),val);
 	enum FixedMode fixedMode = val;
 	if (write(fd,&fixedMode,sizeof(fixedMode)) != sizeof(fixedMode)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrChar(int fd, char val)
+{
+	if (DEBUG & HASKELL_DEBUG) printf("wrChar %d %c\n",getpid(),val);
+	if (write(fd,&val,sizeof(val)) != sizeof(val)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrInt(int fd, int val)

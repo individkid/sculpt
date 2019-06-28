@@ -42,6 +42,7 @@ foreign import ccall rdRollerMode :: CInt -> IO CInt
 foreign import ccall rdTargetMode :: CInt -> IO CInt
 foreign import ccall rdTopologyMode :: CInt -> IO CInt
 foreign import ccall rdFixedMode :: CInt -> IO CInt
+foreign import ccall rdChar :: CInt -> IO CChar
 foreign import ccall rdInt :: CInt -> IO CInt
 foreign import ccall rdFloat :: CInt -> IO CFloat
 foreign import ccall rdDouble :: CInt -> IO CDouble
@@ -66,6 +67,7 @@ foreign import ccall wrRollerMode :: CInt -> CInt -> IO CInt
 foreign import ccall wrTargetMode :: CInt -> CInt -> IO CInt
 foreign import ccall wrTopologyMode :: CInt -> CInt -> IO ()
 foreign import ccall wrFixedMode :: CInt -> CInt -> IO ()
+foreign import ccall wrChar :: CInt -> CChar -> IO ()
 foreign import ccall wrInt :: CInt -> CInt -> IO ()
 foreign import ccall wrFloat :: CInt -> CFloat -> IO ()
 foreign import ccall wrDouble :: CInt -> CDouble -> IO ()
@@ -162,8 +164,10 @@ data Enumeration = Enumeration {
    funcOp :: CInt,
    {-countOp :: CInt,-}
    specifyOp :: CInt,
-   keyOp :: CInt,
    {-scriptOp :: CInt,-}
+   keyOp :: CInt,
+   hotkeyOp :: CInt,
+   macroOp :: CInt,
    {-fixedOp :: CInt,-}
    relativeOp :: CInt,
    absoluteOp :: CInt,
@@ -314,7 +318,6 @@ data Enumeration = Enumeration {
    regionConf :: CInt,
    planeConf :: CInt,
    pictureConf :: CInt,
-   includeConf :: CInt,
    onceConf :: CInt,
    changeConf :: CInt,
    macroConf :: CInt,
@@ -364,6 +367,13 @@ toInt = fmap (fromInteger . toInteger)
 
 toCInt :: Integral a => a -> CInt
 toCInt a = fromInteger (toInteger a)
+
+data State = State {
+   macros :: [(CInt,CInt,Ptr ())],
+   hotkeys :: [(CChar,Ptr ())]}
+
+emptyState :: IO State
+emptyState = undefined
 
 main = do
    print (holes 5 [2,3,4])
@@ -454,8 +464,11 @@ main = do
    funcOpV <- (newCString "FuncOp") >>= enumerate
    {-countOpV <- (newCString "CountOp") >>= enumerate-}
    specifyOpV <- (newCString "SpecifyOp") >>= enumerate
-   keyOpV <- (newCString "KeyOp") >>= enumerate
    {-scriptOpV <- (newCString "ScriptOp") >>= enumerate-}
+   keyOpV <- (newCString "KeyOp") >>= enumerate
+   hotkeyOpV <- (newCString "HotkeyOp") >>= enumerate
+   hotkeyOpV <- (newCString "HotkeyOp") >>= enumerate
+   macroOpV <- (newCString "MacroOp") >>= enumerate
    {-fixedOpV <- (newCString "FixedOp") >>= enumerate-}
    relativeOpV <- (newCString "RelativeOp") >>= enumerate
    absoluteOpV <- (newCString "AbsoluteOp") >>= enumerate
@@ -606,7 +619,6 @@ main = do
    regionConfV <- (newCString "RegionConf") >>= enumerate
    planeConfV <- (newCString "PlaneConf") >>= enumerate
    pictureConfV <- (newCString "PictureConf") >>= enumerate
-   includeConfV <- (newCString "IncludeConf") >>= enumerate
    onceConfV <- (newCString "OnceConf") >>= enumerate
    changeConfV <- (newCString "ChangeConf") >>= enumerate
    macroConfV <- (newCString "MacroConf") >>= enumerate
@@ -737,8 +749,10 @@ main = do
    funcOp = funcOpV,
    {-countOp = countOpV,-}
    specifyOp = specifyOpV,
-   keyOp = keyOpV,
    {-scriptOp = scriptOpV,-}
+   keyOp = keyOpV,
+   hotkeyOp = hotkeyOpV,
+   macroOp = macroOpV,
    {-fixedOp = fixedOpV,-}
    relativeOp = relativeOpV,
    absoluteOp = absoluteOpV,
@@ -889,7 +903,6 @@ main = do
    regionConf = regionConfV,
    planeConf = planeConfV,
    pictureConf = pictureConfV,
-   includeConf = includeConfV,
    onceConf = onceConfV,
    changeConf = changeConfV,
    macroConf = macroConfV,
@@ -932,10 +945,10 @@ main = do
    planeChange = planeChangeV,
    regionChange = regionChangeV,
    textChange = textChangeV,
-   changes = changesV}
+   changes = changesV} emptyState
 
-mainLoop :: CInt -> CInt -> Enumeration -> IO ()
-mainLoop rdfd wrfd en = do
+mainLoop :: CInt -> CInt -> Enumeration -> IO State -> IO State
+mainLoop rdfd wrfd en state = do
    src <- rdOpcode rdfd
    ptr <- rdPointer rdfd
    exOpcode rdfd (fileOp en)
@@ -944,25 +957,39 @@ mainLoop rdfd wrfd en = do
    plane <- rdInt rdfd
    exOpcode rdfd (confOp en)
    conf <- rdConfigure rdfd
-   mainIter rdfd wrfd en src file plane conf
    wrOpcode wrfd src
    wrPointer wrfd ptr
-   mainLoop rdfd wrfd en
+   mainLoop rdfd wrfd en (mainIter rdfd wrfd en src file plane conf state)
 
-mainIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> CInt -> IO ()
-mainIter rdfd wrfd en src file plane conf
-   | src == (readOp en) = readIter rdfd wrfd en file plane conf
-   | src == (windowOp en) = windowIter rdfd wrfd en file plane conf
+mainIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> CInt -> IO State -> IO State
+mainIter rdfd wrfd en src file plane conf state
+   | src == (readOp en) = readIter rdfd wrfd en file plane conf state
+   | src == (windowOp en) = windowIter rdfd wrfd en file plane conf state
    | otherwise = undefined
 
-readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO ()
-readIter rdfd wrfd en file plane conf
-   | conf == (onceConf en) = undefined
-   -- TODO allocate Query, and save in IO
+readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
+readIter rdfd wrfd en file plane conf state
+   | conf == (onceConf en) = do
+   exOpcode rdfd (scriptOp en)
+   script <- rdPointer rdfd
+   -- TODO send Query based on current Data
+   state
+   | conf == (macroConf en) = do
+   exOpcode rdfd (macroOp en)
+   script <- rdPointer rdfd
+   fmap (\x -> x {macros = (file,plane,script):(macros x)}) state
+   | conf == (hotkeyConf en) = do
+   exOpcode rdfd (keyOp en)
+   key <- rdChar rdfd
+   exOpcode rdfd (macroOp en)
+   script <- rdPointer rdfd
+   fmap (\x -> x {hotkeys = (key,script):(hotkeys x)}) state
    | otherwise = undefined
 
-windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO ()
-windowIter rdfd wrfd en file plane conf
+windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
+windowIter rdfd wrfd en file plane conf state
+   | conf == (clickConf en) = undefined
+   -- TODO send Query based on script saved under file and plane
    | conf == (pressConf en) = undefined
-   -- TODO send smart copy of previously allocated Query
+   -- TODO send Query based on saved script
    | otherwise = undefined

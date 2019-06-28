@@ -197,7 +197,6 @@ enum Configure {
 	RegionConf,
 	PlaneConf,
 	PictureConf,
-	IncludeConf,
 	OnceConf,
 	ChangeConf,
 	MacroConf,
@@ -225,10 +224,14 @@ struct Data // (Read,Window) -> Polytope
 	struct {int side; int insides; int outsides; int *inside; int *outside;};
 	// Read->PlaneConf->Polytope
 	struct {int versor; float *vector;};
-	// Read->(PictureConf,IncludeConf)->Polytope
+	// Read->PictureConf->Polytope
 	char *filename;
-	// Read->(OnceConf,ChangeConf,MacroConf,HotkeyConf)->Polytope
-	struct {enum Function func; int count; int *specify; char key; char *script;};
+	// Read->(OnceConf,ChangeConf)->Polytope
+	struct {enum Function func; int count; int *specify; char *script;};
+	// Read->HotkeyConf->Polytope
+	struct {char key; char *hotkey;};
+	// Read->MacroConf->Polytope
+	char *macro;
 	// Window->RelativeConf->Polytope
 	struct {float *fixed; enum TopologyMode relative;};
 	// Window->AbsoluteConf->Polytope
@@ -382,7 +385,9 @@ enum Opcode {
 	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
 	VersorOp, VectorOp,
 	FilenameOp,
-	FuncOp, /*CountOp,*/ SpecifyOp, KeyOp, /*ScriptOp,*/
+	FuncOp, /*CountOp,*/ SpecifyOp, /*ScriptOp,*/
+	KeyOp, HotkeyOp,
+	MacroOp,
 	/*FixedOp,*/ RelativeOp,
 	AbsoluteOp,
 	/*PierceOp,*/

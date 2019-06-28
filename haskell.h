@@ -35,7 +35,7 @@ int rdRollerMode(int fd);
 int rdTargetMode(int fd);
 int rdTopologyMode(int fd);
 int rdFixedMode(int fd);
-// Field Function Equate
+char rdChar(int fd);
 int rdInt(int fd);
 float rdFloat(int fd);
 double rdDouble(int fd);
@@ -60,6 +60,7 @@ void wrRollerMode(int fd, int val);
 void wrTargetMode(int fd, int val);
 void wrTopologyMode(int fd, int val);
 void wrFixedMode(int fd, int val);
+void wrChar(int fd, char val);
 void wrInt(int fd, int val);
 void wrFloat(int fd, float val);
 void wrDouble(int fd, double val);
