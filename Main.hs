@@ -66,8 +66,11 @@ set2 a b c v = v // [((fromIntegral a), (v ! (fromIntegral a)) // [((fromIntegra
 set1 :: CInt -> t -> Vector t -> Vector t
 set1 a b v = v // [((fromIntegral a), b)]
 
-rmw0 :: (State -> (Vector t)) -> (State -> (Vector t) -> State) -> CInt -> t -> State -> IO State
-rmw0 f g a b u = return (g u (set1 a b (f u)))
+rmw2 :: (State -> Vector (Vector t)) -> (State -> Vector (Vector t) -> State) -> CInt -> CInt -> t -> State -> IO State
+rmw2 f g a b c u = return (g u (set2 a b c (f u)))
+
+rmw1 :: (State -> Vector t) -> (State -> Vector t -> State) -> CInt -> t -> State -> IO State
+rmw1 f g a b u = return (g u (set1 a b (f u)))
 
 mainLoop :: CInt -> CInt -> Enumeration -> State -> IO State
 mainLoop rdfd wrfd en state = do
@@ -93,23 +96,24 @@ readIter rdfd wrfd en src ptr file plane conf state
    | conf == (onceConf en) = do
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
-   -- TODO send Query based on current Data
+   wrOpcode wrfd src
+   wrPointer wrfd ptr
+   -- TODO send Query based on script
    return state
    | conf == (macroConf en) = do
    exOpcode rdfd (macroOp en)
    script <- rdPointer rdfd
-   -- TODO replace script by ptr in PerPlane
-   return state
+   state1 <- rmw2 macroSource setMacroSource file plane src state
+   state2 <- rmw2 macroData setMacroData file plane ptr state1
+   rmw2 macroScript setMacroScript file plane script state2
    | conf == (hotkeyConf en) = do
    exOpcode rdfd (keyOp en)
    key <- rdChar rdfd
    exOpcode rdfd (hotkeyOp en)
    script <- rdPointer rdfd
-   wrOpcode wrfd src
-   wrPointer wrfd ptr
-   state1 <- rmw0 hotkeySource setHotkeySource (fromIntegral key) src state
-   state2 <- rmw0 hotkeyData setHotkeyData (fromIntegral key) ptr state1
-   rmw0 hotkeyScript setHotkeyScript (fromIntegral key) script state2
+   state1 <- rmw1 hotkeySource setHotkeySource (fromIntegral key) src state
+   state2 <- rmw1 hotkeyData setHotkeyData (fromIntegral key) ptr state1
+   rmw1 hotkeyScript setHotkeyScript (fromIntegral key) script state2
    | otherwise = undefined
 
 windowIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> State -> IO State
@@ -117,7 +121,7 @@ windowIter rdfd wrfd en file plane conf state
    | conf == (clickConf en) = undefined
    -- TODO send Query based on script saved under file and plane
    | conf == (pressConf en) = undefined
-   -- TODO send Query based on saved script
+   -- TODO send Query based on script saved under press
    | otherwise = undefined
 
 foreign import ccall setDebug :: CInt -> IO ()
