@@ -18,15 +18,15 @@
 
 #include "types.h"
 
+void setDebug(int val);
+int enumerate(char *name);
+
 void *rdPointer(int fd);
 int rdOpcode(int fd);
-int rdConfigure(int fd);
 int rdSource(int fd);
+int rdConfigure(int fd);
 int rdEvent(int fd);
 int rdChange(int fd);
-int rdFactor(int fd);
-int rdBuffer(int fd);
-int rdProgram(int fd);
 int rdSubconf(int fd);
 int rdSculpt(int fd);
 int rdClickMode(int fd);
@@ -35,6 +35,12 @@ int rdRollerMode(int fd);
 int rdTargetMode(int fd);
 int rdTopologyMode(int fd);
 int rdFixedMode(int fd);
+int rdField(int fd);
+int rdBuffer(int fd);
+int rdProgram(int fd);
+int rdFunction(int fd);
+int rdEquate(int fd);
+int rdFactor(int fd);
 char rdChar(int fd);
 int rdInt(int fd);
 float rdFloat(int fd);
@@ -43,15 +49,13 @@ void rdChars(int fd, int count, char *chars);
 void rdInts(int fd, int count, int *ints);
 void rdFloats(int fd, int count, float *floats);
 void rdDoubles(int fd, int count, double *doubles);
+
 void wrPointer(int fd, void *val);
 void wrOpcode(int fd, int val);
-void wrConfigure(int fd, int val);
 void wrSource(int fd, int val);
+void wrConfigure(int fd, int val);
 void wrEvent(int fd, int val);
 void wrChange(int fd, int val);
-void wrFactor(int fd, int val);
-void wrBuffer(int fd, int val);
-void wrProgram(int fd, int val);
 void wrSubconf(int fd, int val);
 void wrSculpt(int fd, int val);
 void wrClickMode(int fd, int val);
@@ -60,6 +64,12 @@ void wrRollerMode(int fd, int val);
 void wrTargetMode(int fd, int val);
 void wrTopologyMode(int fd, int val);
 void wrFixedMode(int fd, int val);
+void wrField(int fd, int val);
+void wrBuffer(int fd, int val);
+void wrProgram(int fd, int val);
+void wrFunction(int fd, int val);
+void wrEquate(int fd, int val);
+void wrFactor(int fd, int val);
 void wrChar(int fd, char val);
 void wrInt(int fd, int val);
 void wrFloat(int fd, float val);
@@ -68,5 +78,6 @@ void wrChars(int fd, int count, char *chars);
 void wrInts(int fd, int count, int *ints);
 void wrFloats(int fd, int count, float *floats);
 void wrDoubles(int fd, int count, double *doubles);
+
 void exOpcode(int fd, int op);
 

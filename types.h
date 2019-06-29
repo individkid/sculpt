@@ -343,10 +343,12 @@ struct Query
 {
 	struct Query *next; int file;
  	struct Smart smart;
-	union {
-	// no response to Read
 	double value; // for response to System
-	struct {int length; char *stream;};}; // for response to Polytope
+ 	int length;
+	union {
+	double *doubles; // for request from System
+	float *floats; // for request from Polytope
+	int *ints;}; // for request from Polytope
 };
 
 enum Opcode {
@@ -413,8 +415,11 @@ enum Opcode {
 	/*TextOp,*/
 	// Query
 	/*FileOp,*/ SmartOp,
+ 	LengthOp,
 	/*ValueOp,*/
-	LengthOp, StreamOp,
+	DoublesOp,
+	FloatsOp,
+	IntsOp,
 	Opcodes};
 
 #endif

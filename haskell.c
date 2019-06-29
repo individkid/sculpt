@@ -186,9 +186,11 @@ const char *enamerate(enum Opcode opcode)
 	// Query
 	/*case (FileOp): return "FileOp";*/
 	case (SmartOp): return "SmartOp";
-	/*case (ValueOp): return "ValueOp";*/
-	case (LengthOp): return "LengthOp";
-	case (StreamOp): return "StreamOp";
+	/*case (ValueOp): return "ValueOp"*/
+ 	case (LengthOp): return "LengthOp";
+	case (DoublesOp): return "DoublesOp";
+	case (FloatsOp): return "FloatsOp";
+	case (IntsOp): return "IntsOp";
 	case (Opcodes): return "Opcodes";
 	default: fatal("unknown opcode",opcode,__FILE__,__LINE__);}
 	return 0;
@@ -330,7 +332,9 @@ int enumerate(char *name)
 	if (strcmp(name,"SmartOp") == 0) return SmartOp;
 	/*if (strcmp(name,"ValueOp") == 0) return ValueOp;*/
 	if (strcmp(name,"LengthOp") == 0) return LengthOp;
-	if (strcmp(name,"StreamOp") == 0) return StreamOp;
+	if (strcmp(name,"DoublesOp") == 0) return DoublesOp;
+	if (strcmp(name,"FloatsOp") == 0) return FloatsOp;
+	if (strcmp(name,"IntsOp") == 0) return IntsOp;
 	if (strcmp(name,"Opcodes") == 0) return Opcodes;
 	// Source
 	if (strcmp(name,"ConfigureSource") == 0) return ConfigureSource;
@@ -489,20 +493,20 @@ int rdOpcode(int fd)
 	return opcode;
 }
 
-int rdConfigure(int fd)
-{
-	enum Configure configure;
-	if (read(fd,&configure,sizeof(configure)) != sizeof(configure)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdConfigure: %d %d\n",getpid(),configure);
-	return configure;
-}
-
 int rdSource(int fd)
 {
 	enum Source source;
 	if (read(fd,&source,sizeof(source)) != sizeof(source)) error ("read failed",errno,__FILE__,__LINE__);
 	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),source);
 	return source;
+}
+
+int rdConfigure(int fd)
+{
+	enum Configure configure;
+	if (read(fd,&configure,sizeof(configure)) != sizeof(configure)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdConfigure: %d %d\n",getpid(),configure);
+	return configure;
 }
 
 int rdEvent(int fd)
@@ -519,30 +523,6 @@ int rdChange(int fd)
 	if (read(fd,&change,sizeof(change)) != sizeof(change)) error ("read failed",errno,__FILE__,__LINE__);
 	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),change);
 	return change;
-}
-
-int rdFactor(int fd)
-{
-	enum Factor factor;
-	if (read(fd,&factor,sizeof(factor)) != sizeof(factor)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),factor);
-	return factor;
-}
-
-int rdBuffer(int fd)
-{
-	enum Buffer buffer;
-	if (read(fd,&buffer,sizeof(buffer)) != sizeof(buffer)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),buffer);
-	return buffer;
-}
-
-int rdProgram(int fd)
-{
-	enum Program program;
-	if (read(fd,&program,sizeof(program)) != sizeof(program)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),program);
-	return program;
 }
 
 int rdSubconf(int fd)
@@ -607,6 +587,54 @@ int rdFixedMode(int fd)
 	if (read(fd,&fixedMode,sizeof(fixedMode)) != sizeof(fixedMode)) error("read failed",errno,__FILE__,__LINE__);
 	if (DEBUG & HASKELL_DEBUG) printf("rdFixedMode: %d %d\n",getpid(),fixedMode);
 	return fixedMode;
+}
+
+int rdField(int fd)
+{
+	enum Field field;
+	if (read(fd,&field,sizeof(field)) != sizeof(field)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdField: %d %d\n",getpid(),field);
+	return field;
+}
+
+int rdBuffer(int fd)
+{
+	enum Buffer buffer;
+	if (read(fd,&buffer,sizeof(buffer)) != sizeof(buffer)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),buffer);
+	return buffer;
+}
+
+int rdProgram(int fd)
+{
+	enum Program program;
+	if (read(fd,&program,sizeof(program)) != sizeof(program)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),program);
+	return program;
+}
+
+int rdFunction(int fd)
+{
+	enum Function function;
+	if (read(fd,&function,sizeof(function)) != sizeof(function)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),function);
+	return function;
+}
+
+int rdEquate(int fd)
+{
+	enum Equate equate;
+	if (read(fd,&equate,sizeof(equate)) != sizeof(equate)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),equate);
+	return equate;
+}
+
+int rdFactor(int fd)
+{
+	enum Factor factor;
+	if (read(fd,&factor,sizeof(factor)) != sizeof(factor)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),factor);
+	return factor;
 }
 
 char rdChar(int fd)
@@ -678,18 +706,18 @@ void wrOpcode(int fd, int val)
 	if (write(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
-void wrConfigure(int fd, int val)
-{
-	enum Configure configure = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrConfigure %d %d\n",getpid(),val);
-	if (write(fd,&configure,sizeof(configure)) != sizeof(configure)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
 void wrSource(int fd, int val)
 {
 	enum Source source = val;
 	if (DEBUG & HASKELL_DEBUG) printf("wrSource %d %d\n",getpid(),val);
 	if (write(fd,&source,sizeof(source)) != sizeof(source)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrConfigure(int fd, int val)
+{
+	enum Configure configure = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrConfigure %d %d\n",getpid(),val);
+	if (write(fd,&configure,sizeof(configure)) != sizeof(configure)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrEvent(int fd, int val)
@@ -704,27 +732,6 @@ void wrChange(int fd, int val)
 	enum Change change = val;
 	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
 	if (write(fd,&change,sizeof(change)) != sizeof(change)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrFactor(int fd, int val)
-{
-	enum Factor factor = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrFactor %d %d\n",getpid(),val);
-	if (write(fd,&factor,sizeof(factor)) != sizeof(factor)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrBuffer(int fd, int val)
-{
-	enum Buffer buffer = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrBuffer %d %d\n",getpid(),val);
-	if (write(fd,&buffer,sizeof(buffer)) != sizeof(buffer)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrProgram(int fd, int val)
-{
-	enum Program program = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrProgram %d %d\n",getpid(),val);
-	if (write(fd,&program,sizeof(program)) != sizeof(program)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrSubconf(int fd, int val)
@@ -781,6 +788,48 @@ void wrFixedMode(int fd, int val)
 	if (DEBUG & HASKELL_DEBUG) printf("wrFixedMode %d %d\n",getpid(),val);
 	enum FixedMode fixedMode = val;
 	if (write(fd,&fixedMode,sizeof(fixedMode)) != sizeof(fixedMode)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrField(int fd, int val)
+{
+	if (DEBUG & HASKELL_DEBUG) printf("wrField %d %d\n",getpid(),val);
+	enum Field field = val;
+	if (write(fd,&field,sizeof(field)) != sizeof(field)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrBuffer(int fd, int val)
+{
+	enum Buffer buffer = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrBuffer %d %d\n",getpid(),val);
+	if (write(fd,&buffer,sizeof(buffer)) != sizeof(buffer)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrProgram(int fd, int val)
+{
+	enum Program program = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrProgram %d %d\n",getpid(),val);
+	if (write(fd,&program,sizeof(program)) != sizeof(program)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrFunction(int fd, int val)
+{
+	enum Function function = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrFactor %d %d\n",getpid(),val);
+	if (write(fd,&function,sizeof(function)) != sizeof(function)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrEquate(int fd, int val)
+{
+	enum Equate equate = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrFactor %d %d\n",getpid(),val);
+	if (write(fd,&equate,sizeof(equate)) != sizeof(equate)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrFactor(int fd, int val)
+{
+	enum Factor factor = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrFactor %d %d\n",getpid(),val);
+	if (write(fd,&factor,sizeof(factor)) != sizeof(factor)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrChar(int fd, char val)

@@ -57,7 +57,7 @@ toInt = fmap (fromInteger . toInteger)
 toCInt :: Integral a => a -> CInt
 toCInt a = fromInteger (toInteger a)
 
-emptyState :: State
+emptyState :: IO State
 emptyState = undefined
 
 set2 :: CInt -> CInt -> t -> Vector (Vector t) -> Vector (Vector t)
@@ -66,13 +66,13 @@ set2 a b c v = v // [((fromIntegral a), (v ! (fromIntegral a)) // [((fromIntegra
 set1 :: CInt -> t -> Vector t -> Vector t
 set1 a b v = v // [((fromIntegral a), b)]
 
-rmw2 :: (State -> Vector (Vector t)) -> (State -> Vector (Vector t) -> State) -> CInt -> CInt -> t -> State -> IO State
-rmw2 f g a b c u = return (g u (set2 a b c (f u)))
+rmw2 :: (State -> Vector (Vector t)) -> (State -> Vector (Vector t) -> State) -> CInt -> CInt -> t -> IO State -> IO State
+rmw2 f g a b c u = fmap (\x -> (g x (set2 a b c (f x)))) u
 
-rmw1 :: (State -> Vector t) -> (State -> Vector t -> State) -> CInt -> t -> State -> IO State
-rmw1 f g a b u = return (g u (set1 a b (f u)))
+rmw1 :: (State -> Vector t) -> (State -> Vector t -> State) -> CInt -> t -> IO State -> IO State
+rmw1 f g a b u = fmap (\x -> (g x (set1 a b (f x)))) u
 
-mainLoop :: CInt -> CInt -> Enumeration -> State -> IO State
+mainLoop :: CInt -> CInt -> Enumeration -> IO State -> IO State
 mainLoop rdfd wrfd en state = do
    src <- rdOpcode rdfd
    ptr <- rdPointer rdfd
@@ -82,41 +82,38 @@ mainLoop rdfd wrfd en state = do
    plane <- rdInt rdfd
    exOpcode rdfd (confOp en)
    conf <- rdConfigure rdfd
-   iter <- mainIter rdfd wrfd en src ptr file plane conf state
-   mainLoop rdfd wrfd en iter
+   mainLoop rdfd wrfd en (mainIter rdfd wrfd en src ptr file plane conf state)
 
-mainIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> State -> IO State
+mainIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
 mainIter rdfd wrfd en src ptr file plane conf state
    | src == (readOp en) = readIter rdfd wrfd en src ptr file plane conf state
    | src == (windowOp en) = windowIter rdfd wrfd en src ptr file plane conf state
    | otherwise = undefined
 
-readIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> State -> IO State
+readIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
 readIter rdfd wrfd en src ptr file plane conf state
    | conf == (onceConf en) = do
+   exOpcode rdfd (funcOp en)
+   func <- rdFunction rdfd
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
    wrOpcode wrfd src
    wrPointer wrfd ptr
    -- TODO send Query based on script
-   return state
+   state
    | conf == (macroConf en) = do
    exOpcode rdfd (macroOp en)
    script <- rdPointer rdfd
-   state1 <- rmw2 macroSource setMacroSource file plane src state
-   state2 <- rmw2 macroData setMacroData file plane ptr state1
-   rmw2 macroScript setMacroScript file plane script state2
+   macroIter src ptr file plane script state
    | conf == (hotkeyConf en) = do
    exOpcode rdfd (keyOp en)
    key <- rdChar rdfd
    exOpcode rdfd (hotkeyOp en)
    script <- rdPointer rdfd
-   state1 <- rmw1 hotkeySource setHotkeySource (fromIntegral key) src state
-   state2 <- rmw1 hotkeyData setHotkeyData (fromIntegral key) ptr state1
-   rmw1 hotkeyScript setHotkeyScript (fromIntegral key) script state2
+   hotkeyIter src ptr (fromIntegral key) script state
    | otherwise = undefined
 
-windowIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> State -> IO State
+windowIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
 windowIter rdfd wrfd en file plane conf state
    | conf == (clickConf en) = undefined
    -- TODO send Query based on script saved under file and plane
@@ -124,18 +121,28 @@ windowIter rdfd wrfd en file plane conf state
    -- TODO send Query based on script saved under press
    | otherwise = undefined
 
+macroIter :: CInt -> Ptr () -> CInt -> CInt -> Ptr () -> IO State -> IO State
+macroIter src ptr file plane script state = let
+   state1 = rmw2 macroSource setMacroSource file plane src state
+   state2 = rmw2 macroData setMacroData file plane ptr state1
+   in rmw2 macroScript setMacroScript file plane script state2
+
+hotkeyIter :: CInt -> Ptr () -> CInt -> Ptr () -> IO State -> IO State
+hotkeyIter src ptr key script state = let
+   state1 = rmw1 hotkeySource setHotkeySource key src state
+   state2 = rmw1 hotkeyData setHotkeyData key ptr state1
+   in rmw1 hotkeyScript setHotkeyScript key script state2
+
 foreign import ccall setDebug :: CInt -> IO ()
 foreign import ccall enumerate :: Ptr CChar -> IO CInt
+
 foreign import ccall rdPointer :: CInt -> IO (Ptr ())
 foreign import ccall rdOpcode :: CInt -> IO CInt
-foreign import ccall rdConfigure :: CInt -> IO CInt
-foreign import ccall rdSubconf :: CInt -> IO CInt
 foreign import ccall rdSource :: CInt -> IO CInt
+foreign import ccall rdConfigure :: CInt -> IO CInt
 foreign import ccall rdEvent :: CInt -> IO CInt
 foreign import ccall rdChange :: CInt -> IO CInt
-foreign import ccall rdFactor :: CInt -> IO CInt
-foreign import ccall rdBuffer :: CInt -> IO CInt
-foreign import ccall rdProgram :: CInt -> IO CInt
+foreign import ccall rdSubconf :: CInt -> IO CInt
 foreign import ccall rdSculpt :: CInt -> IO CInt
 foreign import ccall rdClickMode :: CInt -> IO CInt
 foreign import ccall rdMouseMode :: CInt -> IO CInt
@@ -143,6 +150,12 @@ foreign import ccall rdRollerMode :: CInt -> IO CInt
 foreign import ccall rdTargetMode :: CInt -> IO CInt
 foreign import ccall rdTopologyMode :: CInt -> IO CInt
 foreign import ccall rdFixedMode :: CInt -> IO CInt
+foreign import ccall rdField :: CInt -> IO CInt
+foreign import ccall rdBuffer :: CInt -> IO CInt
+foreign import ccall rdProgram :: CInt -> IO CInt
+foreign import ccall rdFunction :: CInt -> IO CInt
+foreign import ccall rdEquate :: CInt -> IO CInt
+foreign import ccall rdFactor :: CInt -> IO CInt
 foreign import ccall rdChar :: CInt -> IO CChar
 foreign import ccall rdInt :: CInt -> IO CInt
 foreign import ccall rdFloat :: CInt -> IO CFloat
@@ -151,15 +164,13 @@ foreign import ccall rdChars :: CInt -> CInt -> Ptr CChar -> IO ()
 foreign import ccall rdInts :: CInt -> CInt -> Ptr CInt -> IO ()
 foreign import ccall rdFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
 foreign import ccall rdDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
+
 foreign import ccall wrPointer :: CInt -> Ptr () -> IO ()
 foreign import ccall wrOpcode :: CInt -> CInt -> IO ()
-foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
 foreign import ccall wrSource :: CInt -> CInt -> IO ()
+foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
 foreign import ccall wrEvent :: CInt -> CInt -> IO ()
 foreign import ccall wrChange :: CInt -> CInt -> IO ()
-foreign import ccall wrFactor :: CInt -> CInt -> IO ()
-foreign import ccall wrBuffer :: CInt -> CInt -> IO ()
-foreign import ccall wrProgram :: CInt -> CInt -> IO ()
 foreign import ccall wrSubconf :: CInt -> CInt -> IO ()
 foreign import ccall wrSculpt :: CInt -> CInt -> IO CInt
 foreign import ccall wrClickMode :: CInt -> CInt -> IO CInt
@@ -168,6 +179,12 @@ foreign import ccall wrRollerMode :: CInt -> CInt -> IO CInt
 foreign import ccall wrTargetMode :: CInt -> CInt -> IO CInt
 foreign import ccall wrTopologyMode :: CInt -> CInt -> IO ()
 foreign import ccall wrFixedMode :: CInt -> CInt -> IO ()
+foreign import ccall wrField :: CInt -> CInt -> IO ()
+foreign import ccall wrBuffer :: CInt -> CInt -> IO ()
+foreign import ccall wrProgram :: CInt -> CInt -> IO ()
+foreign import ccall wrFunction :: CInt -> CInt -> IO ()
+foreign import ccall wrEquate :: CInt -> CInt -> IO ()
+foreign import ccall wrFactor :: CInt -> CInt -> IO ()
 foreign import ccall wrChar :: CInt -> CChar -> IO ()
 foreign import ccall wrInt :: CInt -> CInt -> IO ()
 foreign import ccall wrFloat :: CInt -> CFloat -> IO ()
@@ -176,8 +193,8 @@ foreign import ccall wrChars :: CInt -> CInt -> Ptr CChar -> IO ()
 foreign import ccall wrInts :: CInt -> CInt -> Ptr CInt -> IO ()
 foreign import ccall wrFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
 foreign import ccall wrDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
+
 foreign import ccall exOpcode :: CInt -> CInt -> IO ()
-foreign import ccall hello :: CString -> IO CString
 
 data Enumeration = Enumeration {
    -- Sideband
@@ -323,7 +340,9 @@ data Enumeration = Enumeration {
    smartOp :: CInt,
    {-valueOp :: CInt,-}
    lengthOp :: CInt,
-   streamOp :: CInt,
+   doublesOp :: CInt,
+   floatsOp :: CInt,
+   intsOp :: CInt,
    opcodes :: CInt,
    -- Source
    configureSource :: CInt,
@@ -611,7 +630,9 @@ main = do
    smartOpV <- (newCString "SmartOp") >>= enumerate
    {-valueOpV <- (newCString "ValueOp") >>= enumerate-}
    lengthOpV <- (newCString "LengthOp") >>= enumerate
-   streamOpV <- (newCString "StreamOp") >>= enumerate
+   doublesOpV <- (newCString "DoublesOp") >>= enumerate
+   floatsOpV <- (newCString "FloatsOp") >>= enumerate
+   intsOpV <- (newCString "IntsOp") >>= enumerate
    opcodesV <- (newCString "Opcodes") >>= enumerate
    -- Source
    configureSourceV <- (newCString "ConfigureSource") >>= enumerate
@@ -892,9 +913,11 @@ main = do
    -- Query
    {-fileOp = fileOpV,-}
    smartOp = smartOpV,
-   {-valueOp = valueOpV,-}
    lengthOp = lengthOpV,
-   streamOp = streamOpV,
+   {-valueOp = valueOpV,-}
+   doublesOp = doublesOpV,
+   floatsOp = floatsOpV,
+   intsOp = intsOpV,
    opcodes = opcodesV,
    -- Source
    configureSource = configureSourceV,
