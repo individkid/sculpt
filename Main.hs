@@ -24,6 +24,102 @@ import System.Environment
 import Data.Vector hiding (map)
 import AffTopo.Naive hiding (Vector)
 
+data State = State {
+   macroSource :: Vector (Vector CInt),
+   macroData :: Vector (Vector (Ptr ())),
+   macroScript :: Vector (Vector (Ptr ())),
+   hotkeySource :: Vector CInt,
+   hotkeyData :: Vector (Ptr ()),
+   hotkeyScript :: Vector (Ptr ())
+}
+
+setMacroSource :: State -> Vector (Vector CInt) -> State
+setMacroSource a b = a {macroSource = b}
+
+setMacroData :: State -> Vector (Vector (Ptr ())) -> State
+setMacroData a b = a {macroData = b}
+
+setMacroScript :: State -> Vector (Vector (Ptr ())) -> State
+setMacroScript a b = a {macroScript = b}
+
+setHotkeySource :: State -> Vector CInt -> State
+setHotkeySource a b = a {hotkeySource = b}
+
+setHotkeyData :: State -> Vector (Ptr ()) -> State
+setHotkeyData a b = a {hotkeyData = b}
+
+setHotkeyScript :: State -> Vector (Ptr ()) -> State
+setHotkeyScript a b = a {hotkeyScript = b}
+
+toInt :: Integral a => IO a -> IO Int
+toInt = fmap (fromInteger . toInteger)
+
+toCInt :: Integral a => a -> CInt
+toCInt a = fromInteger (toInteger a)
+
+emptyState :: State
+emptyState = undefined
+
+set2 :: CInt -> CInt -> t -> Vector (Vector t) -> Vector (Vector t)
+set2 a b c v = v // [((fromIntegral a), (v ! (fromIntegral a)) // [((fromIntegral b), c)])]
+
+set1 :: CInt -> t -> Vector t -> Vector t
+set1 a b v = v // [((fromIntegral a), b)]
+
+rmw0 :: (State -> (Vector t)) -> (State -> (Vector t) -> State) -> CInt -> t -> State -> IO State
+rmw0 f g a b u = return (g u (set1 a b (f u)))
+
+mainLoop :: CInt -> CInt -> Enumeration -> State -> IO State
+mainLoop rdfd wrfd en state = do
+   src <- rdOpcode rdfd
+   ptr <- rdPointer rdfd
+   exOpcode rdfd (fileOp en)
+   file <- rdInt rdfd
+   exOpcode rdfd (planeOp en)
+   plane <- rdInt rdfd
+   exOpcode rdfd (confOp en)
+   conf <- rdConfigure rdfd
+   iter <- mainIter rdfd wrfd en src ptr file plane conf state
+   mainLoop rdfd wrfd en iter
+
+mainIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> State -> IO State
+mainIter rdfd wrfd en src ptr file plane conf state
+   | src == (readOp en) = readIter rdfd wrfd en src ptr file plane conf state
+   | src == (windowOp en) = windowIter rdfd wrfd en src ptr file plane conf state
+   | otherwise = undefined
+
+readIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> State -> IO State
+readIter rdfd wrfd en src ptr file plane conf state
+   | conf == (onceConf en) = do
+   exOpcode rdfd (scriptOp en)
+   script <- rdPointer rdfd
+   -- TODO send Query based on current Data
+   return state
+   | conf == (macroConf en) = do
+   exOpcode rdfd (macroOp en)
+   script <- rdPointer rdfd
+   -- TODO replace script by ptr in PerPlane
+   return state
+   | conf == (hotkeyConf en) = do
+   exOpcode rdfd (keyOp en)
+   key <- rdChar rdfd
+   exOpcode rdfd (hotkeyOp en)
+   script <- rdPointer rdfd
+   wrOpcode wrfd src
+   wrPointer wrfd ptr
+   state1 <- rmw0 hotkeySource setHotkeySource (fromIntegral key) src state
+   state2 <- rmw0 hotkeyData setHotkeyData (fromIntegral key) ptr state1
+   rmw0 hotkeyScript setHotkeyScript (fromIntegral key) script state2
+   | otherwise = undefined
+
+windowIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> State -> IO State
+windowIter rdfd wrfd en file plane conf state
+   | conf == (clickConf en) = undefined
+   -- TODO send Query based on script saved under file and plane
+   | conf == (pressConf en) = undefined
+   -- TODO send Query based on saved script
+   | otherwise = undefined
+
 foreign import ccall setDebug :: CInt -> IO ()
 foreign import ccall enumerate :: Ptr CChar -> IO CInt
 foreign import ccall rdPointer :: CInt -> IO (Ptr ())
@@ -78,83 +174,6 @@ foreign import ccall wrFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
 foreign import ccall wrDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
 foreign import ccall exOpcode :: CInt -> CInt -> IO ()
 foreign import ccall hello :: CString -> IO CString
-
-data State = State {
-   macroScript :: Vector (Vector (Ptr ())),
-   hotkeyScript :: Vector (Ptr ())
-}
-
-setMacroScript :: State -> Vector (Vector (Ptr ())) -> State
-setMacroScript a b = a {macroScript = b}
-
-setHotkeyScript :: State -> Vector (Ptr ()) -> State
-setHotkeyScript a b = a {hotkeyScript = b}
-
-toInt :: Integral a => IO a -> IO Int
-toInt = fmap (fromInteger . toInteger)
-
-toCInt :: Integral a => a -> CInt
-toCInt a = fromInteger (toInteger a)
-
-emptyState :: IO State
-emptyState = undefined
-
-set2 :: CInt -> CInt -> t -> Vector (Vector t) -> Vector (Vector t)
-set2 a b c v = v // [((fromIntegral a), (v ! (fromIntegral a)) // [((fromIntegral b), c)])]
-
-set1 :: CInt -> t -> Vector t -> Vector t
-set1 a b v = v // [((fromIntegral a), b)]
-
-fmap0 :: (State -> (Vector t)) -> (State -> (Vector t) -> State) -> CInt -> t -> IO State -> IO State
-fmap0 f g a b u = fmap (\x -> (g x (set1 a b (f x)))) u
-
-mainLoop :: CInt -> CInt -> Enumeration -> IO State -> IO State
-mainLoop rdfd wrfd en state = do
-   src <- rdOpcode rdfd
-   ptr <- rdPointer rdfd
-   exOpcode rdfd (fileOp en)
-   file <- rdInt rdfd
-   exOpcode rdfd (planeOp en)
-   plane <- rdInt rdfd
-   exOpcode rdfd (confOp en)
-   conf <- rdConfigure rdfd
-   mainLoop rdfd wrfd en (mainIter rdfd wrfd en src ptr file plane conf state)
-
-mainIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-mainIter rdfd wrfd en src ptr file plane conf state
-   | src == (readOp en) = readIter rdfd wrfd en src ptr file plane conf state
-   | src == (windowOp en) = windowIter rdfd wrfd en src ptr file plane conf state
-   | otherwise = undefined
-
-readIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-readIter rdfd wrfd en src ptr file plane conf state
-   | conf == (onceConf en) = do
-   exOpcode rdfd (scriptOp en)
-   script <- rdPointer rdfd
-   -- TODO send Query based on current Data
-   state
-   | conf == (macroConf en) = do
-   exOpcode rdfd (macroOp en)
-   script <- rdPointer rdfd
-   -- TODO replace script by ptr in PerPlane
-   state
-   | conf == (hotkeyConf en) = do
-   exOpcode rdfd (keyOp en)
-   key <- rdChar rdfd
-   exOpcode rdfd (hotkeyOp en)
-   script <- rdPointer rdfd
-   wrOpcode wrfd src
-   wrPointer wrfd ptr
-   fmap0 hotkeyScript setHotkeyScript (fromIntegral key) script state
-   | otherwise = undefined
-
-windowIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-windowIter rdfd wrfd en file plane conf state
-   | conf == (clickConf en) = undefined
-   -- TODO send Query based on script saved under file and plane
-   | conf == (pressConf en) = undefined
-   -- TODO send Query based on saved script
-   | otherwise = undefined
 
 data Enumeration = Enumeration {
    -- Sideband
@@ -727,7 +746,6 @@ main = do
    regionChangeV <- (newCString "RegionChange") >>= enumerate
    textChangeV <- (newCString "TextChange") >>= enumerate
    changesV <- (newCString "Changes") >>= enumerate
-
    mainLoop rdfd wrfd Enumeration {
    -- Sideband
    -- TODO for new Query pointer
