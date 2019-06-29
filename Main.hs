@@ -21,7 +21,8 @@ module Main where
 import Foreign.C
 import Foreign.Ptr
 import System.Environment
-import AffTopo.Naive
+import Data.Vector hiding (map)
+import AffTopo.Naive hiding (Vector)
 
 foreign import ccall setDebug :: CInt -> IO ()
 foreign import ccall enumerate :: Ptr CChar -> IO CInt
@@ -77,6 +78,11 @@ foreign import ccall wrFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
 foreign import ccall wrDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
 foreign import ccall exOpcode :: CInt -> CInt -> IO ()
 foreign import ccall hello :: CString -> IO CString
+
+data State = State {
+   macroScript :: Vector (Vector (Ptr ())),
+   hotkeyScript :: Vector (Ptr ())
+}
 
 data Enumeration = Enumeration {
    -- Sideband
@@ -367,10 +373,6 @@ toInt = fmap (fromInteger . toInteger)
 
 toCInt :: Integral a => a -> CInt
 toCInt a = fromInteger (toInteger a)
-
-data State = State {
-   macros :: [(CInt,CInt,Ptr ())],
-   hotkeys :: [(CChar,Ptr ())]}
 
 emptyState :: IO State
 emptyState = undefined
@@ -976,14 +978,15 @@ readIter rdfd wrfd en file plane conf state
    state
    | conf == (macroConf en) = do
    exOpcode rdfd (macroOp en)
-   script <- rdPointer rdfd
-   fmap (\x -> x {macros = (file,plane,script):(macros x)}) state
+   ptr <- rdPointer rdfd
+   -- TODO replace script by ptr in PerPlane
+   state
    | conf == (hotkeyConf en) = do
    exOpcode rdfd (keyOp en)
    key <- rdChar rdfd
-   exOpcode rdfd (macroOp en)
-   script <- rdPointer rdfd
-   fmap (\x -> x {hotkeys = (key,script):(hotkeys x)}) state
+   exOpcode rdfd (hotkeyOp en)
+   ptr <- rdPointer rdfd
+   fmap (\x -> x {hotkeyScript = (hotkeyScript x) // [(fromIntegral key,ptr)]}) state
    | otherwise = undefined
 
 windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
