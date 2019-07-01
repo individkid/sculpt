@@ -358,7 +358,7 @@ enum Opcode {
 	// Sideband
 	// TODO for new Query pointer
 	// Message
-	ReadOp, WriteOp, ScriptOp, WindowOp, CommandOp,
+	ReadOp, WriteOp, ScriptOp, WindowOp, CommandOp, ExitOp,
 	// Command
 	FileOp,
 	SourceOp,

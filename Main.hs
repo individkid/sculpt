@@ -25,18 +25,13 @@ import Data.Vector hiding (map,replicate,length)
 import AffTopo.Naive hiding (Vector)
 
 data State = State {
-   macroData :: Vector (Vector (Ptr ())),
    macroFunc :: Vector (Vector CInt),
    macroSpecify :: Vector (Vector [CInt]),
    macroScript :: Vector (Vector (Ptr ())),
-   hotkeyData :: Vector (Ptr ()),
    hotkeyFunc :: Vector CInt,
    hotkeySpecify :: Vector [CInt],
    hotkeyScript :: Vector (Ptr ())
 }
-
-setMacroData :: State -> Vector (Vector (Ptr ())) -> State
-setMacroData a b = a {macroData = b}
 
 setMacroFunc :: State -> Vector (Vector CInt) -> State
 setMacroFunc a b = a {macroFunc = b}
@@ -46,9 +41,6 @@ setMacroSpecify a b = a {macroSpecify = b}
 
 setMacroScript :: State -> Vector (Vector (Ptr ())) -> State
 setMacroScript a b = a {macroScript = b}
-
-setHotkeyData :: State -> Vector (Ptr ()) -> State
-setHotkeyData a b = a {hotkeyData = b}
 
 setHotkeyFunc :: State -> Vector CInt -> State
 setHotkeyFunc a b = a {hotkeyFunc = b}
@@ -111,22 +103,32 @@ mainLoop :: CInt -> CInt -> Enumeration -> IO State -> IO State
 mainLoop rdfd wrfd en state = do
    src <- rdOpcode rdfd
    ptr <- rdPointer rdfd
+   mainLoop rdfd wrfd en (
+      (mainIter rdfd wrfd en src state) <*
+      (wrOpcode wrfd (readOp en)) <*
+      (wrPointer wrfd ptr))
+
+mainIter :: CInt -> CInt -> Enumeration -> CInt -> IO State -> IO State
+mainIter rdfd wrfd en src state
+   | src == (readOp en) = dataIter rdfd wrfd en readIter state
+   | src == (windowOp en) = dataIter rdfd wrfd en windowIter state
+   | src == (exitOp en) = undefined
+   | otherwise = undefined
+
+dataIter :: CInt -> CInt -> Enumeration ->
+   (CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State) ->
+   IO State -> IO State
+dataIter rdfd wrfd en iter state = do
    exOpcode rdfd (fileOp en)
    file <- rdInt rdfd
    exOpcode rdfd (planeOp en)
    plane <- rdInt rdfd
    exOpcode rdfd (confOp en)
    conf <- rdConfigure rdfd
-   mainLoop rdfd wrfd en (mainIter rdfd wrfd en src ptr file plane conf state)
+   iter rdfd wrfd en file plane conf state
 
-mainIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-mainIter rdfd wrfd en src ptr file plane conf state
-   | src == (readOp en) = readIter rdfd wrfd en ptr file plane conf state
-   | src == (windowOp en) = windowIter rdfd wrfd en ptr file plane conf state
-   | otherwise = undefined
-
-readIter :: CInt -> CInt -> Enumeration -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-readIter rdfd wrfd en ptr file plane conf state
+readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
+readIter rdfd wrfd en file plane conf state
    | conf == (onceConf en) = do
    exOpcode rdfd (funcOp en)
    func <- rdFunction rdfd
@@ -136,8 +138,6 @@ readIter rdfd wrfd en ptr file plane conf state
    specify <- rdInts rdfd count
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
-   wrOpcode wrfd (readOp en)
-   wrPointer wrfd ptr
    queryIter wrfd en func specify script state
    | conf == (macroConf en) = do
    exOpcode rdfd (funcOp en)
@@ -148,7 +148,7 @@ readIter rdfd wrfd en ptr file plane conf state
    specify <- rdInts rdfd count
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
-   macroIter ptr file plane func specify script state
+   macroIter file plane func specify script state
    | conf == (hotkeyConf en) = do
    exOpcode rdfd (keyOp en)
    key <- rdChar rdfd
@@ -160,11 +160,11 @@ readIter rdfd wrfd en ptr file plane conf state
    specify <- rdInts rdfd count
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
-   hotkeyIter ptr key func specify script state
+   hotkeyIter key func specify script state
    | otherwise = undefined
 
-windowIter :: CInt -> CInt -> Enumeration -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-windowIter rdfd wrfd en ptr file plane conf state
+windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
+windowIter rdfd wrfd en file plane conf state
    | conf == (clickConf en) = do
    func <- fmap (\x -> (get2 file plane (macroFunc x))) state
    specify <- fmap (\x -> (get2 file plane (macroSpecify x))) state
@@ -193,17 +193,15 @@ queryIter wrfd en func specify script state
    wrInts wrfd ints
    state
 
-macroIter :: Ptr () -> CInt -> CInt -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
-macroIter ptr file plane func specify script state = let
-   state1 = rmw2 macroData setMacroData file plane ptr state
-   state2 = rmw2 macroFunc setMacroFunc file plane func state1
+macroIter :: CInt -> CInt -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
+macroIter file plane func specify script state = let
+   state2 = rmw2 macroFunc setMacroFunc file plane func state
    state3 = rmw2 macroSpecify setMacroSpecify file plane specify state2
    in rmw2 macroScript setMacroScript file plane script state3
 
-hotkeyIter :: Ptr () -> CChar -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
-hotkeyIter ptr key func specify script state = let
-   state1 = rmw1 hotkeyData setHotkeyData key ptr state
-   state2 = rmw1 hotkeyFunc setHotkeyFunc key func state1
+hotkeyIter :: CChar -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
+hotkeyIter key func specify script state = let
+   state2 = rmw1 hotkeyFunc setHotkeyFunc key func state
    state3 = rmw1 hotkeySpecify setHotkeySpecify key specify state2
    in rmw1 hotkeyScript setHotkeyScript key script state3
 
@@ -276,6 +274,7 @@ data Enumeration = Enumeration {
    scriptOp :: CInt,
    windowOp :: CInt,
    commandOp :: CInt,
+   exitOp :: CInt,
    -- Command
    fileOp :: CInt,
    sourceOp :: CInt,
@@ -570,6 +569,7 @@ main = do
    scriptOpV <- (newCString "ScriptOp") >>= enumerate
    windowOpV <- (newCString "WindowOp") >>= enumerate
    commandOpV <- (newCString "CommandOp") >>= enumerate
+   exitOpV <- (newCString "ExitOp") >>= enumerate
    -- Command
    fileOpV <- (newCString "FileOp") >>= enumerate
    sourceOpV <- (newCString "SourceOp") >>= enumerate
@@ -860,6 +860,7 @@ main = do
    scriptOp = scriptOpV,
    windowOp = windowOpV,
    commandOp = commandOpV,
+   exitOp = exitOpV,
    -- Command
    fileOp = fileOpV,
    sourceOp = sourceOpV,
