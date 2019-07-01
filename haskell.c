@@ -53,7 +53,6 @@ const char *enamerate(enum Opcode opcode)
 	case (ScriptOp): return "ScriptOp";
 	case (WindowOp): return "WindowOp";
 	case (CommandOp): return "CommandOp";
-	case (ExitOp): return "ExitOp";
 	// Command
 	case (FileOp): return "FileOp";
 	case (SourceOp): return "SourceOp";
@@ -208,7 +207,6 @@ int enumerate(char *name)
 	if (strcmp(name,"ScriptOp") == 0) return ScriptOp;
 	if (strcmp(name,"WindowOp") == 0) return WindowOp;
 	if (strcmp(name,"CommandOp") == 0) return CommandOp;
-	if (strcmp(name,"ExitOp") == 0) return ExitOp;
 	// Command
 	if (strcmp(name,"FileOp") == 0) return FileOp;
 	if (strcmp(name,"SourceOp") == 0) return SourceOp;
@@ -497,8 +495,9 @@ void *rdPointer(int fd)
 
 int rdOpcode(int fd)
 {
-	enum Opcode opcode;
-	if (read(fd,&opcode,sizeof(opcode)) != sizeof(opcode)) error("read failed",errno,__FILE__,__LINE__);
+	enum Opcode opcode; int ret;
+	if ((ret = read(fd,&opcode,sizeof(opcode))) < 0) error("read failed",errno,__FILE__,__LINE__);
+	if (ret == 0) exit(0);
 	if (DEBUG & HASKELL_DEBUG) printf("rdOpcode: %d %s\n",getpid(),enamerate(opcode));
 	return opcode;
 }

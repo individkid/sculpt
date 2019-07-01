@@ -110,15 +110,14 @@ mainLoop rdfd wrfd en state = do
 
 mainIter :: CInt -> CInt -> Enumeration -> CInt -> IO State -> IO State
 mainIter rdfd wrfd en src state
-   | src == (readOp en) = dataIter rdfd wrfd en readIter state
-   | src == (windowOp en) = dataIter rdfd wrfd en windowIter state
-   | src == (exitOp en) = undefined
+   | src == (readOp en) = mainIterF rdfd wrfd en readIter state
+   | src == (windowOp en) = mainIterF rdfd wrfd en windowIter state
    | otherwise = undefined
 
-dataIter :: CInt -> CInt -> Enumeration ->
+mainIterF :: CInt -> CInt -> Enumeration ->
    (CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State) ->
    IO State -> IO State
-dataIter rdfd wrfd en iter state = do
+mainIterF rdfd wrfd en iter state = do
    exOpcode rdfd (fileOp en)
    file <- rdInt rdfd
    exOpcode rdfd (planeOp en)
@@ -129,29 +128,18 @@ dataIter rdfd wrfd en iter state = do
 
 readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
 readIter rdfd wrfd en file plane conf state
-   | conf == (onceConf en) = do
-   exOpcode rdfd (funcOp en)
-   func <- rdFunction rdfd
-   exOpcode rdfd (countOp en)
-   count <- rdInt rdfd
-   exOpcode rdfd (specifyOp en)
-   specify <- rdInts rdfd count
-   exOpcode rdfd (scriptOp en)
-   script <- rdPointer rdfd
-   queryIter wrfd en func specify script state
-   | conf == (macroConf en) = do
-   exOpcode rdfd (funcOp en)
-   func <- rdFunction rdfd
-   exOpcode rdfd (countOp en)
-   count <- rdInt rdfd
-   exOpcode rdfd (specifyOp en)
-   specify <- rdInts rdfd count
-   exOpcode rdfd (scriptOp en)
-   script <- rdPointer rdfd
-   macroIter file plane func specify script state
+   | conf == (onceConf en) = readIterF rdfd en (queryIter wrfd en) state
+   | conf == (macroConf en) = readIterF rdfd en (macroIter file plane) state
    | conf == (hotkeyConf en) = do
    exOpcode rdfd (keyOp en)
    key <- rdChar rdfd
+   readIterF rdfd en (hotkeyIter key) state
+   | otherwise = undefined
+
+readIterF :: CInt -> Enumeration ->
+   (CInt -> [CInt] -> Ptr () -> IO State -> IO State) ->
+   IO State -> IO State
+readIterF rdfd en iter state = do
    exOpcode rdfd (funcOp en)
    func <- rdFunction rdfd
    exOpcode rdfd (countOp en)
@@ -160,8 +148,7 @@ readIter rdfd wrfd en file plane conf state
    specify <- rdInts rdfd count
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
-   hotkeyIter key func specify script state
-   | otherwise = undefined
+   iter func specify script state
 
 windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
 windowIter rdfd wrfd en file plane conf state
@@ -274,7 +261,6 @@ data Enumeration = Enumeration {
    scriptOp :: CInt,
    windowOp :: CInt,
    commandOp :: CInt,
-   exitOp :: CInt,
    -- Command
    fileOp :: CInt,
    sourceOp :: CInt,
@@ -569,7 +555,6 @@ main = do
    scriptOpV <- (newCString "ScriptOp") >>= enumerate
    windowOpV <- (newCString "WindowOp") >>= enumerate
    commandOpV <- (newCString "CommandOp") >>= enumerate
-   exitOpV <- (newCString "ExitOp") >>= enumerate
    -- Command
    fileOpV <- (newCString "FileOp") >>= enumerate
    sourceOpV <- (newCString "SourceOp") >>= enumerate
@@ -860,7 +845,6 @@ main = do
    scriptOp = scriptOpV,
    windowOp = windowOpV,
    commandOp = commandOpV,
-   exitOp = exitOpV,
    -- Command
    fileOp = fileOpV,
    sourceOp = sourceOpV,
