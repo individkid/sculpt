@@ -20,8 +20,6 @@ module Main where
 
 import Foreign.C
 import Foreign.Ptr
-import Foreign.Marshal.Alloc
-import Foreign.Marshal.Array
 import System.Environment
 import Data.Vector hiding (map,replicate,length)
 import AffTopo.Naive hiding (Vector)
