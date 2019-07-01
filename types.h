@@ -211,6 +211,7 @@ enum Configure {
 	SubtractiveConf,
 	Configures};
 enum Function {
+	AttachedFunc,
 	Functions};
 struct Data // (Read,Window) -> Polytope
 {
@@ -226,12 +227,8 @@ struct Data // (Read,Window) -> Polytope
 	struct {int versor; float *vector;};
 	// Read->PictureConf->Polytope
 	char *filename;
-	// Read->(OnceConf,ChangeConf)->Polytope
-	struct {enum Function func; int count; int *specify; char *script;};
-	// Read->HotkeyConf->Polytope
-	struct {char key; char *hotkey;};
-	// Read->MacroConf->Polytope
-	char *macro;
+	// Read->(OnceConf,ChangeConf,HotkeyConf,MacroConf)->Polytope
+	struct {char key; enum Function func; int count; int *specify; char *script;};
 	// Window->RelativeConf->Polytope
 	struct {float *fixed; enum TopologyMode relative;};
 	// Window->AbsoluteConf->Polytope
@@ -335,6 +332,11 @@ struct State // (Polytope,Window,Script)->Write
 };
 
 // Query
+enum Given {
+	DoublesGiv,
+	FloatsGiv,
+	IntsGiv,
+	Givens};
 struct Smart {
 	int count;
 	char *ptr;
@@ -344,6 +346,7 @@ struct Query
 	struct Query *next; int file;
  	struct Smart smart;
 	double value; // for response to System
+ 	enum Given given;
  	int length;
 	union {
 	double *doubles; // for request from System
@@ -415,8 +418,9 @@ enum Opcode {
 	/*TextOp,*/
 	// Query
 	/*FileOp,*/ SmartOp,
- 	LengthOp,
 	/*ValueOp,*/
+ 	LengthOp,
+ 	GivenOp,
 	DoublesOp,
 	FloatsOp,
 	IntsOp,

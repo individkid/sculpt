@@ -29,8 +29,6 @@ private:
 	void get(int fd, Render *&render);
 	void get(int fd, Query *&query);
 	void get(int fd, Data *&data);
-	void get(int fd, char *&text);
-	void put(int fd, char *text);
 public:
 	Stream(const char *file, int line) : Pools(file,line) {}
 	Opcode get(int fd, Data *&data, Query *&query, Command *&command);

@@ -20,21 +20,18 @@ module Main where
 
 import Foreign.C
 import Foreign.Ptr
+import Foreign.Marshal.Alloc
+import Foreign.Marshal.Array
 import System.Environment
-import Data.Vector hiding (map)
+import Data.Vector hiding (map,replicate,length)
 import AffTopo.Naive hiding (Vector)
 
 data State = State {
-   macroSource :: Vector (Vector CInt),
    macroData :: Vector (Vector (Ptr ())),
    macroScript :: Vector (Vector (Ptr ())),
-   hotkeySource :: Vector CInt,
    hotkeyData :: Vector (Ptr ()),
    hotkeyScript :: Vector (Ptr ())
 }
-
-setMacroSource :: State -> Vector (Vector CInt) -> State
-setMacroSource a b = a {macroSource = b}
 
 setMacroData :: State -> Vector (Vector (Ptr ())) -> State
 setMacroData a b = a {macroData = b}
@@ -42,23 +39,11 @@ setMacroData a b = a {macroData = b}
 setMacroScript :: State -> Vector (Vector (Ptr ())) -> State
 setMacroScript a b = a {macroScript = b}
 
-setHotkeySource :: State -> Vector CInt -> State
-setHotkeySource a b = a {hotkeySource = b}
-
 setHotkeyData :: State -> Vector (Ptr ()) -> State
 setHotkeyData a b = a {hotkeyData = b}
 
 setHotkeyScript :: State -> Vector (Ptr ()) -> State
 setHotkeyScript a b = a {hotkeyScript = b}
-
-toInt :: Integral a => IO a -> IO Int
-toInt = fmap (fromInteger . toInteger)
-
-toCInt :: Integral a => a -> CInt
-toCInt a = fromInteger (toInteger a)
-
-emptyState :: IO State
-emptyState = undefined
 
 set2 :: CInt -> CInt -> t -> Vector (Vector t) -> Vector (Vector t)
 set2 a b c v = v // [((fromIntegral a), (v ! (fromIntegral a)) // [((fromIntegral b), c)])]
@@ -71,6 +56,30 @@ rmw2 f g a b c u = fmap (\x -> (g x (set2 a b c (f x)))) u
 
 rmw1 :: (State -> Vector t) -> (State -> Vector t -> State) -> CInt -> t -> IO State -> IO State
 rmw1 f g a b u = fmap (\x -> (g x (set1 a b (f x)))) u
+
+rdInts :: CInt -> CInt -> IO [CInt]
+rdInts rdfd count
+   | count == 0 = return []
+   | count > 0 = do
+   int <- rdInt rdfd
+   ints <- rdInts rdfd (count - 1)
+   return (int:ints)
+   | otherwise = undefined
+
+wrInts :: CInt -> [CInt] -> IO ()
+wrInts wrfd [] = return ()
+wrInts wrfd (a:b) = do
+   wrInt wrfd a
+   wrInts wrfd b
+
+toInt :: Integral a => a -> Int
+toInt = fromInteger . toInteger
+
+toCInt :: Integral a => Int -> a
+toCInt = fromInteger . toInteger
+
+emptyState :: IO State
+emptyState = undefined
 
 mainLoop :: CInt -> CInt -> Enumeration -> IO State -> IO State
 mainLoop rdfd wrfd en state = do
@@ -86,34 +95,29 @@ mainLoop rdfd wrfd en state = do
 
 mainIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
 mainIter rdfd wrfd en src ptr file plane conf state
-   | src == (readOp en) = readIter rdfd wrfd en src ptr file plane conf state
-   | src == (windowOp en) = windowIter rdfd wrfd en src ptr file plane conf state
+   | src == (readOp en) = readIter rdfd wrfd en ptr file plane conf state
+   | src == (windowOp en) = windowIter rdfd wrfd en ptr file plane conf state
    | otherwise = undefined
 
-readIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-readIter rdfd wrfd en src ptr file plane conf state
+readIter :: CInt -> CInt -> Enumeration -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
+readIter rdfd wrfd en ptr file plane conf state
    | conf == (onceConf en) = do
    exOpcode rdfd (funcOp en)
    func <- rdFunction rdfd
+   exOpcode rdfd (countOp en)
+   count <- rdInt rdfd
+   exOpcode rdfd (specifyOp en)
+   specify <- rdInts rdfd count
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
-   wrOpcode wrfd src
+   wrOpcode wrfd (readOp en)
    wrPointer wrfd ptr
-   -- TODO send Query based on script
-   state
-   | conf == (macroConf en) = do
-   exOpcode rdfd (macroOp en)
-   script <- rdPointer rdfd
-   macroIter src ptr file plane script state
-   | conf == (hotkeyConf en) = do
-   exOpcode rdfd (keyOp en)
-   key <- rdChar rdfd
-   exOpcode rdfd (hotkeyOp en)
-   script <- rdPointer rdfd
-   hotkeyIter src ptr (fromIntegral key) script state
+   queryIter wrfd en func count specify script state
+   | conf == (macroConf en) = undefined
+   | conf == (hotkeyConf en) = undefined
    | otherwise = undefined
 
-windowIter :: CInt -> CInt -> Enumeration -> CInt -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
+windowIter :: CInt -> CInt -> Enumeration -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
 windowIter rdfd wrfd en file plane conf state
    | conf == (clickConf en) = undefined
    -- TODO send Query based on script saved under file and plane
@@ -121,17 +125,32 @@ windowIter rdfd wrfd en file plane conf state
    -- TODO send Query based on script saved under press
    | otherwise = undefined
 
-macroIter :: CInt -> Ptr () -> CInt -> CInt -> Ptr () -> IO State -> IO State
-macroIter src ptr file plane script state = let
-   state1 = rmw2 macroSource setMacroSource file plane src state
-   state2 = rmw2 macroData setMacroData file plane ptr state1
-   in rmw2 macroScript setMacroScript file plane script state2
+queryIter :: CInt -> Enumeration -> CInt -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
+queryIter wrfd en func count specify script state
+   | func == (attachedFunc en) = do
+   wrOpcode wrfd (scriptOp en)
+   wrPointer wrfd script
+   ints <- attachedIter specify state
+   wrOpcode wrfd (givenOp en)
+   wrGiven wrfd (intsGiv en)
+   wrOpcode wrfd (lengthOp en)
+   wrInt wrfd (toCInt (length ints))
+   wrOpcode wrfd (intsOp en)
+   wrInts wrfd ints
+   state
 
-hotkeyIter :: CInt -> Ptr () -> CInt -> Ptr () -> IO State -> IO State
-hotkeyIter src ptr key script state = let
-   state1 = rmw1 hotkeySource setHotkeySource key src state
-   state2 = rmw1 hotkeyData setHotkeyData key ptr state1
-   in rmw1 hotkeyScript setHotkeyScript key script state2
+macroIter :: Ptr () -> CInt -> CInt -> Ptr () -> IO State -> IO State
+macroIter ptr file plane script state = let
+   state1 = rmw2 macroData setMacroData file plane ptr state
+   in rmw2 macroScript setMacroScript file plane script state1
+
+hotkeyIter :: Ptr () -> CInt -> Ptr () -> IO State -> IO State
+hotkeyIter ptr key script state = let
+   state1 = rmw1 hotkeyData setHotkeyData key ptr state
+   in rmw1 hotkeyScript setHotkeyScript key script state1
+
+attachedIter :: [CInt] -> IO State -> IO [CInt]
+attachedIter specify state = undefined
 
 foreign import ccall setDebug :: CInt -> IO ()
 foreign import ccall enumerate :: Ptr CChar -> IO CInt
@@ -142,6 +161,7 @@ foreign import ccall rdSource :: CInt -> IO CInt
 foreign import ccall rdConfigure :: CInt -> IO CInt
 foreign import ccall rdEvent :: CInt -> IO CInt
 foreign import ccall rdChange :: CInt -> IO CInt
+foreign import ccall rdGiven :: CInt -> IO CInt
 foreign import ccall rdSubconf :: CInt -> IO CInt
 foreign import ccall rdSculpt :: CInt -> IO CInt
 foreign import ccall rdClickMode :: CInt -> IO CInt
@@ -160,10 +180,6 @@ foreign import ccall rdChar :: CInt -> IO CChar
 foreign import ccall rdInt :: CInt -> IO CInt
 foreign import ccall rdFloat :: CInt -> IO CFloat
 foreign import ccall rdDouble :: CInt -> IO CDouble
-foreign import ccall rdChars :: CInt -> CInt -> Ptr CChar -> IO ()
-foreign import ccall rdInts :: CInt -> CInt -> Ptr CInt -> IO ()
-foreign import ccall rdFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
-foreign import ccall rdDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
 
 foreign import ccall wrPointer :: CInt -> Ptr () -> IO ()
 foreign import ccall wrOpcode :: CInt -> CInt -> IO ()
@@ -171,6 +187,7 @@ foreign import ccall wrSource :: CInt -> CInt -> IO ()
 foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
 foreign import ccall wrEvent :: CInt -> CInt -> IO ()
 foreign import ccall wrChange :: CInt -> CInt -> IO ()
+foreign import ccall wrGiven :: CInt -> CInt -> IO ()
 foreign import ccall wrSubconf :: CInt -> CInt -> IO ()
 foreign import ccall wrSculpt :: CInt -> CInt -> IO CInt
 foreign import ccall wrClickMode :: CInt -> CInt -> IO CInt
@@ -189,10 +206,6 @@ foreign import ccall wrChar :: CInt -> CChar -> IO ()
 foreign import ccall wrInt :: CInt -> CInt -> IO ()
 foreign import ccall wrFloat :: CInt -> CFloat -> IO ()
 foreign import ccall wrDouble :: CInt -> CDouble -> IO ()
-foreign import ccall wrChars :: CInt -> CInt -> Ptr CChar -> IO ()
-foreign import ccall wrInts :: CInt -> CInt -> Ptr CInt -> IO ()
-foreign import ccall wrFloats :: CInt -> CInt -> Ptr CFloat -> IO ()
-foreign import ccall wrDoubles :: CInt -> CInt -> Ptr CDouble -> IO ()
 
 foreign import ccall exOpcode :: CInt -> CInt -> IO ()
 
@@ -279,13 +292,11 @@ data Enumeration = Enumeration {
    versorOp :: CInt,
    vectorOp :: CInt,
    filenameOp :: CInt,
+   keyOp :: CInt,
    funcOp :: CInt,
    {-countOp :: CInt,-}
    specifyOp :: CInt,
    {-scriptOp :: CInt,-}
-   keyOp :: CInt,
-   hotkeyOp :: CInt,
-   macroOp :: CInt,
    {-fixedOp :: CInt,-}
    relativeOp :: CInt,
    absoluteOp :: CInt,
@@ -339,6 +350,7 @@ data Enumeration = Enumeration {
    {-fileOp :: CInt,-}
    smartOp :: CInt,
    {-valueOp :: CInt,-}
+   givenOp :: CInt,
    lengthOp :: CInt,
    doublesOp :: CInt,
    floatsOp :: CInt,
@@ -452,6 +464,7 @@ data Enumeration = Enumeration {
    subtractiveConf :: CInt,
    configures :: CInt,
    -- Function
+   attachedFunc :: CInt,
    functions :: CInt,
    -- Event
    startEvent :: CInt,
@@ -480,11 +493,16 @@ data Enumeration = Enumeration {
    planeChange :: CInt,
    regionChange :: CInt,
    textChange :: CInt,
-   changes :: CInt}
+   changes :: CInt,
+   -- Given
+   doublesGiv :: CInt,
+   floatsGiv :: CInt,
+   intsGiv :: CInt,
+   givens :: CInt}
 
 main = do
    print (holes 5 [2,3,4])
-   setDebug (toCInt 1)
+   setDebug (fromIntegral 1)
    [rdfd,wrfd] <- fmap (map read) getArgs
    -- Sideband
    -- TODO for new Query pointer
@@ -568,14 +586,11 @@ main = do
    versorOpV <- (newCString "VersorOp") >>= enumerate
    vectorOpV <- (newCString "VectorOp") >>= enumerate
    filenameOpV <- (newCString "FilenameOp") >>= enumerate
+   keyOpV <- (newCString "KeyOp") >>= enumerate
    funcOpV <- (newCString "FuncOp") >>= enumerate
    {-countOpV <- (newCString "CountOp") >>= enumerate-}
    specifyOpV <- (newCString "SpecifyOp") >>= enumerate
    {-scriptOpV <- (newCString "ScriptOp") >>= enumerate-}
-   keyOpV <- (newCString "KeyOp") >>= enumerate
-   hotkeyOpV <- (newCString "HotkeyOp") >>= enumerate
-   hotkeyOpV <- (newCString "HotkeyOp") >>= enumerate
-   macroOpV <- (newCString "MacroOp") >>= enumerate
    {-fixedOpV <- (newCString "FixedOp") >>= enumerate-}
    relativeOpV <- (newCString "RelativeOp") >>= enumerate
    absoluteOpV <- (newCString "AbsoluteOp") >>= enumerate
@@ -629,6 +644,7 @@ main = do
    {-fileOpV <- (newCString "FileOp") >>= enumerate-}
    smartOpV <- (newCString "SmartOp") >>= enumerate
    {-valueOpV <- (newCString "ValueOp") >>= enumerate-}
+   givenOpV <- (newCString "GivenOp") >>= enumerate
    lengthOpV <- (newCString "LengthOp") >>= enumerate
    doublesOpV <- (newCString "DoublesOp") >>= enumerate
    floatsOpV <- (newCString "FloatsOp") >>= enumerate
@@ -742,6 +758,7 @@ main = do
    subtractiveConfV <- (newCString "SubtractiveConf") >>= enumerate
    configuresV <- (newCString "Configures") >>= enumerate
    -- Function
+   attachedFuncV <- (newCString "AttachedFunc") >>= enumerate
    functionsV <- (newCString "Functions") >>= enumerate
    -- Event
    startEventV <- (newCString "StartEvent") >>= enumerate
@@ -771,6 +788,11 @@ main = do
    regionChangeV <- (newCString "RegionChange") >>= enumerate
    textChangeV <- (newCString "TextChange") >>= enumerate
    changesV <- (newCString "Changes") >>= enumerate
+   -- Given
+   doublesGivV <- (newCString "DoublesGiv") >>= enumerate
+   floatsGivV <- (newCString "FloatsGiv") >>= enumerate
+   intsGivV <- (newCString "IntsGiv") >>= enumerate
+   givensV <- (newCString "Givens") >>= enumerate
    mainLoop rdfd wrfd Enumeration {
    -- Sideband
    -- TODO for new Query pointer
@@ -854,13 +876,11 @@ main = do
    versorOp = versorOpV,
    vectorOp = vectorOpV,
    filenameOp = filenameOpV,
+   keyOp = keyOpV,
    funcOp = funcOpV,
    {-countOp = countOpV,-}
    specifyOp = specifyOpV,
    {-scriptOp = scriptOpV,-}
-   keyOp = keyOpV,
-   hotkeyOp = hotkeyOpV,
-   macroOp = macroOpV,
    {-fixedOp = fixedOpV,-}
    relativeOp = relativeOpV,
    absoluteOp = absoluteOpV,
@@ -913,8 +933,9 @@ main = do
    -- Query
    {-fileOp = fileOpV,-}
    smartOp = smartOpV,
-   lengthOp = lengthOpV,
    {-valueOp = valueOpV,-}
+   givenOp = givenOpV,
+   lengthOp = lengthOpV,
    doublesOp = doublesOpV,
    floatsOp = floatsOpV,
    intsOp = intsOpV,
@@ -1027,6 +1048,7 @@ main = do
    subtractiveConf = subtractiveConfV,
    configures = configuresV,
    -- Function
+   attachedFunc = attachedFuncV,
    functions = functionsV,
    -- Event
    startEvent = startEventV,
@@ -1055,4 +1077,9 @@ main = do
    planeChange = planeChangeV,
    regionChange = regionChangeV,
    textChange = textChangeV,
-   changes = changesV} emptyState
+   changes = changesV,
+   -- Given
+   doublesGiv = doublesGivV,
+   floatsGiv = floatsGivV,
+   intsGiv = intsGivV,
+   givens = givensV} emptyState

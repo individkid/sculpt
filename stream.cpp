@@ -52,21 +52,6 @@ void Stream::get(int fd, Data *&data)
 	default: error("unimplemented configure",data->conf,__FILE__,__LINE__);}
 }
 
-void Stream::get(int fd, char *&text)
-{
-	int count = rdInt(fd);
-	text = Pools::chars.get(count);
-	rdChars(fd,count,text);
-	if (text[count-1]) error("invalid text",0,__FILE__,__LINE__);
-}
-
-void Stream::put(int fd, char *text)
-{
-	int count = strlen(text)+1;
-	wrInt(fd,count);
-	wrChars(fd,count,text);
-}
-
 Opcode Stream::get(int fd, Data *&data, Query *&query, Command *&command)
 {
 	data = 0; query = 0; command = 0;

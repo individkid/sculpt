@@ -27,6 +27,7 @@ int rdSource(int fd);
 int rdConfigure(int fd);
 int rdEvent(int fd);
 int rdChange(int fd);
+int rdGiven(int fd);
 int rdSubconf(int fd);
 int rdSculpt(int fd);
 int rdClickMode(int fd);
@@ -45,10 +46,6 @@ char rdChar(int fd);
 int rdInt(int fd);
 float rdFloat(int fd);
 double rdDouble(int fd);
-void rdChars(int fd, int count, char *chars);
-void rdInts(int fd, int count, int *ints);
-void rdFloats(int fd, int count, float *floats);
-void rdDoubles(int fd, int count, double *doubles);
 
 void wrPointer(int fd, void *val);
 void wrOpcode(int fd, int val);
@@ -56,6 +53,7 @@ void wrSource(int fd, int val);
 void wrConfigure(int fd, int val);
 void wrEvent(int fd, int val);
 void wrChange(int fd, int val);
+void wrGiven(int fd, int val);
 void wrSubconf(int fd, int val);
 void wrSculpt(int fd, int val);
 void wrClickMode(int fd, int val);
@@ -74,10 +72,6 @@ void wrChar(int fd, char val);
 void wrInt(int fd, int val);
 void wrFloat(int fd, float val);
 void wrDouble(int fd, double val);
-void wrChars(int fd, int count, char *chars);
-void wrInts(int fd, int count, int *ints);
-void wrFloats(int fd, int count, float *floats);
-void wrDoubles(int fd, int count, double *doubles);
 
 void exOpcode(int fd, int op);
 

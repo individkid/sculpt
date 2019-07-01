@@ -187,6 +187,7 @@ const char *enamerate(enum Opcode opcode)
 	/*case (FileOp): return "FileOp";*/
 	case (SmartOp): return "SmartOp";
 	/*case (ValueOp): return "ValueOp"*/
+ 	case (GivenOp): return "GivenOp";
  	case (LengthOp): return "LengthOp";
 	case (DoublesOp): return "DoublesOp";
 	case (FloatsOp): return "FloatsOp";
@@ -331,6 +332,7 @@ int enumerate(char *name)
 	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
 	if (strcmp(name,"SmartOp") == 0) return SmartOp;
 	/*if (strcmp(name,"ValueOp") == 0) return ValueOp;*/
+	if (strcmp(name,"GivenOp") == 0) return GivenOp;
 	if (strcmp(name,"LengthOp") == 0) return LengthOp;
 	if (strcmp(name,"DoublesOp") == 0) return DoublesOp;
 	if (strcmp(name,"FloatsOp") == 0) return FloatsOp;
@@ -444,6 +446,7 @@ int enumerate(char *name)
 	if (strcmp(name,"SubtractiveConf") == 0) return SubtractiveConf;
 	if (strcmp(name,"Configures") == 0) return Configures;
 	// Function
+	if (strcmp(name,"AttachedFunc") == 0) return AttachedFunc;
 	if (strcmp(name,"Functions") == 0) return Functions;
 	// Event
 	if (strcmp(name,"StartEvent") == 0) return StartEvent;
@@ -473,6 +476,11 @@ int enumerate(char *name)
 	if (strcmp(name,"RegionChange") == 0) return RegionChange;
 	if (strcmp(name,"TextChange") == 0) return TextChange;
 	if (strcmp(name,"Changes") == 0) return Changes;
+	// Given
+	if (strcmp(name,"DoublesGiv") == 0) return DoublesGiv;
+	if (strcmp(name,"FloatsGiv") == 0) return FloatsGiv;
+	if (strcmp(name,"IntsGiv") == 0) return IntsGiv;
+	if (strcmp(name,"Givens") == 0) return Givens;
 	fatal("unknown name",0,__FILE__,__LINE__);
 	return -1;
 }
@@ -523,6 +531,14 @@ int rdChange(int fd)
 	if (read(fd,&change,sizeof(change)) != sizeof(change)) error ("read failed",errno,__FILE__,__LINE__);
 	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),change);
 	return change;
+}
+
+int rdGiven(int fd)
+{
+	enum Given given;
+	if (read(fd,&given,sizeof(given)) != sizeof(given)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),given);
+	return given;
 }
 
 int rdSubconf(int fd)
@@ -669,30 +685,6 @@ double rdDouble(int fd)
 	return val;
 }
 
-void rdChars(int fd, int count, char *chars)
-{
-	if (read(fd,chars,count*sizeof(*chars)) != count*sizeof(*chars)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdChars %d %d\n",getpid(),count);
-}
-
-void rdInts(int fd, int count, int *ints)
-{
-	if (read(fd,ints,count*sizeof(*ints)) != count*sizeof(*ints)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdInts %d %d\n",getpid(),count);
-}
-
-void rdFloats(int fd, int count, float *floats)
-{
-	if (read(fd,floats,count*sizeof(*floats)) != count*sizeof(*floats)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdFloats %d %d\n",getpid(),count);
-}
-
-void rdDoubles(int fd, int count, double *doubles)
-{
-	if (read(fd,doubles,count*sizeof(*doubles)) != count*sizeof(*doubles)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdDoubles %d %d\n",getpid(),count);
-}
-
 void wrPointer(int fd, void *ptr)
 {
 	if (DEBUG & HASKELL_DEBUG) printf("wrPointer %d %p\n",getpid(),ptr);
@@ -732,6 +724,13 @@ void wrChange(int fd, int val)
 	enum Change change = val;
 	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
 	if (write(fd,&change,sizeof(change)) != sizeof(change)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrGiven(int fd, int val)
+{
+	enum Given given = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
+	if (write(fd,&given,sizeof(given)) != sizeof(given)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrSubconf(int fd, int val)
@@ -854,30 +853,6 @@ void wrDouble(int fd, double val)
 {
 	if (DEBUG & HASKELL_DEBUG) printf("wrDouble %d %f\n",getpid(),val);
 	if (write(fd,&val,sizeof(val)) != sizeof(val)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrChars(int fd, int count, char *chars)
-{
-	if (DEBUG & HASKELL_DEBUG) printf("wrChars %d %p\n",getpid(),chars);
-	if (write(fd,chars,count*sizeof(*chars)) != count*sizeof(*chars)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrInts(int fd, int count, int *ints)
-{
-	if (DEBUG & HASKELL_DEBUG) printf("wrInts %d %p\n",getpid(),ints);
-	if (write(fd,ints,count*sizeof(*ints)) != count*sizeof(*ints)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrFloats(int fd, int count, float *floats)
-{
-	if (DEBUG & HASKELL_DEBUG) printf("wrFloats %d %p\n",getpid(),floats);
-	if (write(fd,floats,count*sizeof(*floats)) != count*sizeof(*floats)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrDoubles(int fd, int count, double *doubles)
-{
-	if (DEBUG & HASKELL_DEBUG) printf("wrDoubles %d %p\n",getpid(),doubles);
-	if (write(fd,doubles,count*sizeof(*doubles)) != count*sizeof(*doubles)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void exOpcode(int fd, int opcode)
