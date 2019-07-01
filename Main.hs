@@ -26,13 +26,23 @@ import AffTopo.Naive hiding (Vector)
 
 data State = State {
    macroData :: Vector (Vector (Ptr ())),
+   macroFunc :: Vector (Vector CInt),
+   macroSpecify :: Vector (Vector [CInt]),
    macroScript :: Vector (Vector (Ptr ())),
    hotkeyData :: Vector (Ptr ()),
+   hotkeyFunc :: Vector CInt,
+   hotkeySpecify :: Vector [CInt],
    hotkeyScript :: Vector (Ptr ())
 }
 
 setMacroData :: State -> Vector (Vector (Ptr ())) -> State
 setMacroData a b = a {macroData = b}
+
+setMacroFunc :: State -> Vector (Vector CInt) -> State
+setMacroFunc a b = a {macroFunc = b}
+
+setMacroSpecify :: State -> Vector (Vector [CInt]) -> State
+setMacroSpecify a b = a {macroSpecify = b}
 
 setMacroScript :: State -> Vector (Vector (Ptr ())) -> State
 setMacroScript a b = a {macroScript = b}
@@ -40,19 +50,31 @@ setMacroScript a b = a {macroScript = b}
 setHotkeyData :: State -> Vector (Ptr ()) -> State
 setHotkeyData a b = a {hotkeyData = b}
 
+setHotkeyFunc :: State -> Vector CInt -> State
+setHotkeyFunc a b = a {hotkeyFunc = b}
+
+setHotkeySpecify :: State -> Vector [CInt] -> State
+setHotkeySpecify a b = a {hotkeySpecify = b}
+
 setHotkeyScript :: State -> Vector (Ptr ()) -> State
 setHotkeyScript a b = a {hotkeyScript = b}
 
-set2 :: CInt -> CInt -> t -> Vector (Vector t) -> Vector (Vector t)
-set2 a b c v = v // [((fromIntegral a), (v ! (fromIntegral a)) // [((fromIntegral b), c)])]
+get2 :: CInt -> CInt -> Vector (Vector t) -> t
+get2 a b v = (v ! (toInt a)) ! (toInt b)
 
-set1 :: CInt -> t -> Vector t -> Vector t
-set1 a b v = v // [((fromIntegral a), b)]
+get1 :: CChar -> Vector t -> t
+get1 a v = v ! (toInt a)
+
+set2 :: CInt -> CInt -> t -> Vector (Vector t) -> Vector (Vector t)
+set2 a b c v = v // [((toInt a), (v ! (toInt a)) // [((toInt b), c)])]
+
+set1 :: CChar -> t -> Vector t -> Vector t
+set1 a b v = v // [((toInt a), b)]
 
 rmw2 :: (State -> Vector (Vector t)) -> (State -> Vector (Vector t) -> State) -> CInt -> CInt -> t -> IO State -> IO State
 rmw2 f g a b c u = fmap (\x -> (g x (set2 a b c (f x)))) u
 
-rmw1 :: (State -> Vector t) -> (State -> Vector t -> State) -> CInt -> t -> IO State -> IO State
+rmw1 :: (State -> Vector t) -> (State -> Vector t -> State) -> CChar -> t -> IO State -> IO State
 rmw1 f g a b u = fmap (\x -> (g x (set1 a b (f x)))) u
 
 rdInts :: CInt -> CInt -> IO [CInt]
@@ -73,8 +95,14 @@ wrInts wrfd (a:b) = do
 toInt :: Integral a => a -> Int
 toInt = fromInteger . toInteger
 
+toInts :: Integral a => [a] -> [Int]
+toInts = map toInt
+
 toCInt :: Integral a => Int -> a
 toCInt = fromInteger . toInteger
+
+toCInts :: Integral a => [Int] -> [a]
+toCInts = map toCInt
 
 emptyState :: IO State
 emptyState = undefined
@@ -110,21 +138,49 @@ readIter rdfd wrfd en ptr file plane conf state
    script <- rdPointer rdfd
    wrOpcode wrfd (readOp en)
    wrPointer wrfd ptr
-   queryIter wrfd en func count specify script state
-   | conf == (macroConf en) = undefined
-   | conf == (hotkeyConf en) = undefined
+   queryIter wrfd en func specify script state
+   | conf == (macroConf en) = do
+   exOpcode rdfd (funcOp en)
+   func <- rdFunction rdfd
+   exOpcode rdfd (countOp en)
+   count <- rdInt rdfd
+   exOpcode rdfd (specifyOp en)
+   specify <- rdInts rdfd count
+   exOpcode rdfd (scriptOp en)
+   script <- rdPointer rdfd
+   macroIter ptr file plane func specify script state
+   | conf == (hotkeyConf en) = do
+   exOpcode rdfd (keyOp en)
+   key <- rdChar rdfd
+   exOpcode rdfd (funcOp en)
+   func <- rdFunction rdfd
+   exOpcode rdfd (countOp en)
+   count <- rdInt rdfd
+   exOpcode rdfd (specifyOp en)
+   specify <- rdInts rdfd count
+   exOpcode rdfd (scriptOp en)
+   script <- rdPointer rdfd
+   hotkeyIter ptr key func specify script state
    | otherwise = undefined
 
 windowIter :: CInt -> CInt -> Enumeration -> Ptr () -> CInt -> CInt -> CInt -> IO State -> IO State
-windowIter rdfd wrfd en file plane conf state
-   | conf == (clickConf en) = undefined
-   -- TODO send Query based on script saved under file and plane
-   | conf == (pressConf en) = undefined
-   -- TODO send Query based on script saved under press
+windowIter rdfd wrfd en ptr file plane conf state
+   | conf == (clickConf en) = do
+   func <- fmap (\x -> (get2 file plane (macroFunc x))) state
+   specify <- fmap (\x -> (get2 file plane (macroSpecify x))) state
+   script <- fmap (\x -> (get2 file plane (macroScript x))) state
+   queryIter wrfd en func specify script state
+   | conf == (pressConf en) = do
+   exOpcode rdfd (pressOp en)
+   key <- rdChar rdfd
+   func <- fmap (\x -> (get1 key (hotkeyFunc x))) state
+   specify <- fmap (\x -> (get1 key (hotkeySpecify x))) state
+   script <- fmap (\x -> (get1 key (hotkeyScript x))) state
+   queryIter wrfd en func specify script state
    | otherwise = undefined
 
-queryIter :: CInt -> Enumeration -> CInt -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
-queryIter wrfd en func count specify script state
+queryIter :: CInt -> Enumeration -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
+queryIter wrfd en func specify script state
    | func == (attachedFunc en) = do
    wrOpcode wrfd (scriptOp en)
    wrPointer wrfd script
@@ -137,15 +193,19 @@ queryIter wrfd en func count specify script state
    wrInts wrfd ints
    state
 
-macroIter :: Ptr () -> CInt -> CInt -> Ptr () -> IO State -> IO State
-macroIter ptr file plane script state = let
+macroIter :: Ptr () -> CInt -> CInt -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
+macroIter ptr file plane func specify script state = let
    state1 = rmw2 macroData setMacroData file plane ptr state
-   in rmw2 macroScript setMacroScript file plane script state1
+   state2 = rmw2 macroFunc setMacroFunc file plane func state1
+   state3 = rmw2 macroSpecify setMacroSpecify file plane specify state2
+   in rmw2 macroScript setMacroScript file plane script state3
 
-hotkeyIter :: Ptr () -> CInt -> Ptr () -> IO State -> IO State
-hotkeyIter ptr key script state = let
+hotkeyIter :: Ptr () -> CChar -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
+hotkeyIter ptr key func specify script state = let
    state1 = rmw1 hotkeyData setHotkeyData key ptr state
-   in rmw1 hotkeyScript setHotkeyScript key script state1
+   state2 = rmw1 hotkeyFunc setHotkeyFunc key func state1
+   state3 = rmw1 hotkeySpecify setHotkeySpecify key specify state2
+   in rmw1 hotkeyScript setHotkeyScript key script state3
 
 attachedIter :: [CInt] -> IO State -> IO [CInt]
 attachedIter specify state = undefined
@@ -187,11 +247,11 @@ foreign import ccall wrEvent :: CInt -> CInt -> IO ()
 foreign import ccall wrChange :: CInt -> CInt -> IO ()
 foreign import ccall wrGiven :: CInt -> CInt -> IO ()
 foreign import ccall wrSubconf :: CInt -> CInt -> IO ()
-foreign import ccall wrSculpt :: CInt -> CInt -> IO CInt
-foreign import ccall wrClickMode :: CInt -> CInt -> IO CInt
-foreign import ccall wrMouseMode :: CInt -> CInt -> IO CInt
-foreign import ccall wrRollerMode :: CInt -> CInt -> IO CInt
-foreign import ccall wrTargetMode :: CInt -> CInt -> IO CInt
+foreign import ccall wrSculpt :: CInt -> CInt -> IO ()
+foreign import ccall wrClickMode :: CInt -> CInt -> IO ()
+foreign import ccall wrMouseMode :: CInt -> CInt -> IO ()
+foreign import ccall wrRollerMode :: CInt -> CInt -> IO ()
+foreign import ccall wrTargetMode :: CInt -> CInt -> IO ()
 foreign import ccall wrTopologyMode :: CInt -> CInt -> IO ()
 foreign import ccall wrFixedMode :: CInt -> CInt -> IO ()
 foreign import ccall wrField :: CInt -> CInt -> IO ()

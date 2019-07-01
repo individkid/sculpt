@@ -861,9 +861,3 @@ void exOpcode(int fd, int opcode)
 	if (rdOpcode(fd) != opcode) fatal("unexpected opcode",errno,__FILE__,__LINE__);
 }
 
-char *hello(char *hello)
-{
-   static char buffer[100];
-   return strcat(strcpy(buffer,hello)," ok again");
-}
-
