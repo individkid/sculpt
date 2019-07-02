@@ -24,32 +24,18 @@ import System.Environment
 import Data.Vector hiding (map,replicate,length)
 import AffTopo.Naive hiding (Vector)
 
+data Query = Query CInt [CInt] (Ptr ())
+
 data State = State {
-   macroFunc :: Vector (Vector CInt),
-   macroSpecify :: Vector (Vector [CInt]),
-   macroScript :: Vector (Vector (Ptr ())),
-   hotkeyFunc :: Vector CInt,
-   hotkeySpecify :: Vector [CInt],
-   hotkeyScript :: Vector (Ptr ())
+   macroQuery :: Vector (Vector Query),
+   hotkeyQuery :: Vector Query
 }
 
-setMacroFunc :: State -> Vector (Vector CInt) -> State
-setMacroFunc a b = a {macroFunc = b}
+setMacroQuery :: State -> Vector (Vector Query) -> State
+setMacroQuery a b = a {macroQuery = b}
 
-setMacroSpecify :: State -> Vector (Vector [CInt]) -> State
-setMacroSpecify a b = a {macroSpecify = b}
-
-setMacroScript :: State -> Vector (Vector (Ptr ())) -> State
-setMacroScript a b = a {macroScript = b}
-
-setHotkeyFunc :: State -> Vector CInt -> State
-setHotkeyFunc a b = a {hotkeyFunc = b}
-
-setHotkeySpecify :: State -> Vector [CInt] -> State
-setHotkeySpecify a b = a {hotkeySpecify = b}
-
-setHotkeyScript :: State -> Vector (Ptr ()) -> State
-setHotkeyScript a b = a {hotkeyScript = b}
+setHotkeyQuery :: State -> Vector Query -> State
+setHotkeyQuery a b = a {hotkeyQuery = b}
 
 get2 :: CInt -> CInt -> Vector (Vector t) -> t
 get2 a b v = (v ! (toInt a)) ! (toInt b)
@@ -129,15 +115,12 @@ mainIterF rdfd wrfd en iter state = do
 readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
 readIter rdfd wrfd en file plane conf state
    | conf == (onceConf en) = readIterF rdfd en (queryIter wrfd en) state
-   | conf == (macroConf en) = readIterF rdfd en (macroIter file plane) state
-   | conf == (hotkeyConf en) = do
-   exOpcode rdfd (keyOp en)
-   key <- rdChar rdfd
-   readIterF rdfd en (hotkeyIter key) state
+   | conf == (macroConf en) = readIterF rdfd en (rmw2 macroQuery setMacroQuery file plane) state
+   | conf == (hotkeyConf en) = (rdChar rdfd) >>= (\key -> readIterF rdfd en (rmw1 hotkeyQuery setHotkeyQuery key) state)
    | otherwise = undefined
 
 readIterF :: CInt -> Enumeration ->
-   (CInt -> [CInt] -> Ptr () -> IO State -> IO State) ->
+   (Query -> IO State -> IO State) ->
    IO State -> IO State
 readIterF rdfd en iter state = do
    exOpcode rdfd (funcOp en)
@@ -148,26 +131,22 @@ readIterF rdfd en iter state = do
    specify <- rdInts rdfd count
    exOpcode rdfd (scriptOp en)
    script <- rdPointer rdfd
-   iter func specify script state
+   iter (Query func specify script) state
 
 windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
 windowIter rdfd wrfd en file plane conf state
    | conf == (clickConf en) = do
-   func <- fmap (\x -> (get2 file plane (macroFunc x))) state
-   specify <- fmap (\x -> (get2 file plane (macroSpecify x))) state
-   script <- fmap (\x -> (get2 file plane (macroScript x))) state
-   queryIter wrfd en func specify script state
+   query <- fmap (\x -> (get2 file plane (macroQuery x))) state
+   queryIter wrfd en query state
    | conf == (pressConf en) = do
    exOpcode rdfd (pressOp en)
    key <- rdChar rdfd
-   func <- fmap (\x -> (get1 key (hotkeyFunc x))) state
-   specify <- fmap (\x -> (get1 key (hotkeySpecify x))) state
-   script <- fmap (\x -> (get1 key (hotkeyScript x))) state
-   queryIter wrfd en func specify script state
+   query <- fmap (\x -> (get1 key (hotkeyQuery x))) state
+   queryIter wrfd en query state
    | otherwise = undefined
 
-queryIter :: CInt -> Enumeration -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
-queryIter wrfd en func specify script state
+queryIter :: CInt -> Enumeration -> Query -> IO State -> IO State
+queryIter wrfd en (Query func specify script) state
    | func == (attachedFunc en) = do
    wrOpcode wrfd (scriptOp en)
    wrPointer wrfd script
@@ -179,18 +158,6 @@ queryIter wrfd en func specify script state
    wrOpcode wrfd (intsOp en)
    wrInts wrfd ints
    state
-
-macroIter :: CInt -> CInt -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
-macroIter file plane func specify script state = let
-   state2 = rmw2 macroFunc setMacroFunc file plane func state
-   state3 = rmw2 macroSpecify setMacroSpecify file plane specify state2
-   in rmw2 macroScript setMacroScript file plane script state3
-
-hotkeyIter :: CChar -> CInt -> [CInt] -> Ptr () -> IO State -> IO State
-hotkeyIter key func specify script state = let
-   state2 = rmw1 hotkeyFunc setHotkeyFunc key func state
-   state3 = rmw1 hotkeySpecify setHotkeySpecify key specify state2
-   in rmw1 hotkeyScript setHotkeyScript key script state3
 
 attachedIter :: [CInt] -> IO State -> IO [CInt]
 attachedIter specify state = undefined
