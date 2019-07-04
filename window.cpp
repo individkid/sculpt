@@ -28,7 +28,7 @@
 
 #include "window.hpp"
 #include "object.hpp"
-#include "read.hpp"
+#include "script.hpp"
 #include "write.hpp"
 #include "polytope.hpp"
 extern "C" {
@@ -36,10 +36,9 @@ extern "C" {
 #include "callback.h"
 }
 
-void Window::connect(int i, Read *ptr)
+void Window::connect(Script *ptr)
 {
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].rsp2read = &ptr->command2rsp;
+    rsp2script = &ptr->window2rsp;
 }
 
 void Window::connect(int i, Write *ptr)
@@ -56,7 +55,7 @@ void Window::connect(Polytope *ptr)
 
 void Window::init()
 {
-    for (int i = 0; i < nfile; i++) if (object[i].rsp2read == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+    if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
     for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
     if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
     if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
@@ -99,7 +98,7 @@ void Window::call()
     processDatas(polytope2rsp);
     processStates(write2rsp);
     processQueues(read);
-    processCommands(read2req,read);
+    processCommands(script2req,read);
 }
 
 void Window::wait()
@@ -119,13 +118,13 @@ void Window::done()
     processQueues(polytope);
     processCommands(polytope2req,polytope);
     processQueues(read);
-    processCommands(read2req,read);
+    processCommands(script2req,read);
     glfwTerminate(); window = 0;
 }
 
 Window::Window(int n) : Thread(1),
     object(new Object[n]), rsp2polytope(0), req2polytope(0),
-    read2req(this,"Read->Command->Window"),
+    script2req(this,"Script->Command->Window"),
     write2rsp(this,"Window<-State<-Write"),
     polytope2req(this,"Polytope->Command->Window"),
     polytope2rsp(this,"Window<-Data<-Polytope"),

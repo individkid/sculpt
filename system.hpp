@@ -33,13 +33,12 @@ extern "C" int systemFunc(
 class System : public Thread
 {
 private:
-	Message<Sound> **rsp2read;
+	Message<Sound> *rsp2script;
 	Message<Query> *req2script;
 public:
-	Message<Sound> read2req;
+	Message<Sound> script2req;
 	Message<Query> script2rsp;
 public:
-	void connect(int i, Read *ptr);
 	void connect(Script *ptr);
 private:
 	virtual void init();

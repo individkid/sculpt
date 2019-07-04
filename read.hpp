@@ -27,19 +27,10 @@ class File;
 class Read : public Thread
 {
 private:
-	Message<Command> *req2command;
-	Message<Data> *req2data;
-	Message<Sound> *req2sound;
-	Message<Query> *req2query;
+	Message<Query> *req2script;
 public:
-	Message<Command> command2rsp;
-	Message<Data> data2rsp;
-	Message<Sound> sound2rsp;
-	Message<Query> query2rsp;
+	Message<Query> script2rsp;
 public:
-	void connect(Window *ptr);
-	void connect(Polytope *ptr);
-	void connect(System *ptr);
 	void connect(Script *ptr);
 private:
 	virtual void init();
@@ -53,4 +44,6 @@ private:
 	int self;
 	File *file;
 	char *buffer;
+	int length;
+	int found;
 };

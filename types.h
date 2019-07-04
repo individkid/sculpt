@@ -165,14 +165,14 @@ struct Render
 	int count;
 	int size;
 };
-struct Command // (Polytope,Read) -> Window
+struct Command // (Polytope,Script) -> Window
 {
 	struct Command *next; int file;
 	enum Source source;
 	union {
-	// Read->ConfigureSource->Window
+	// Script->ConfigureSource->Window
 	struct {enum Subconf subconf; float setting;};
-	// Read->ModeSource->Window
+	// Script->ModeSource->Window
 	struct {enum Sculpt sculpt; union {
 	enum ClickMode click;
 	enum MouseMode mouse;
@@ -180,9 +180,9 @@ struct Command // (Polytope,Read) -> Window
 	enum TargetMode target;
 	enum TopologyMode topology;
 	enum FixedMode fixed;};};
-	// Read->(MatrixSource,GlobalSource)->Window
+	// Script->(MatrixSource,GlobalSource)->Window
 	float *matrix;
-	// Command->PolytopeSource->Window
+	// (Script,Polytope)->PolytopeSource->Window
  	struct {int feedback; int finish;
  	struct Update *update[Fields];
 	struct Render *render;
@@ -198,9 +198,7 @@ enum Configure {
 	PlaneConf,
 	PictureConf,
 	OnceConf,
-	ChangeConf,
-	MacroConf,
-	HotkeyConf,
+	NotifyConf,
 	RelativeConf,
 	AbsoluteConf,
 	RefineConf,
@@ -213,35 +211,35 @@ enum Configure {
 enum Function {
 	AttachedFunc,
 	Functions};
-struct Data // (Read,Window) -> Polytope
+struct Data // (Script,Window) -> Polytope
 {
 	struct Data *next; int file; int plane;
 	enum Configure conf;
-	// Read->InflateConf->Polytope
+	// Script->InflateConf->Polytope
 	union {
-	// Read->SpaceConf->Polytope
+	// Script->SpaceConf->Polytope
 	struct {int boundaries; int regions; int *planes; int *sides;};
-	// Read->RegionConf->Polytope
+	// Script->RegionConf->Polytope
 	struct {int side; int insides; int outsides; int *inside; int *outside;};
-	// Read->PlaneConf->Polytope
+	// Script->PlaneConf->Polytope
 	struct {int versor; float *vector;};
-	// Read->PictureConf->Polytope
+	// Script->PictureConf->Polytope
 	char *filename;
-	// Read->(OnceConf,ChangeConf,HotkeyConf,MacroConf)->Polytope
-	struct {char key; enum Function func; int count; int *specify; char *script;};
-	// Window->RelativeConf->Polytope
+	// Script->(OnceConf,NotifyConf)->Polytope
+	struct {enum Function func; int count; int *specify; char *script;};
+	// (Script,Window)->RelativeConf->Polytope
 	struct {float *fixed; enum TopologyMode relative;};
-	// Window->AbsoluteConf->Polytope
+	// (Script,Window)->AbsoluteConf->Polytope
 	enum TopologyMode absolute;
-	// Window->RefineConf->Polytope
+	// (Script,Window)->RefineConf->Polytope
 	float *pierce;
-	// Window->ManipConf->Poltope
+	// (Script,Window)->ManipConf->Poltope
 	float *matrix;
-	// Window->PressConf->Polytope
+	// (Script,Window)->PressConf->Polytope
 	char press;};
-	// Window->ClickConf->Polytope
-	// Window->AdditiveConf->Polytope
-	// Window->SubtractiveConf->Polytope
+	// (Script,Window)->ClickConf->Polytope
+	// (Script,Window)->AdditiveConf->Polytope
+	// (Script,Window)->SubtractiveConf->Polytope
 };
 
 // Sound
@@ -249,7 +247,8 @@ enum Event {
 	StartEvent,
 	StopEvent,
 	SoundEvent,
-	ScriptEvent,
+	OnceEvent,
+	NotifyEvent,
 	UpdateEvent,
 	Events};
 enum Equate {
@@ -282,21 +281,21 @@ struct Equ
 };
 struct Sound
 {
-	struct Sound *next; int file; int ident;
+	struct Sound *next;
 	int done; // initialize ptrs if not done
-	double value; // tone envelope phrase helper metric
+	int ident; double value; // tone envelope phrase helper metric
 	enum Event event;
-	// Read->(StartEvent,StopEvent)->System
+	// Script->(StartEvent,StopEvent)->System
 	union {
-	// Read->SoundEvent->System
+	// Script->SoundEvent->System
 	struct Equ equ[Equates];
-	// Read->ScriptEvent->System
+	// Script->(OnceEvent,NotifyEvent)->System
 	struct {struct Equ sched; // sample rate
 	int count; // number of parameters for script
-	int *ids; double **ptrs; // initialize to set done
+	union {int *ids; double **ptrs;}; // initialize to set done
 	char *script;}; // init Smart for Query
  	// UpdateEvent on timewheel
-	double *update;}; // assign when UpdateSync allocated
+	union {int id; double *update;};}; // assign when UpdateSync allocated
 };
 
 // State
@@ -336,22 +335,20 @@ enum Given {
 	DoublesGiv,
 	FloatsGiv,
 	IntsGiv,
+	CharsGiv,
 	Givens};
-struct Smart {
-	int count;
-	char *ptr;
-};
 struct Query
 {
-	struct Query *next; int file;
- 	struct Smart smart;
-	double value; // for response to System
+	struct Query *next;
+	char *script;
  	enum Given given;
- 	int length;
+ 	union {int file; int length;};
 	union {
 	double *doubles; // for request from System
 	float *floats; // for request from Polytope
-	int *ints;}; // for request from Polytope
+	int *ints; // for request from Polytope
+	char *chars; // for request from Read
+	char key;}; // for request from Window
 };
 
 enum Opcode {
@@ -384,30 +381,34 @@ enum Opcode {
 	CursorOp, AffineOp, PerplaneOp, BasisOp,
 	CutoffOp, SlopeOp, AspectOp,
 	FeatherOp, ArrowOp, EnableOp,
+	TagplaneOp, TaggraphOp,
 	// Data
 	/*FileOp, PlaneOp,*/ ConfOp,
 	BoundariesOp, RegionsOp, PlanesOp, SidesOp,
 	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
 	VersorOp, VectorOp,
 	FilenameOp,
-	FuncOp, /*CountOp,*/ SpecifyOp, /*ScriptOp,*/
-	KeyOp, HotkeyOp,
-	MacroOp,
+	KeyOp, FuncOp, /*CountOp,*/ SpecifyOp, /*ScriptOp,*/
 	/*FixedOp,*/ RelativeOp,
 	AbsoluteOp,
 	/*PierceOp,*/
 	/*MatrixOp,*/
 	PressOp,
 	// Sound
-	/*FileOp,*/ IdentOp, DoneOp, ValueOp, EventOp,
+	DoneOp, IdentOp, ValueOp, EventOp,
 	/*ValueOp,*/ DelayOp, SchedOp, LeftOp, RightOp,
+	/*SchedOp,*/
+	/*CountOp,*/
+	IdsOp, PtrsOp,
+	/*ScriptOp,*/
+	IdOp, UpdateOp,
 	// Equ
 	NumerOp, DenomOp,
 	// Sum
 	/*CountOp,*/
 	// Term
 	CoefOp, FactorOp,
-	ConstOp, VaryOp, SquareOp, CompOp,
+	/*IdOp,*/ PtrOp,
 	// State
 	/*FileOp, PlaneOp,*/
 	ChangeOp,
@@ -417,13 +418,13 @@ enum Opcode {
 	/*VersorOp, VectorOp,*/
 	/*TextOp,*/
 	// Query
-	/*FileOp,*/ SmartOp,
-	/*ValueOp,*/
- 	LengthOp,
+	/*ScriptOp,*/
  	GivenOp,
+ 	/*FileOp,*/ LengthOp,
 	DoublesOp,
 	FloatsOp,
 	IntsOp,
+	CharsOp,
 	Opcodes};
 
 #endif

@@ -95,7 +95,8 @@ void Pools::put(Sound *sound)
 	switch (sound->event) {
 	case (StartEvent): break;
 	case (StopEvent): break;
-	case (ScriptEvent):
+	case (OnceEvent):
+	case (NotifyEvent):
 	ints.put(sound->count,sound->ids);
 	pointers.put(sound->count,sound->ptrs);
 	chars.put(strlen(sound->script)+1,sound->script);

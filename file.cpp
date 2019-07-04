@@ -80,22 +80,27 @@ File::~File()
 	if (close(pipe[1]) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(given) < 0) error("close failed",errno,__FILE__,__LINE__);
 	if (close(temp) < 0) error("close failed",errno,__FILE__,__LINE__);
-	Header header; header.mod = FinishMode;
+	Header header; header.head = FinishHead;
 	if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
 	if (pthread_join(thread, 0) < 0) error("cannot join",errno,__FILE__,__LINE__);
 	if ((errno = pthread_mutex_destroy(&mutex)) != 0) error("cannot destroy",errno,__FILE__,__LINE__);
+}
+
+int File::ready()
+{
+	return todo;
 }
 
 int File::read(char *buf, int max)
 {
 	if (init) {
 		Header header;
-		header.loc = done; header.len = BUFFER_LENGTH; header.mod = ReadMode; header.pid = pid;
+		header.loc = done; header.len = BUFFER_LENGTH; header.head = ReadHead; header.pid = pid;
 		if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("write failed",errno,__FILE__,__LINE__);
 		done += BUFFER_LENGTH;
 		if (todo == 0) while (1) {
 			if (::read(pipe[0],&header,sizeof(header)) < 0) error("cannot read",errno,__FILE__,__LINE__);
-			if (header.mod == ReadMode) {todo = header.len; break;}
+			if (header.head == ReadHead) {todo = header.len; break;}
 			size.push_back(header.len);
 			char *buf = new char[header.len];
 			pend.push_back(buf);
@@ -140,7 +145,7 @@ int File::identify(int id, int len, int off)
 
 int File::append(const char *buf, size_t len)
 {
-	Header header; header.mod = AppendMode; header.len = len;
+	Header header; header.head = AppendHead; header.len = len;
 	if (write(fifo[1],&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
 	if (write(fifo[1],buf,len) != len) error("cannot write",errno,__FILE__,__LINE__);
 	return 0;
@@ -148,7 +153,7 @@ int File::append(const char *buf, size_t len)
 
 int File::update(const char *buf, size_t len, int id, char def)
 {
-	Header header; header.mod = WriteMode;
+	Header header; header.head = WriteHead;
 	if ((errno = pthread_mutex_lock(&mutex)) != 0) error("cannot mutex",errno,__FILE__,__LINE__);
 	header.loc = id2loc[id]; header.len = id2loc[id];
 	if ((errno = pthread_mutex_unlock(&mutex)) != 0) error("cannot mutex",errno,__FILE__,__LINE__);
@@ -188,15 +193,15 @@ void File::run()
 		if (fcntl(temp,F_SETLK,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);}
 	if (val == 0 && pos == temppos) {
 		if (::read(fifo[0],&header,sizeof(header)) != sizeof(header)) error("cannot read",errno,__FILE__,__LINE__);
-		if (header.mod == AppendMode || header.mod == WriteMode) transfer(fifo[0],given,given,F_WRLCK,header);
+		if (header.head == AppendHead || header.head == WriteHead) transfer(fifo[0],given,given,F_WRLCK,header);
 		if (write(temp,&header,sizeof(header)) != sizeof(header)) error("cannot write",errno,__FILE__,__LINE__);
 		lock.l_start = -sizeof(header); lock.l_len = INFINITE_LENGTH; lock.l_type = F_UNLCK; lock.l_whence = SEEK_CUR;
 		if (fcntl(temp,F_SETLK,&lock) == -1) error("cannot fcntl",errno,__FILE__,__LINE__);}
 	temppos += sizeof(header);
-	if (header.mod == ReadMode && header.pid != pid) continue;
-	if (header.mod == FinishMode && header.pid != pid) continue;
-	if (header.mod == FinishMode) break;
-	if (header.mod == ReadMode) {
+	if (header.head == ReadHead && header.pid != pid) continue;
+	if (header.head == FinishHead && header.pid != pid) continue;
+	if (header.head == FinishHead) break;
+	if (header.head == ReadHead) {
 		off_t givenlen;
 		if ((givenlen = lseek(given,0,SEEK_END)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
 		if (header.loc + header.len > givenlen) header.len = givenlen - header.loc;}
@@ -208,12 +213,12 @@ void File::transfer(int src, int dst, int lck, int typ, struct Header &hdr)
 {
 	char buffer[BUFFER_LENGTH];
 	struct flock lock;
-	if (hdr.mod == AppendMode) lock.l_start = 0; else lock.l_start = hdr.loc;
+	if (hdr.head == AppendHead) lock.l_start = 0; else lock.l_start = hdr.loc;
 	lock.l_len = hdr.len; lock.l_type = typ;
-	if (hdr.mod == AppendMode) lock.l_whence = SEEK_END; else lock.l_whence = SEEK_SET;
+	if (hdr.head == AppendHead) lock.l_whence = SEEK_END; else lock.l_whence = SEEK_SET;
 	if (fcntl(lck,F_SETLKW,&lock) < 0) error("cannot fcntl",errno,__FILE__,__LINE__);
 	if ((lock.l_start = lseek(lck,lock.l_start,lock.l_whence)) < 0) error("cannot seek",errno,__FILE__,__LINE__);
-	hdr.mod = WriteMode; hdr.loc = lock.l_start; lock.l_whence = SEEK_SET;
+	hdr.head = WriteHead; hdr.loc = lock.l_start; lock.l_whence = SEEK_SET;
 	size_t len = lock.l_len;
 	while (len > 0) {
 		int min = len;

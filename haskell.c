@@ -111,6 +111,8 @@ const char *enamerate(enum Opcode opcode)
 	case (FeatherOp): return "FeatherOp";
 	case (ArrowOp): return "ArrowOp";
 	case (EnableOp): return "EnableOp";
+	case (TagplaneOp): return "TagplaneOp";
+	case (TaggraphOp): return "TaggraphOp";
 	// Data
 	/*case (FileOp): return "FileOp";
 	case (PlaneOp): return "PlaneOp";*/
@@ -127,23 +129,19 @@ const char *enamerate(enum Opcode opcode)
 	case (VersorOp): return "VersorOp";
 	case (VectorOp): return "VectorOp";
 	case (FilenameOp): return "FilenameOp";
+	case (KeyOp): return "KeyOp";
 	case (FuncOp): return "FuncOp";
 	/*case (CountOp): return "CountOp";*/
 	case (SpecifyOp): return "SpecifyOp";
 	/*case (ScriptOp): return "ScriptOp";*/
-	case (KeyOp): return "KeyOp";
-	case (HotkeyOp): return "HotkeyOp";
-	case (MacroOp): return "MacroOp";
 	/*case (FixedOp): return "FixedOp";*/
 	case (RelativeOp): return "RelativeOp";
 	case (AbsoluteOp): return "AbsoluteOp";
-	/*case (PierceOp): return "PierceOp";*/
 	/*case (MatrixOp): return "MatrixOp";*/
 	case (PressOp): return "PressOp";
 	// Sound
-	/*case (FileOp): return "FileOp";*/
-	case (IdentOp): return "IdentOp";
 	case (DoneOp): return "DoneOp";
+	case (IdentOp): return "IdentOp";
 	case (ValueOp): return "ValueOp";
 	case (EventOp): return "EventOp";
 	/*case (ValueOp): return "ValueOp";*/
@@ -151,6 +149,13 @@ const char *enamerate(enum Opcode opcode)
 	case (SchedOp): return "SchedOp";
 	case (LeftOp): return "LeftOp";
 	case (RightOp): return "RightOp";
+	/*case (SchedOp): return "SchedOp";*/
+	/*case (CountOp): return "CountOp";*/
+	case (IdsOp): return "IdsOp";
+	case (PtrsOp): return "PtrsOp";
+	/*case (ScriptOp): return "ScriptOp";*/
+	case (IdOp): return "IdOp";
+	case (UpdateOp): return "UpdateOp";
 	// Equ
 	case (NumerOp): return "NumerOp";
 	case (DenomOp): return "DenomOp";
@@ -159,10 +164,8 @@ const char *enamerate(enum Opcode opcode)
 	// Term
 	case (CoefOp): return "CoefOp";
 	case (FactorOp): return "FactorOp";
-	case (ConstOp): return "ConstOp";
-	case (VaryOp): return "VaryOp";
-	case (SquareOp): return "SquareOp";
-	case (CompOp): return "CompOp";
+	/*case (IdOp): return "IdOp";*/
+	case (PtrOp): return "PtrOp";
 	// State
 	/*case (FileOp): return "FileOp";
 	case (PlaneOp): return "PlaneOp";*/
@@ -184,14 +187,14 @@ const char *enamerate(enum Opcode opcode)
 	case (VectorOp): return "VectorOp";*/
 	/*case (TextOp): return "TextOp";*/
 	// Query
-	/*case (FileOp): return "FileOp";*/
-	case (SmartOp): return "SmartOp";
-	/*case (ValueOp): return "ValueOp"*/
+	/*case (ScriptOp): return "ScriptOp";*/
  	case (GivenOp): return "GivenOp";
+	/*case (FileOp): return "FileOp";*/
  	case (LengthOp): return "LengthOp";
 	case (DoublesOp): return "DoublesOp";
 	case (FloatsOp): return "FloatsOp";
 	case (IntsOp): return "IntsOp";
+	case (CharsOp): return "CharsOp";
 	case (Opcodes): return "Opcodes";
 	default: fatal("unknown opcode",opcode,__FILE__,__LINE__);}
 	return 0;
@@ -222,6 +225,10 @@ int enumerate(char *name)
 	if (strcmp(name,"MatrixOp") == 0) return MatrixOp;
 	if (strcmp(name,"FeedbackOp") == 0) return FeedbackOp;
 	if (strcmp(name,"FinishOp") == 0) return FinishOp;
+	if (strcmp(name,"AllocOp") == 0) return AllocOp;
+	/*if (strcmp(name,"WriteOp") == 0) return WriteOp;*/
+	if (strcmp(name,"BindOp") == 0) return BindOp;
+	/*if (strcmp(name,"ReadOp") == 0) return ReadOp;*/
 	// Update
 	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
 	/*if (strcmp(name,"FinishOp") == 0) return FinishOp;*/
@@ -277,13 +284,11 @@ int enumerate(char *name)
 	if (strcmp(name,"VersorOp") == 0) return VersorOp;
 	if (strcmp(name,"VectorOp") == 0) return VectorOp;
 	if (strcmp(name,"FilenameOp") == 0) return FilenameOp;
+	if (strcmp(name,"KeyOp") == 0) return KeyOp;
 	if (strcmp(name,"FuncOp") == 0) return FuncOp;
 	/*if (strcmp(name,"CountOp") == 0) return CountOp;*/
 	if (strcmp(name,"SpecifyOp") == 0) return SpecifyOp;
 	/*if (strcmp(name,"ScriptOp") == 0) return ScriptOp;*/
-	if (strcmp(name,"KeyOp") == 0) return KeyOp;
-	if (strcmp(name,"HotkeyOp") == 0) return HotkeyOp;
-	if (strcmp(name,"MacroOp") == 0) return MacroOp;
 	/*if (strcmp(name,"FixedOp") == 0) return FixedOp;*/
 	if (strcmp(name,"RelativeOp") == 0) return RelativeOp;
 	if (strcmp(name,"AbsoluteOp") == 0) return AbsoluteOp;
@@ -291,11 +296,22 @@ int enumerate(char *name)
 	/*if (strcmp(name,"MatrixOp") == 0) return MatrixOp;*/
 	if (strcmp(name,"PressOp") == 0) return PressOp;
 	// Sound
-	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
-	if (strcmp(name,"IdentOp") == 0) return IdentOp;
 	if (strcmp(name,"DoneOp") == 0) return DoneOp;
+	if (strcmp(name,"IdentOp") == 0) return IdentOp;
 	if (strcmp(name,"ValueOp") == 0) return ValueOp;
 	if (strcmp(name,"EventOp") == 0) return EventOp;
+	/*if (strcmp(name,"ValueOp") == 0) return ValueOp;*/
+	if (strcmp(name,"DelayOp") == 0) return DelayOp;
+	if (strcmp(name,"SchedOp") == 0) return SchedOp;
+	if (strcmp(name,"LeftOp") == 0) return LeftOp;
+	if (strcmp(name,"RightOp") == 0) return RightOp;
+	/*if (strcmp(name,"SchedOp") == 0) return SchedOp;*/
+	if (strcmp(name,"CountOp") == 0) return CountOp;
+	if (strcmp(name,"IdsOp") == 0) return IdsOp;
+	if (strcmp(name,"PtrsOp") == 0) return PtrsOp;
+	/*if (strcmp(name,"ScriptOp") == 0) return ScriptOp;*/
+	if (strcmp(name,"IdOp") == 0) return IdOp;
+	if (strcmp(name,"UpdateOp") == 0) return UpdateOp;
 	// Equ
 	if (strcmp(name,"NumerOp") == 0) return NumerOp;
 	if (strcmp(name,"DenomOp") == 0) return DenomOp;
@@ -304,10 +320,8 @@ int enumerate(char *name)
 	// Term
 	if (strcmp(name,"CoefOp") == 0) return CoefOp;
 	if (strcmp(name,"FactorOp") == 0) return FactorOp;
-	if (strcmp(name,"ConstOp") == 0) return ConstOp;
-	if (strcmp(name,"VaryOp") == 0) return VaryOp;
-	if (strcmp(name,"SquareOp") == 0) return SquareOp;
-	if (strcmp(name,"CompOp") == 0) return CompOp;
+	if (strcmp(name,"IdOp") == 0) return IdOp;
+	if (strcmp(name,"PtrOp") == 0) return PtrOp;
 	// State
 	/*if (strcmp(name,"FileOp") == 0) return FileOp;
 	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;*/
@@ -329,14 +343,14 @@ int enumerate(char *name)
 	if (strcmp(name,"VectorOp") == 0) return VectorOp;*/
 	/*if (strcmp(name,"TextOp") == 0) return TextOp;*/
 	// Query
-	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
-	if (strcmp(name,"SmartOp") == 0) return SmartOp;
-	/*if (strcmp(name,"ValueOp") == 0) return ValueOp;*/
+	/*if (strcmp(name,"ScriptOp") == 0) return ScriptOp;*/
 	if (strcmp(name,"GivenOp") == 0) return GivenOp;
+	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
 	if (strcmp(name,"LengthOp") == 0) return LengthOp;
 	if (strcmp(name,"DoublesOp") == 0) return DoublesOp;
 	if (strcmp(name,"FloatsOp") == 0) return FloatsOp;
 	if (strcmp(name,"IntsOp") == 0) return IntsOp;
+	if (strcmp(name,"CharsOp") == 0) return CharsOp;
 	if (strcmp(name,"Opcodes") == 0) return Opcodes;
 	// Source
 	if (strcmp(name,"ConfigureSource") == 0) return ConfigureSource;
@@ -393,12 +407,6 @@ int enumerate(char *name)
 	if (strcmp(name,"RelativeMode") == 0) return RelativeMode;
 	if (strcmp(name,"AbsoluteMode") == 0) return AbsoluteMode;
 	if (strcmp(name,"FixedModes") == 0) return FixedModes;
-	// Field
-	if (strcmp(name,"AllocField") == 0) return AllocField;
-	if (strcmp(name,"WriteField") == 0) return WriteField;
-	if (strcmp(name,"BindField") == 0) return BindField;
-	if (strcmp(name,"ReadField") == 0) return ReadField;
-	if (strcmp(name,"Fields") == 0) return Fields;
 	// Buffer
 	if (strcmp(name,"Point0") == 0) return Point0;
 	if (strcmp(name,"Versor") == 0) return Versor;
@@ -433,9 +441,7 @@ int enumerate(char *name)
 	if (strcmp(name,"PlaneConf") == 0) return PlaneConf;
 	if (strcmp(name,"PictureConf") == 0) return PictureConf;
 	if (strcmp(name,"OnceConf") == 0) return OnceConf;
-	if (strcmp(name,"ChangeConf") == 0) return ChangeConf;
-	if (strcmp(name,"MacroConf") == 0) return MacroConf;
-	if (strcmp(name,"HotkeyConf") == 0) return HotkeyConf;
+	if (strcmp(name,"NotifyConf") == 0) return NotifyConf;
 	if (strcmp(name,"RelativeConf") == 0) return RelativeConf;
 	if (strcmp(name,"AbsoluteConf") == 0) return AbsoluteConf;
 	if (strcmp(name,"RefineConf") == 0) return RefineConf;
@@ -452,16 +458,10 @@ int enumerate(char *name)
 	if (strcmp(name,"StartEvent") == 0) return StartEvent;
 	if (strcmp(name,"StopEvent") == 0) return StopEvent;
 	if (strcmp(name,"SoundEvent") == 0) return SoundEvent;
-	if (strcmp(name,"ScriptEvent") == 0) return ScriptEvent;
+	if (strcmp(name,"OnceEvent") == 0) return OnceEvent;
+	if (strcmp(name,"NotifyEvent") == 0) return NotifyEvent;
 	if (strcmp(name,"UpdateEvent") == 0) return UpdateEvent;
 	if (strcmp(name,"Events") == 0) return Events;
-	// Equate
-	if (strcmp(name,"ValueEqu") == 0) return ValueEqu;
-	if (strcmp(name,"DelayEqu") == 0) return DelayEqu;
-	if (strcmp(name,"SchedEqu") == 0) return SchedEqu;
-	if (strcmp(name,"LeftEqu") == 0) return LeftEqu;
-	if (strcmp(name,"RightEqu") == 0) return RightEqu;
-	if (strcmp(name,"Equates") == 0) return Equates;
 	// Factor
 	if (strcmp(name,"ConstFactor") == 0) return ConstFactor;
 	if (strcmp(name,"VaryFactor") == 0) return VaryFactor;
@@ -480,6 +480,7 @@ int enumerate(char *name)
 	if (strcmp(name,"DoublesGiv") == 0) return DoublesGiv;
 	if (strcmp(name,"FloatsGiv") == 0) return FloatsGiv;
 	if (strcmp(name,"IntsGiv") == 0) return IntsGiv;
+	if (strcmp(name,"CharsGiv") == 0) return CharsGiv;
 	if (strcmp(name,"Givens") == 0) return Givens;
 	fatal("unknown name",0,__FILE__,__LINE__);
 	return -1;
@@ -508,38 +509,6 @@ int rdSource(int fd)
 	if (read(fd,&source,sizeof(source)) != sizeof(source)) error ("read failed",errno,__FILE__,__LINE__);
 	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),source);
 	return source;
-}
-
-int rdConfigure(int fd)
-{
-	enum Configure configure;
-	if (read(fd,&configure,sizeof(configure)) != sizeof(configure)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdConfigure: %d %d\n",getpid(),configure);
-	return configure;
-}
-
-int rdEvent(int fd)
-{
-	enum Event event;
-	if (read(fd,&event,sizeof(event)) != sizeof(event)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),event);
-	return event;
-}
-
-int rdChange(int fd)
-{
-	enum Change change;
-	if (read(fd,&change,sizeof(change)) != sizeof(change)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),change);
-	return change;
-}
-
-int rdGiven(int fd)
-{
-	enum Given given;
-	if (read(fd,&given,sizeof(given)) != sizeof(given)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),given);
-	return given;
 }
 
 int rdSubconf(int fd)
@@ -606,14 +575,6 @@ int rdFixedMode(int fd)
 	return fixedMode;
 }
 
-int rdField(int fd)
-{
-	enum Field field;
-	if (read(fd,&field,sizeof(field)) != sizeof(field)) error("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdField: %d %d\n",getpid(),field);
-	return field;
-}
-
 int rdBuffer(int fd)
 {
 	enum Buffer buffer;
@@ -630,6 +591,14 @@ int rdProgram(int fd)
 	return program;
 }
 
+int rdConfigure(int fd)
+{
+	enum Configure configure;
+	if (read(fd,&configure,sizeof(configure)) != sizeof(configure)) error("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdConfigure: %d %d\n",getpid(),configure);
+	return configure;
+}
+
 int rdFunction(int fd)
 {
 	enum Function function;
@@ -638,12 +607,12 @@ int rdFunction(int fd)
 	return function;
 }
 
-int rdEquate(int fd)
+int rdEvent(int fd)
 {
-	enum Equate equate;
-	if (read(fd,&equate,sizeof(equate)) != sizeof(equate)) error ("read failed",errno,__FILE__,__LINE__);
-	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),equate);
-	return equate;
+	enum Event event;
+	if (read(fd,&event,sizeof(event)) != sizeof(event)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),event);
+	return event;
 }
 
 int rdFactor(int fd)
@@ -652,6 +621,22 @@ int rdFactor(int fd)
 	if (read(fd,&factor,sizeof(factor)) != sizeof(factor)) error ("read failed",errno,__FILE__,__LINE__);
 	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),factor);
 	return factor;
+}
+
+int rdChange(int fd)
+{
+	enum Change change;
+	if (read(fd,&change,sizeof(change)) != sizeof(change)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),change);
+	return change;
+}
+
+int rdGiven(int fd)
+{
+	enum Given given;
+	if (read(fd,&given,sizeof(given)) != sizeof(given)) error ("read failed",errno,__FILE__,__LINE__);
+	if (DEBUG & HASKELL_DEBUG) printf("rdSource: %d %d\n",getpid(),given);
+	return given;
 }
 
 char rdChar(int fd)
@@ -704,34 +689,6 @@ void wrSource(int fd, int val)
 	enum Source source = val;
 	if (DEBUG & HASKELL_DEBUG) printf("wrSource %d %d\n",getpid(),val);
 	if (write(fd,&source,sizeof(source)) != sizeof(source)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrConfigure(int fd, int val)
-{
-	enum Configure configure = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrConfigure %d %d\n",getpid(),val);
-	if (write(fd,&configure,sizeof(configure)) != sizeof(configure)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrEvent(int fd, int val)
-{
-	enum Event event = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrEvent %d %d\n",getpid(),val);
-	if (write(fd,&event,sizeof(event)) != sizeof(event)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrChange(int fd, int val)
-{
-	enum Change change = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
-	if (write(fd,&change,sizeof(change)) != sizeof(change)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
-void wrGiven(int fd, int val)
-{
-	enum Given given = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
-	if (write(fd,&given,sizeof(given)) != sizeof(given)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrSubconf(int fd, int val)
@@ -790,13 +747,6 @@ void wrFixedMode(int fd, int val)
 	if (write(fd,&fixedMode,sizeof(fixedMode)) != sizeof(fixedMode)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
-void wrField(int fd, int val)
-{
-	if (DEBUG & HASKELL_DEBUG) printf("wrField %d %d\n",getpid(),val);
-	enum Field field = val;
-	if (write(fd,&field,sizeof(field)) != sizeof(field)) fatal("write failed",errno,__FILE__,__LINE__);
-}
-
 void wrBuffer(int fd, int val)
 {
 	enum Buffer buffer = val;
@@ -811,6 +761,13 @@ void wrProgram(int fd, int val)
 	if (write(fd,&program,sizeof(program)) != sizeof(program)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
+void wrConfigure(int fd, int val)
+{
+	enum Configure configure = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrConfigure %d %d\n",getpid(),val);
+	if (write(fd,&configure,sizeof(configure)) != sizeof(configure)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
 void wrFunction(int fd, int val)
 {
 	enum Function function = val;
@@ -818,11 +775,11 @@ void wrFunction(int fd, int val)
 	if (write(fd,&function,sizeof(function)) != sizeof(function)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
-void wrEquate(int fd, int val)
+void wrEvent(int fd, int val)
 {
-	enum Equate equate = val;
-	if (DEBUG & HASKELL_DEBUG) printf("wrFactor %d %d\n",getpid(),val);
-	if (write(fd,&equate,sizeof(equate)) != sizeof(equate)) fatal("write failed",errno,__FILE__,__LINE__);
+	enum Event event = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrEvent %d %d\n",getpid(),val);
+	if (write(fd,&event,sizeof(event)) != sizeof(event)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrFactor(int fd, int val)
@@ -830,6 +787,20 @@ void wrFactor(int fd, int val)
 	enum Factor factor = val;
 	if (DEBUG & HASKELL_DEBUG) printf("wrFactor %d %d\n",getpid(),val);
 	if (write(fd,&factor,sizeof(factor)) != sizeof(factor)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrChange(int fd, int val)
+{
+	enum Change change = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
+	if (write(fd,&change,sizeof(change)) != sizeof(change)) fatal("write failed",errno,__FILE__,__LINE__);
+}
+
+void wrGiven(int fd, int val)
+{
+	enum Given given = val;
+	if (DEBUG & HASKELL_DEBUG) printf("wrChange %d %d\n",getpid(),val);
+	if (write(fd,&given,sizeof(given)) != sizeof(given)) fatal("write failed",errno,__FILE__,__LINE__);
 }
 
 void wrChar(int fd, char val)

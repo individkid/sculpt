@@ -24,6 +24,12 @@
 #include "polytope.hpp"
 #include "write.hpp"
 
+static Pool<Query> queries(__FILE__,__LINE__);
+static Pool<State> states(__FILE__,__LINE__);
+static Pool<Command> commands(__FILE__,__LINE__);
+static Pool<Data> datas(__FILE__,__LINE__);
+static Pool<Sound> sounds(__FILE__,__LINE__);
+
 void Script::connect(Polytope *ptr)
 {
     rsp2polytope = &ptr->script2rsp;
@@ -36,7 +42,17 @@ void Script::connect(System *ptr)
 
 void Script::connect(int i, Read *ptr)
 {
-	rsp2read[i] = &ptr->query2rsp;
+	rsp2read[i] = &ptr->script2rsp;
+}
+
+void Script::connect(int i, Write *ptr)
+{
+	req2write[i] = &ptr->script2req;
+}
+
+void Script::connect(Window *ptr)
+{
+	req2window = &ptr->script2req;
 }
 
 void Script::init()
@@ -45,6 +61,10 @@ void Script::init()
 	if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
 	if (rsp2system == 0) error("unconnected rsp2system",0,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+	for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
+	if (req2window == 0) error("unconnected req2window",0,__FILE__,__LINE__);
+	if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
+	if (req2system == 0) error("unconnected req2system",0,__FILE__,__LINE__);
 }
 
 void Script::call()
@@ -52,6 +72,10 @@ void Script::call()
 	processQueries(polytope2req);
 	processQueries(system2req);
 	processQueries(read2req);
+	processStates(write2rsp);
+	processCommands(window2rsp);
+	processDatas(polytope2rsp);
+	processSounds(system2rsp);
 }
 
 void Script::done()
@@ -64,15 +88,24 @@ void Script::done()
 
 Script::Script(int n) :
 	rsp2read(new Message<Query>*[n]),
+	req2write(new Message<State>*[n]),
 	polytope2req(this,"Polytope->Query->Script"),
 	system2req(this,"System->Query->Script"),
 	read2req(this,"Read->Query->Script"),
+	write2rsp(this,"Script<-State<-Write"),
+	window2rsp(this,"Script<-Command<-Window"),
+	polytope2rsp(this,"Script<-Data<-Polytope"),
+	system2rsp(this,"Script<-Sound<-System"),
 	state(0), nfile(n), cleanup(0)
 {
 }
 
 Script::~Script()
 {
+	processStates(write2rsp);
+	processCommands(window2rsp);
+	processDatas(polytope2rsp);
+	processSounds(system2rsp);
 }
 
 #define POP_ERROR(MESSAGE,LINE) { \
@@ -118,7 +151,7 @@ void Script::processQueries(Message<Query> &message)
 	Query *query; while (message.get(query)) {
 		if (!cleanup) {
 			// execute script
-			if (lua_load(state,reader,query->smart.ptr,"script",0) == LUA_OK) {
+			if (lua_load(state,reader,query->script,"script",0) == LUA_OK) {
 			lua_pushlightuserdata(state,this);
 			lua_call(state,1,0);} else {
 			error(lua_tostring(state,-1),0,__FILE__,__LINE__);
@@ -136,3 +169,28 @@ void Script::processQueries(Message<Query> &message)
 		}
 	}
 }
+
+void Script::processStates(Message<State> &message)
+{
+	State *state;
+	while (message.get(state)) {/*put to Pools depending on state->change*/ states.put(state);}
+}
+
+void Script::processCommands(Message<Command> &message)
+{
+	Command *command;
+	while (message.get(command)) {/*put to Pools depending on command->source*/ commands.put(command);}
+}
+
+void Script::processDatas(Message<Data> &message)
+{
+	Data *data;
+	while (message.get(data)) {/*put to Pools depending on data->conf*/ datas.put(data);}
+}
+
+void Script::processSounds(Message<Sound> &message)
+{
+	Sound *sound;
+	while (message.get(sound)) {/*put to Pools depending on sound->event*/ sounds.put(sound);}
+}
+

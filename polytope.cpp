@@ -30,8 +30,8 @@
 static Stream stream(__FILE__,__LINE__);
 
 Polytope::Polytope(int n, const char *path) : Thread(),
-	rsp2read(new Message<Data>*[n]), req2write(new Message<State>*[n]),
-	read2req(this,"Read->Data->Polytope"), write2rsp(this,"Polytope<-State<-Write"),
+	req2write(new Message<State>*[n]),
+	script2req(this,"Script->Data->Polytope"), write2rsp(this,"Polytope<-State<-Write"),
 	script2rsp(this,"Polytope<-Query<-Script"),
 	window2req(this,"Window->Data->Polytope"), window2rsp(this,"Polytope<-Command<-Window"),
 	nfile(n), iss(0)
@@ -62,12 +62,6 @@ Polytope::~Polytope()
 	while (window2rsp.get(command)) stream.Pools::put(command);
 }
 
-void Polytope::connect(int i, Read *ptr)
-{
-    if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-	rsp2read[i] = &ptr->data2rsp;
-}
-
 void Polytope::connect(int i, Write *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
@@ -76,6 +70,7 @@ void Polytope::connect(int i, Write *ptr)
 
 void Polytope::connect(Script *ptr)
 {
+	rsp2script = &ptr->polytope2rsp;
 	req2script = &ptr->polytope2req;
 }
 
@@ -99,7 +94,7 @@ void Polytope::wait()
 
 void Polytope::init()
 {
-	for (int i = 0; i < nfile; i++) if (rsp2read[i] == 0) error("unconnected rsp2read",i,__FILE__,__LINE__);
+	if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
 	for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
 	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 	if (rsp2window == 0) error("unconnected rsp2window",0,__FILE__,__LINE__);
@@ -112,13 +107,13 @@ void Polytope::call()
 	if (iss) {iss = 0;
 	Opcode opcode = stream.get(p2t[0],data,query,command);
 	switch (opcode) {
-	case (ReadOp): rsp2read[data->file]->put(data); break;
+	case (ReadOp): rsp2script->put(data); break;
 	case (WriteOp): req2write[state->file]->put(state); break;
 	case (QueryOp): req2script->put(query); break;
 	case (WindowOp): rsp2window->put(data); break;
 	case (CommandOp): req2window->put(command); break;
 	default: error("invalid opcode",opcode,__FILE__,__LINE__);}}
-	while (read2req.get(data)) stream.put(t2p[1],ReadOp,data);
+	while (script2req.get(data)) stream.put(t2p[1],ReadOp,data);
 	while (write2rsp.get(state)) stream.put(t2p[1],WriteOp,state);
 	while (script2rsp.get(query)) stream.put(t2p[1],QueryOp,query);
 	while (window2req.get(data)) stream.put(t2p[1],WindowOp,data);
@@ -128,6 +123,6 @@ void Polytope::call()
 void Polytope::done()
 {
 	Data *data;
-	while (read2req.get(data)) rsp2read[data->file]->put(data);
+	while (script2req.get(data)) rsp2script->put(data);
 	while (window2req.get(data)) rsp2window->put(data);
 }

@@ -27,12 +27,12 @@
 #define INFINITE_LENGTH 1000000000ull
 #define BUFFER_LENGTH 100
 
-enum Mode {
-	AppendMode,
-	WriteMode,
-	ReadMode,
-	FinishMode,
-	Modes};
+enum Head {
+	AppendHead,
+	WriteHead,
+	ReadHead,
+	FinishHead,
+	Heads};
 
 struct Pid
 {
@@ -43,18 +43,18 @@ struct Pid
 struct Header {
 	off_t loc;
 	size_t len; 
-	Mode mod;
-	  // AppendMode in fifo causes append of len to given
-	  // WriteMode in fifo causes write of len to given at loc
-	  // ReadMode in fifo qualified by pid causes read
+	Head head;
+	  // AppendHead in fifo causes append of len to given
+	  // WriteHead in fifo causes write of len to given at loc
+	  // ReadHead in fifo qualified by pid causes read
 	  //  of len or less from given at loc
-	  // FinishMode in fifo qualified by pid causes terminate
-	  // AppendMode or WriteMode in pipe causes postpone
+	  // FinishHead in fifo qualified by pid causes terminate
+	  // AppendHead or WriteHead in pipe causes postpone
 	  //  or return of len
-	  // ReadMode in pipe causes return of len
+	  // ReadHead in pipe causes return of len
 	  //  or finish initialize if len is 0
 	  //  or error if not initializing
-	  // FinishMode in pipe is error
+	  // FinishHead in pipe is error
 	struct Pid pid;
 };
 
@@ -65,10 +65,12 @@ class File
 public:
 	File(const char *n);
 	virtual ~File();
-	// read and identify are called by reader thread
+	// ready read and identify are called by reader thread
 	// append and update are called by writer thread
 	// records appended or updated are in general read
 	// all functions return -1 and errno on system error
+	int ready(); // called by Read Thread
+	  // returns whether read would not block
 	int read(char *buf, int len); // called by Read Thread
 	  // initially reads to eof
 	  // then waits for appends or updates

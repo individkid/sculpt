@@ -21,7 +21,7 @@
 
 class GLFWwindow;
 class Object;
-class Read;
+class Script;
 class Write;
 class Polytope;
 
@@ -42,16 +42,17 @@ struct Queues
 class Window : public Thread
 {
 private:
+	Message<Command> *rsp2script;
 	Object *object;
 	Message<Command> *rsp2polytope;
 	Message<Data> *req2polytope;
 public:
-	Message<Command> read2req;
+	Message<Command> script2req;
 	Message<State> write2rsp;
 	Message<Command> polytope2req;
 	Message<Data> polytope2rsp;
 public:
-	void connect(int i, Read *ptr);
+	void connect(Script *ptr);
 	void connect(int i, Write *ptr);
 	void connect(Polytope *ptr);
 private:

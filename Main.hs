@@ -24,36 +24,31 @@ import System.Environment
 import Data.Vector hiding (map,replicate,length)
 import AffTopo.Naive hiding (Vector)
 
-data Query = Query CInt [CInt] (Ptr ())
+data Query = Query CInt [CInt] [CChar]
 
 data State = State {
-   macroQuery :: Vector (Vector Query),
-   hotkeyQuery :: Vector Query
+   notifyQuery :: Query
 }
 
-setMacroQuery :: State -> Vector (Vector Query) -> State
-setMacroQuery a b = a {macroQuery = b}
+setNotifyQuery :: State -> Query -> State
+setNotifyQuery a b = a {notifyQuery = b}
 
-setHotkeyQuery :: State -> Vector Query -> State
-setHotkeyQuery a b = a {hotkeyQuery = b}
+rdStr :: CInt -> IO [CChar]
+rdStr rdfd = (rdChar rdfd) >>= (rdStrF rdfd)
 
-get2 :: CInt -> CInt -> Vector (Vector t) -> t
-get2 a b v = (v ! (toInt a)) ! (toInt b)
+rdStrF :: CInt -> CChar -> IO [CChar]
+rdStrF rdfd a
+   | a == (toEnum 0) = return [a]
+   | otherwise = do
+      b <- rdChar rdfd
+      c <- rdStrF rdfd b
+      return (a:c)
 
-get1 :: CChar -> Vector t -> t
-get1 a v = v ! (toInt a)
-
-set2 :: CInt -> CInt -> t -> Vector (Vector t) -> Vector (Vector t)
-set2 a b c v = v // [((toInt a), (v ! (toInt a)) // [((toInt b), c)])]
-
-set1 :: CChar -> t -> Vector t -> Vector t
-set1 a b v = v // [((toInt a), b)]
-
-rmw2 :: (State -> Vector (Vector t)) -> (State -> Vector (Vector t) -> State) -> CInt -> CInt -> t -> IO State -> IO State
-rmw2 f g a b c u = fmap (\x -> (g x (set2 a b c (f x)))) u
-
-rmw1 :: (State -> Vector t) -> (State -> Vector t -> State) -> CChar -> t -> IO State -> IO State
-rmw1 f g a b u = fmap (\x -> (g x (set1 a b (f x)))) u
+wrStr :: CInt -> [CChar] -> IO ()
+wrStr wrfd [] = return ()
+wrStr wrfd (a:b) = do
+   wrChar wrfd a
+   wrStr wrfd b
 
 rdInts :: CInt -> CInt -> IO [CInt]
 rdInts rdfd count
@@ -76,10 +71,10 @@ toInt = fromInteger . toInteger
 toInts :: Integral a => [a] -> [Int]
 toInts = map toInt
 
-toCInt :: Integral a => Int -> a
+toCInt :: Integral a => a -> CInt
 toCInt = fromInteger . toInteger
 
-toCInts :: Integral a => [Int] -> [a]
+toCInts :: Integral a => [a] -> [CInt]
 toCInts = map toCInt
 
 emptyState :: IO State
@@ -115,8 +110,7 @@ mainIterF rdfd wrfd en iter state = do
 readIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
 readIter rdfd wrfd en file plane conf state
    | conf == (onceConf en) = readIterF rdfd en (queryIter wrfd en) state
-   | conf == (macroConf en) = readIterF rdfd en (rmw2 macroQuery setMacroQuery file plane) state
-   | conf == (hotkeyConf en) = (rdChar rdfd) >>= (\key -> readIterF rdfd en (rmw1 hotkeyQuery setHotkeyQuery key) state)
+   | conf == (notifyConf en) = readIterF rdfd en (\a b -> fmap (\x -> (setNotifyQuery x a)) b) state
    | otherwise = undefined
 
 readIterF :: CInt -> Enumeration ->
@@ -130,26 +124,17 @@ readIterF rdfd en iter state = do
    exOpcode rdfd (specifyOp en)
    specify <- rdInts rdfd count
    exOpcode rdfd (scriptOp en)
-   script <- rdPointer rdfd
+   script <- rdStr rdfd
    iter (Query func specify script) state
 
 windowIter :: CInt -> CInt -> Enumeration -> CInt -> CInt -> CInt -> IO State -> IO State
-windowIter rdfd wrfd en file plane conf state
-   | conf == (clickConf en) = do
-   query <- fmap (\x -> (get2 file plane (macroQuery x))) state
-   queryIter wrfd en query state
-   | conf == (pressConf en) = do
-   exOpcode rdfd (pressOp en)
-   key <- rdChar rdfd
-   query <- fmap (\x -> (get1 key (hotkeyQuery x))) state
-   queryIter wrfd en query state
-   | otherwise = undefined
+windowIter rdfd wrfd en file plane conf state = undefined
 
 queryIter :: CInt -> Enumeration -> Query -> IO State -> IO State
 queryIter wrfd en (Query func specify script) state
    | func == (attachedFunc en) = do
    wrOpcode wrfd (scriptOp en)
-   wrPointer wrfd script
+   wrStr wrfd script
    ints <- attachedIter specify state
    wrOpcode wrfd (givenOp en)
    wrGiven wrfd (intsGiv en)
@@ -168,10 +153,6 @@ foreign import ccall enumerate :: Ptr CChar -> IO CInt
 foreign import ccall rdPointer :: CInt -> IO (Ptr ())
 foreign import ccall rdOpcode :: CInt -> IO CInt
 foreign import ccall rdSource :: CInt -> IO CInt
-foreign import ccall rdConfigure :: CInt -> IO CInt
-foreign import ccall rdEvent :: CInt -> IO CInt
-foreign import ccall rdChange :: CInt -> IO CInt
-foreign import ccall rdGiven :: CInt -> IO CInt
 foreign import ccall rdSubconf :: CInt -> IO CInt
 foreign import ccall rdSculpt :: CInt -> IO CInt
 foreign import ccall rdClickMode :: CInt -> IO CInt
@@ -180,12 +161,14 @@ foreign import ccall rdRollerMode :: CInt -> IO CInt
 foreign import ccall rdTargetMode :: CInt -> IO CInt
 foreign import ccall rdTopologyMode :: CInt -> IO CInt
 foreign import ccall rdFixedMode :: CInt -> IO CInt
-foreign import ccall rdField :: CInt -> IO CInt
 foreign import ccall rdBuffer :: CInt -> IO CInt
 foreign import ccall rdProgram :: CInt -> IO CInt
+foreign import ccall rdConfigure :: CInt -> IO CInt
 foreign import ccall rdFunction :: CInt -> IO CInt
-foreign import ccall rdEquate :: CInt -> IO CInt
+foreign import ccall rdEvent :: CInt -> IO CInt
 foreign import ccall rdFactor :: CInt -> IO CInt
+foreign import ccall rdChange :: CInt -> IO CInt
+foreign import ccall rdGiven :: CInt -> IO CInt
 foreign import ccall rdChar :: CInt -> IO CChar
 foreign import ccall rdInt :: CInt -> IO CInt
 foreign import ccall rdFloat :: CInt -> IO CFloat
@@ -194,10 +177,6 @@ foreign import ccall rdDouble :: CInt -> IO CDouble
 foreign import ccall wrPointer :: CInt -> Ptr () -> IO ()
 foreign import ccall wrOpcode :: CInt -> CInt -> IO ()
 foreign import ccall wrSource :: CInt -> CInt -> IO ()
-foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
-foreign import ccall wrEvent :: CInt -> CInt -> IO ()
-foreign import ccall wrChange :: CInt -> CInt -> IO ()
-foreign import ccall wrGiven :: CInt -> CInt -> IO ()
 foreign import ccall wrSubconf :: CInt -> CInt -> IO ()
 foreign import ccall wrSculpt :: CInt -> CInt -> IO ()
 foreign import ccall wrClickMode :: CInt -> CInt -> IO ()
@@ -206,12 +185,14 @@ foreign import ccall wrRollerMode :: CInt -> CInt -> IO ()
 foreign import ccall wrTargetMode :: CInt -> CInt -> IO ()
 foreign import ccall wrTopologyMode :: CInt -> CInt -> IO ()
 foreign import ccall wrFixedMode :: CInt -> CInt -> IO ()
-foreign import ccall wrField :: CInt -> CInt -> IO ()
 foreign import ccall wrBuffer :: CInt -> CInt -> IO ()
 foreign import ccall wrProgram :: CInt -> CInt -> IO ()
+foreign import ccall wrConfigure :: CInt -> CInt -> IO ()
 foreign import ccall wrFunction :: CInt -> CInt -> IO ()
-foreign import ccall wrEquate :: CInt -> CInt -> IO ()
+foreign import ccall wrEvent :: CInt -> CInt -> IO ()
 foreign import ccall wrFactor :: CInt -> CInt -> IO ()
+foreign import ccall wrChange :: CInt -> CInt -> IO ()
+foreign import ccall wrGiven :: CInt -> CInt -> IO ()
 foreign import ccall wrChar :: CInt -> CChar -> IO ()
 foreign import ccall wrInt :: CInt -> CInt -> IO ()
 foreign import ccall wrFloat :: CInt -> CFloat -> IO ()
@@ -314,9 +295,8 @@ data Enumeration = Enumeration {
    {-matrixOp :: CInt,-}
    pressOp :: CInt,
    -- Sound
-   {-fileOp :: CInt,-}
-   identOp :: CInt,
    doneOp :: CInt,
+   identOp :: CInt,
    valueOp :: CInt,
    eventOp :: CInt,
    {-valueOp :: CInt,-}
@@ -324,6 +304,13 @@ data Enumeration = Enumeration {
    schedOp :: CInt,
    leftOp :: CInt,
    rightOp :: CInt,
+   {- schedOp :: CInt,-}
+   {-countOp :: CInt,-}
+   idsOp :: CInt,
+   ptrsOp :: CInt,
+   {- scriptOp :: CInt,-}
+   idOp :: CInt,
+   updateOp :: CInt,
    -- Equ
    numerOp :: CInt,
    denomOp :: CInt,
@@ -332,10 +319,8 @@ data Enumeration = Enumeration {
    -- Term
    coefOp :: CInt,
    factorOp :: CInt,
-   constOp :: CInt,
-   varyOp :: CInt,
-   squareOp :: CInt,
-   compOp :: CInt,
+   {-idOp :: CInt,-}
+   ptrOp :: CInt,
    -- State
    {-fileOp :: CInt,
    planeOp :: CInt,-}
@@ -357,14 +342,14 @@ data Enumeration = Enumeration {
    vectorOp :: CInt,-}
    {-textOp :: CInt,-}
    -- Query
-   {-fileOp :: CInt,-}
-   smartOp :: CInt,
-   {-valueOp :: CInt,-}
+   {-scriptOp :: CInt,-}
    givenOp :: CInt,
+   {-fileOp :: CInt,-}
    lengthOp :: CInt,
    doublesOp :: CInt,
    floatsOp :: CInt,
    intsOp :: CInt,
+   charsOp :: CInt,
    opcodes :: CInt,
    -- Source
    configureSource :: CInt,
@@ -421,12 +406,6 @@ data Enumeration = Enumeration {
    relativeMode :: CInt,
    absoluteMode :: CInt,
    fixedModes :: CInt,
-   -- Field
-   allocField :: CInt,
-   writeField :: CInt,
-   bindField :: CInt,
-   readField :: CInt,
-   fields :: CInt,
    -- Buffer
    point0 :: CInt,
    versor :: CInt,
@@ -461,9 +440,7 @@ data Enumeration = Enumeration {
    planeConf :: CInt,
    pictureConf :: CInt,
    onceConf :: CInt,
-   changeConf :: CInt,
-   macroConf :: CInt,
-   hotkeyConf :: CInt,
+   notifyConf :: CInt,
    relativeConf :: CInt,
    absoluteConf :: CInt,
    refineConf :: CInt,
@@ -480,16 +457,10 @@ data Enumeration = Enumeration {
    startEvent :: CInt,
    stopEvent :: CInt,
    soundEvent :: CInt,
-   scriptEvent :: CInt,
+   onceEvent :: CInt,
+   notifyEvent :: CInt,
    updateEvent :: CInt,
    events :: CInt,
-   -- Equate
-   valueEqu :: CInt,
-   delayEqu :: CInt,
-   schedEqu :: CInt,
-   leftEqu :: CInt,
-   rightEqu :: CInt,
-   equates :: CInt,
    -- Factor
    constFactor :: CInt,
    varyFactor :: CInt,
@@ -508,6 +479,7 @@ data Enumeration = Enumeration {
    doublesGiv :: CInt,
    floatsGiv :: CInt,
    intsGiv :: CInt,
+   charsGiv :: CInt,
    givens :: CInt}
 
 main = do
@@ -608,9 +580,8 @@ main = do
    {-matrixOpV <- (newCString "MatrixOp") >>= enumerate-}
    pressOpV <- (newCString "PressOp") >>= enumerate
    -- Sound
-   {-fileOpV <- (newCString "FileOp") >>= enumerate-}
-   identOpV <- (newCString "IdentOp") >>= enumerate
    doneOpV <- (newCString "DoneOp") >>= enumerate
+   identOpV <- (newCString "IdentOp") >>= enumerate
    valueOpV <- (newCString "ValueOp") >>= enumerate
    eventOpV <- (newCString "EventOp") >>= enumerate
    {-valueOpV <- (newCString "ValueOp") >>= enumerate-}
@@ -618,6 +589,13 @@ main = do
    schedOpV <- (newCString "SchedOp") >>= enumerate
    leftOpV <- (newCString "LeftOp") >>= enumerate
    rightOpV <- (newCString "RightOp") >>= enumerate
+   {-schedOpV <- (newCString "SchedOp") >>= enumerate-}
+   {-countOpV <- (newCString "CountOp") >>= enumerate-}
+   idsOpV <- (newCString "IdsOp") >>= enumerate
+   ptrsOpV <- (newCString "PtrsOp") >>= enumerate
+   {-scriptOpV <- (newCString "ScriptOp") >>= enumerate-}
+   idOpV <- (newCString "IdOp") >>= enumerate
+   updateOpV <- (newCString "UpdateOp") >>= enumerate
    -- Equ
    numerOpV <- (newCString "NumerOp") >>= enumerate
    denomOpV <- (newCString "DenomOp") >>= enumerate
@@ -626,10 +604,8 @@ main = do
    -- Term
    coefOpV <- (newCString "CoefOp") >>= enumerate
    factorOpV <- (newCString "FactorOp") >>= enumerate
-   constOpV <- (newCString "ConstOp") >>= enumerate
-   varyOpV <- (newCString "VaryOp") >>= enumerate
-   squareOpV <- (newCString "SquareOp") >>= enumerate
-   compOpV <- (newCString "CompOp") >>= enumerate
+   {-idOpV <- (newCString "IdOp") >>= enumerate-}
+   ptrOpV <- (newCString "PtrOp") >>= enumerate
    -- State
    {-fileOpV <- (newCString "FileOp") >>= enumerate
    planeOpV <- (newCString "PlaneOp") >>= enumerate-}
@@ -651,14 +627,14 @@ main = do
    vectorOpV <- (newCString "VectorOp") >>= enumerate-}
    {-textOpV <- (newCString "TextOp") >>= enumerate-}
    -- Query
-   {-fileOpV <- (newCString "FileOp") >>= enumerate-}
-   smartOpV <- (newCString "SmartOp") >>= enumerate
-   {-valueOpV <- (newCString "ValueOp") >>= enumerate-}
+   {-scriptOpV <- (newCString "ScriptOp") >>= enumerate-}
    givenOpV <- (newCString "GivenOp") >>= enumerate
+   {-fileOpV <- (newCString "FileOp") >>= enumerate-}
    lengthOpV <- (newCString "LengthOp") >>= enumerate
    doublesOpV <- (newCString "DoublesOp") >>= enumerate
    floatsOpV <- (newCString "FloatsOp") >>= enumerate
    intsOpV <- (newCString "IntsOp") >>= enumerate
+   charsOpV <- (newCString "CharsOp") >>= enumerate
    opcodesV <- (newCString "Opcodes") >>= enumerate
    -- Source
    configureSourceV <- (newCString "ConfigureSource") >>= enumerate
@@ -715,12 +691,6 @@ main = do
    relativeModeV <- (newCString "RelativeMode") >>= enumerate
    absoluteModeV <- (newCString "AbsoluteMode") >>= enumerate
    fixedModesV <- (newCString "FixedModes") >>= enumerate
-   -- Field
-   allocFieldV <- (newCString "AllocField") >>= enumerate
-   writeFieldV <- (newCString "WriteField") >>= enumerate
-   bindFieldV <- (newCString "BindField") >>= enumerate
-   readFieldV <- (newCString "ReadField") >>= enumerate
-   fieldsV <- (newCString "Fields") >>= enumerate
    -- Buffer
    point0V <- (newCString "Point0") >>= enumerate
    versorV <- (newCString "Versor") >>= enumerate
@@ -755,9 +725,7 @@ main = do
    planeConfV <- (newCString "PlaneConf") >>= enumerate
    pictureConfV <- (newCString "PictureConf") >>= enumerate
    onceConfV <- (newCString "OnceConf") >>= enumerate
-   changeConfV <- (newCString "ChangeConf") >>= enumerate
-   macroConfV <- (newCString "MacroConf") >>= enumerate
-   hotkeyConfV <- (newCString "HotkeyConf") >>= enumerate
+   notifyConfV <- (newCString "NotifyConf") >>= enumerate
    relativeConfV <- (newCString "RelativeConf") >>= enumerate
    absoluteConfV <- (newCString "AbsoluteConf") >>= enumerate
    refineConfV <- (newCString "RefineConf") >>= enumerate
@@ -774,16 +742,10 @@ main = do
    startEventV <- (newCString "StartEvent") >>= enumerate
    stopEventV <- (newCString "StopEvent") >>= enumerate
    soundEventV <- (newCString "SoundEvent") >>= enumerate
-   scriptEventV <- (newCString "ScriptEvent") >>= enumerate
+   onceEventV <- (newCString "OnceEvent") >>= enumerate
+   notifyEventV <- (newCString "NotifyEvent") >>= enumerate
    updateEventV <- (newCString "UpdateEvent") >>= enumerate
    eventsV <- (newCString "Events") >>= enumerate
-   -- Equate
-   valueEquV <- (newCString "ValueEqu") >>= enumerate
-   delayEquV <- (newCString "DelayEqu") >>= enumerate
-   schedEquV <- (newCString "SchedEqu") >>= enumerate
-   leftEquV <- (newCString "LeftEqu") >>= enumerate
-   rightEquV <- (newCString "RightEqu") >>= enumerate
-   equatesV <- (newCString "Equates") >>= enumerate
    -- Factor
    constFactorV <- (newCString "ConstFactor") >>= enumerate
    varyFactorV <- (newCString "VaryFactor") >>= enumerate
@@ -802,6 +764,7 @@ main = do
    doublesGivV <- (newCString "DoublesGiv") >>= enumerate
    floatsGivV <- (newCString "FloatsGiv") >>= enumerate
    intsGivV <- (newCString "IntsGiv") >>= enumerate
+   charsGivV <- (newCString "CharsGiv") >>= enumerate
    givensV <- (newCString "Givens") >>= enumerate
    mainLoop rdfd wrfd Enumeration {
    -- Sideband
@@ -898,9 +861,8 @@ main = do
    {-matrixOp = matrixOpV,-}
    pressOp = pressOpV,
    -- Sound
-   {-fileOp = fileOpV,-}
-   identOp = identOpV,
    doneOp = doneOpV,
+   identOp = identOpV,
    valueOp = valueOpV,
    eventOp = eventOpV,
    {-valueOp = valueOpV,-}
@@ -908,6 +870,13 @@ main = do
    schedOp = schedOpV,
    leftOp = leftOpV,
    rightOp = rightOpV,
+   {-schedOp = schedOpV,-}
+   {-countOp = countOpV,-}
+   idsOp = idsOpV,
+   ptrsOp = ptrsOpV,
+   {-scriptOp = scriptOpV,-}
+   idOp = idOpV,
+   updateOp = updateOpV,
    -- Equ
    numerOp = numerOpV,
    denomOp = denomOpV,
@@ -916,10 +885,8 @@ main = do
    -- Term
    coefOp = coefOpV,
    factorOp = factorOpV,
-   constOp = constOpV,
-   varyOp = varyOpV,
-   squareOp = squareOpV,
-   compOp = compOpV,
+   {-idOp = idOpV,-}
+   ptrOp = ptrOpV,
    -- State
    {-fileOp = fileOpV,
    planeOp = planeOpV,-}
@@ -941,14 +908,14 @@ main = do
    vectorOp = vectorOpV,-}
    {-textOp = textOpV,-}
    -- Query
-   {-fileOp = fileOpV,-}
-   smartOp = smartOpV,
-   {-valueOp = valueOpV,-}
+   {-scriptOp = scriptOpV,-}
    givenOp = givenOpV,
+   {-fileOp = fileOpV,-}
    lengthOp = lengthOpV,
    doublesOp = doublesOpV,
    floatsOp = floatsOpV,
    intsOp = intsOpV,
+   charsOp = charsOpV,
    opcodes = opcodesV,
    -- Source
    configureSource = configureSourceV,
@@ -1005,12 +972,6 @@ main = do
    relativeMode = relativeModeV,
    absoluteMode = absoluteModeV,
    fixedModes = fixedModesV,
-   -- Field
-   allocField = allocFieldV,
-   writeField = writeFieldV,
-   bindField = bindFieldV,
-   readField = readFieldV,
-   fields = fieldsV,
    -- Buffer
    point0 = point0V,
    versor = versorV,
@@ -1045,9 +1006,7 @@ main = do
    planeConf = planeConfV,
    pictureConf = pictureConfV,
    onceConf = onceConfV,
-   changeConf = changeConfV,
-   macroConf = macroConfV,
-   hotkeyConf = hotkeyConfV,
+   notifyConf = notifyConfV,
    relativeConf = relativeConfV,
    absoluteConf = absoluteConfV,
    refineConf = refineConfV,
@@ -1064,16 +1023,10 @@ main = do
    startEvent = startEventV,
    stopEvent = stopEventV,
    soundEvent = soundEventV,
-   scriptEvent = scriptEventV,
+   onceEvent = onceEventV,
+   notifyEvent = notifyEventV,
    updateEvent = updateEventV,
    events = eventsV,
-   -- Equate
-   valueEqu = valueEquV,
-   delayEqu = delayEquV,
-   schedEqu = schedEquV,
-   leftEqu = leftEquV,
-   rightEqu = rightEquV,
-   equates = equatesV,
    -- Factor
    constFactor = constFactorV,
    varyFactor = varyFactorV,
@@ -1092,4 +1045,5 @@ main = do
    doublesGiv = doublesGivV,
    floatsGiv = floatsGivV,
    intsGiv = intsGivV,
+   charsGiv = charsGivV,
    givens = givensV} emptyState

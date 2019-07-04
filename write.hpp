@@ -28,12 +28,15 @@ class Write : public Thread
 private:
 	Message<State> *rsp2polytope;
 	Message<State> *rsp2window;
+	Message<State> *rsp2script;
 public:
 	Message<State> polytope2req;
 	Message<State> window2req;
+	Message<State> script2req;
 public:
 	void connect(Polytope *ptr);
 	void connect(Window *ptr);
+	void connect(Script *ptr);
 private:
 	virtual void init();
 	virtual void call();

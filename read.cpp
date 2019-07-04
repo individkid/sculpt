@@ -16,75 +16,60 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/select.h>
-#include <signal.h>
-
 #include "read.hpp"
-#include "window.hpp"
-#include "polytope.hpp"
-#include "system.hpp"
-#include "script.hpp"
-#include "parse.hpp"
+extern "C" {
+#include "callback.h"
+}
 #include "file.hpp"
+#include "script.hpp"
 
-static Parse parse(__FILE__,__LINE__);
-
-void Read::connect(Window *ptr)
-{
-	req2command = &ptr->read2req;
-}
-
-void Read::connect(Polytope *ptr)
-{
-	req2data = &ptr->read2req;
-}
-
-void Read::connect(System *ptr)
-{
-	req2sound = &ptr->read2req;
-}
+static Pool<Query> queries(__FILE__,__LINE__);
+static Power<char> chars(__FILE__,__LINE__);
 
 void Read::connect(Script *ptr)
 {
-	req2query = &ptr->read2req;
+	req2script = &ptr->read2req;
 }
 
 void Read::init()
 {
-	if (req2command == 0) error("unconnected req2command",0,__FILE__,__LINE__);
-	if (req2data == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
-	if (req2sound == 0) error("unconnected req2sound",0,__FILE__,__LINE__);
-	if (req2query == 0) error("unconnected req2query",0,__FILE__,__LINE__);
+	if (req2script == 0) error("unconnected req2script",0,__FILE__,__LINE__);
 }
 
 void Read::call()
 {
-    Command *command; Data *data; Sound *sound; Query *query;
-	while (command2rsp.get(command)) parse.put(command);
-    while (data2rsp.get(data)) parse.put(data);
-    while (sound2rsp.get(sound)) parse.put(sound);
-	while (query2rsp.get(query)) parse.put(query);
-	const char *str = buffer;
-	while (parse.get(str,self,command,data,sound,query)) {
-	if (command) req2command->put(command);
-	if (data) req2data->put(data);
-	if (sound) req2sound->put(sound);
-	if (query) req2query->put(query);}
-	int length = str-buffer;
-	buffer = parse.postfix(buffer,length);
+	Query *query;
+	while (script2rsp.get(query)) {
+	chars.put(strlen(query->chars)+1,query->chars);
+	queries.put(query);}
+	while ((length > 0 && !file->ready()) || found > 1) {
+	int len = 0;
+	while (buffer[len] != 0 && (len == 0 || buffer[len] != '-' || buffer[len+1] != '-')) len++;
+    query = queries.get();
+    query->given = CharsGiv;
+    query->file = self;
+    query->chars = chars.get(len+1);
+    strncpy(query->chars,buffer,len);
+    query->chars[len] = 0;
+	req2script->put(query);
+	buffer = ::postfix(chars,buffer,len);
+	length -= len;
+	if (found > 0) found--;}
 }
 
 void Read::wait()
 {
-	char *temp = parse.setup(BUFFER_SIZE);
-	int length = file->read(temp,BUFFER_SIZE-1);
-	temp[length] = 0;
-	buffer = parse.concat(buffer,temp);
+	char temp[BUFFER_SIZE+1];
+	int len = file->read(temp,BUFFER_SIZE);
+	temp[len] = 0;
+	const char *tmp = temp;
+	buffer = ::concat(chars,buffer,tmp);
+	length += len;
+	int count = 0;
+	for (int i = 0; i < len; i++)
+	if (temp[i] != '-') count = 0;
+	else if (count == 1) {count = 0; found++;}
+	else count++;
 }
 
 void Read::done()
@@ -92,20 +77,17 @@ void Read::done()
 }
 
 Read::Read(int s, File *f) : Thread(),
-	command2rsp(this,"Read<-Data<-Command"),
-	data2rsp(this,"Read<-Data<-Data"),
-	sound2rsp(this,"Read<-Sound<-System"), 
-	query2rsp(this,"Read<-Query<-Script"),
+	script2rsp(this,"Read<-Query<-Script"),
 	self(s), file(f)
 {
-	buffer = parse.setup("");
+	buffer = ::setup(chars,"");
+	length = found = 0;
 }
 
 Read::~Read()
 {
-	Command *command; Data *data; Sound *sound; Query *query;
-	while (command2rsp.get(command)) parse.put(command);
-    while (data2rsp.get(data)) parse.put(data);
-    while (sound2rsp.get(sound)) parse.put(sound);
-	while (query2rsp.get(query)) parse.put(query);
+	Query *query;
+	while (script2rsp.get(query)) {
+	chars.put(strlen(query->chars)+1,query->chars);
+	queries.put(query);}
 }

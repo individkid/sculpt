@@ -21,6 +21,8 @@
 class Polytope;
 class System;
 class Read;
+class Write;
+class Window;
 struct lua_State;
 
 class Script : public Thread
@@ -29,14 +31,24 @@ private:
 	Message<Query> *rsp2polytope;
 	Message<Query> *rsp2system;
 	Message<Query> **rsp2read;
+	Message<State> **req2write;
+	Message<Command> *req2window;
+	Message<Data> *req2polytope;
+	Message<Sound> *req2system;
 public:
 	Message<Query> polytope2req;
 	Message<Query> system2req;
 	Message<Query> read2req;
+	Message<State> write2rsp;
+	Message<Command> window2rsp;
+	Message<Data> polytope2rsp;
+	Message<Sound> system2rsp;
 public:
 	void connect(Polytope *ptr);
 	void connect(System *ptr);
 	void connect(int i, Read *ptr);
+	void connect(int i, Write *ptr);
+	void connect(Window *ptr);
 private:
 	virtual void init();
 	virtual void call();
@@ -49,4 +61,8 @@ private:
 	int nfile; int cleanup;
 private:
 	void processQueries(Message<Query> &message);
+	void processStates(Message<State> &message);
+	void processCommands(Message<Command> &message);
+	void processDatas(Message<Data> &message);
+	void processSounds(Message<Sound> &message);
 };

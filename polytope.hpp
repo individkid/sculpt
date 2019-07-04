@@ -1,5 +1,5 @@
 /*
-*    polytope.hpp thread for sample and classify
+*    polytope.hpp thscript for sample and classify
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -26,19 +26,18 @@ class Window;
 class Polytope : public Thread
 {
 private:
-	Message<Data> **rsp2read;
+	Message<Data> *rsp2script;
 	Message<State> **req2write;
 	Message<Query> *req2script;
 	Message<Data> *rsp2window;
 	Message<Command> *req2window;
 public:
-	Message<Data> read2req;
+	Message<Data> script2req;
 	Message<State> write2rsp;
 	Message<Query> script2rsp;
 	Message<Data> window2req;
 	Message<Command> window2rsp;
 public:
-	void connect(int i, Read *ptr);
 	void connect(int i, Write *ptr);
 	void connect(Script *ptr);
 	void connect(Window *ptr);
