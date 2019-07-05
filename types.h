@@ -191,7 +191,7 @@ struct Command // (Polytope,Script) -> Window
 	struct Command *redraw;
 	struct Command *pierce;};
 	// Script->(MacroSrc,HotkeySrc)->Window
-	struct {char key; char *script;};};
+	struct {union {int plane; char key;}; char *script;};};
 };
 
 // Data
@@ -340,6 +340,8 @@ enum Given {
 	FloatsGiv,
 	IntsGiv,
 	CharsGiv,
+	CharGiv,
+	IntGiv,
 	Givens};
 struct Query
 {
@@ -369,7 +371,7 @@ enum Opcode {
 	MatrixOp,
 	FeedbackOp, FinishOp,
 	AllocOp, /*WriteOp,*/ BindOp, /*ReadOp,*/
-	KeyOp, /*ScriptOp,*/
+	PlaneOp, KeyOp, /*ScriptOp,*/
 	// Update
 	/*FileOp,*/ /*FinishOp,*/
 	BufferOp,
@@ -382,7 +384,7 @@ enum Opcode {
 	/*FileOp,*/
 	ProgramOp, BaseOp, CountOp, /*SizeOp,*/
 	// Feedback
-	PierceOp, NormalOp, TagbitsOp, PlaneOp,
+	PierceOp, NormalOp, TagbitsOp, /*PlaneOp,*/
 	// Format
 	CursorOp, AffineOp, PerplaneOp, BasisOp,
 	CutoffOp, SlopeOp, AspectOp,

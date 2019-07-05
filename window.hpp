@@ -18,6 +18,7 @@
 
 #include "message.hpp"
 #include "microcode.hpp"
+#include <map>
 
 class GLFWwindow;
 class Object;
@@ -42,11 +43,13 @@ struct Queues
 class Window : public Thread
 {
 private:
+	Message<Query> *req2script;
 	Message<Command> *rsp2script;
-	Object *object;
+	Message<State> **req2write;
 	Message<Command> *rsp2polytope;
 	Message<Data> *req2polytope;
 public:
+	Message<Query> script2rsp;
 	Message<Command> script2req;
 	Message<State> write2rsp;
 	Message<Command> polytope2req;
@@ -65,17 +68,19 @@ public:
 	Window(int n);
 	virtual ~Window();
 public:
+	void sendScript(Query *query);
 	void sendWrite(State *state);
 	void sendPolytope(Data *data);
 	void warpCursor(float *cursor);
 	void maybeKill(int seq);
 private:
 	GLFWwindow *window;
+	Object *object;
 	int finish;
 	int nfile;
 	Microcode microcode[Programs];
 	Queues polytope;
-	Queues read;
+	Queues script;
 private:
 	void allocBuffer(Update &update);
 	void writeBuffer(Update &update);
@@ -92,6 +97,7 @@ private:
 	void processQueues(Queues &queues);
 	void processQueue(Queue &queue, Queues &queues);
 	void processCommands(Message<Command> &message, Queues &queues);
+	void processQueries(Message<Query> &message);
 	void processDatas(Message<Data> &message);
 	void processStates(Message<State> &message);
 };

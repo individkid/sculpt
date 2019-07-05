@@ -72,6 +72,7 @@ const char *enamerate(enum Opcode opcode)
 	/*case (WriteOp): return "WriteOp";*/
 	case (BindOp): return "BindOp";
 	/*case (ReadOp): return "ReadOp";*/
+	case (PlaneOp): return "PlaneOp";
 	case (KeyOp): return "KeyOp";
 	/*case (ScriptOp): return "ScriptOp";*/
 	// Update
@@ -101,7 +102,7 @@ const char *enamerate(enum Opcode opcode)
 	case (PierceOp): return "PierceOp";
 	case (NormalOp): return "NormalOp";
 	case (TagbitsOp): return "TagbitsOp";
-	case (PlaneOp): return "PlaneOp";
+	/*case (PlaneOp): return "PlaneOp";*/
 	// Format
 	case (CursorOp): return "CursorOp";
 	case (AffineOp): return "AffineOp";
@@ -232,6 +233,7 @@ int enumerate(char *name)
 	/*if (strcmp(name,"WriteOp") == 0) return WriteOp;*/
 	if (strcmp(name,"BindOp") == 0) return BindOp;
 	/*if (strcmp(name,"ReadOp") == 0) return ReadOp;*/
+	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;
 	if (strcmp(name,"KeyOp") == 0) return KeyOp;
 	/*if (strcmp(name,"ScriptOp") == 0) return ScriptOp;*/
 	// Update
@@ -261,7 +263,7 @@ int enumerate(char *name)
 	if (strcmp(name,"PierceOp") == 0) return PierceOp;
 	if (strcmp(name,"NormalOp") == 0) return NormalOp;
 	if (strcmp(name,"TagbitsOp") == 0) return TagbitsOp;
-	if (strcmp(name,"PlaneOp") == 0) return PlaneOp;
+	/*if (strcmp(name,"PlaneOp") == 0) return PlaneOp;*/
 	// Format
 	if (strcmp(name,"CursorOp") == 0) return CursorOp;
 	if (strcmp(name,"AffineOp") == 0) return AffineOp;
@@ -489,6 +491,8 @@ int enumerate(char *name)
 	if (strcmp(name,"FloatsGiv") == 0) return FloatsGiv;
 	if (strcmp(name,"IntsGiv") == 0) return IntsGiv;
 	if (strcmp(name,"CharsGiv") == 0) return CharsGiv;
+	if (strcmp(name,"CharGiv") == 0) return CharGiv;
+	if (strcmp(name,"IntGiv") == 0) return IntGiv;
 	if (strcmp(name,"Givens") == 0) return Givens;
 	fatal("unknown name",0,__FILE__,__LINE__);
 	return -1;

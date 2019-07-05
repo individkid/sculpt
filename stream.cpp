@@ -177,7 +177,6 @@ void Stream::put(Data *data)
 	case (AbsoluteConf): break;
 	case (RefineConf): floats.put(3,data->pierce); break;
 	case (ManipConf): floats.put(16,data->matrix); break;
-	case (ClickConf): break;
 	case (AdditiveConf): break;
 	case (SubtractiveConf): break;
 	default: error("invalid conf",data->conf,__FILE__,__LINE__);}

@@ -24,10 +24,12 @@ class Read;
 class Write;
 class Window;
 struct lua_State;
+typedef const char * (*lua_Reader) (lua_State *L, void *data, size_t *size);
 
 class Script : public Thread
 {
 private:
+	Message<Query> *rsp2window;
 	Message<Query> *rsp2polytope;
 	Message<Query> *rsp2system;
 	Message<Query> **rsp2read;
@@ -36,6 +38,7 @@ private:
 	Message<Data> *req2polytope;
 	Message<Sound> *req2system;
 public:
+	Message<Query> window2req;
 	Message<Query> polytope2req;
 	Message<Query> system2req;
 	Message<Query> read2req;
@@ -54,7 +57,8 @@ private:
 	virtual void call();
 	virtual void done();
 public:
-	Script(int n);
+	void execute(void *data, lua_Reader func);
+	Script(int n, const char *path);
 	virtual ~Script();
 private:
 	lua_State *state;

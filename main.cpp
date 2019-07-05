@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
 	Read *read[argc]; for (int i = 0; i < argc; i++) read[i] = new Read(i,file[i]);
 	Write *write[argc]; for (int i = 0; i < argc; i++) write[i] = new Write(i,file[i]);
 	System *system = new System(argc);
-	Script *script = new Script(argc);
-	Polytope *polytope = new Polytope(argc,argv[0]);
+	Script *script = new Script(argc,path);
+	Polytope *polytope = new Polytope(argc,path);
 	window = new Window(argc);
 
 	for (int i = 0; i < argc; i++) {read[i]->connect(script); script->connect(i,read[i]);}

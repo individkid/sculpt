@@ -228,6 +228,7 @@ data Enumeration = Enumeration {
    {-writeOp :: CInt,-}
    bindOp :: CInt,
    {-readOp :: CInt,-}
+   planeOp :: CInt,
    keyOp :: CInt,
    {-scriptOp :: CInt,-}
    -- Update
@@ -257,7 +258,7 @@ data Enumeration = Enumeration {
    pierceOp :: CInt,
    normalOp :: CInt,
    tagbitsOp :: CInt,
-   planeOp :: CInt,
+   {-planeOp :: CInt,-}
    -- Format
    cursorOp :: CInt,
    affineOp :: CInt,
@@ -485,6 +486,8 @@ data Enumeration = Enumeration {
    floatsGiv :: CInt,
    intsGiv :: CInt,
    charsGiv :: CInt,
+   charGiv :: CInt,
+   intGiv :: CInt,
    givens :: CInt}
 
 main = do
@@ -518,6 +521,7 @@ main = do
    {-writeOpV <- (newCString "WriteOp") >>= enumerate-}
    bindOpV <- (newCString "BindOp") >>= enumerate
    {-readOpV <- (newCString "ReadOp") >>= enumerate-}
+   planeOpV <- (newCString "PlaneOp") >>= enumerate
    keyOpV <- (newCString "keyOp") >>= enumerate
    {-scriptOpV <- (newCString "scriptOp") >>= enumerate-}
    -- Update
@@ -547,7 +551,7 @@ main = do
    pierceOpV <- (newCString "PierceOp") >>= enumerate
    normalOpV <- (newCString "NormalOp") >>= enumerate
    tagbitsOpV <- (newCString "TagbitsOp") >>= enumerate
-   planeOpV <- (newCString "PlaneOp") >>= enumerate
+   {-planeOpV <- (newCString "PlaneOp") >>= enumerate-}
    -- Format
    cursorOpV <- (newCString "CursorOp") >>= enumerate
    affineOpV <- (newCString "AffineOp") >>= enumerate
@@ -775,6 +779,8 @@ main = do
    floatsGivV <- (newCString "FloatsGiv") >>= enumerate
    intsGivV <- (newCString "IntsGiv") >>= enumerate
    charsGivV <- (newCString "CharsGiv") >>= enumerate
+   charGivV <- (newCString "CharGiv") >>= enumerate
+   intGivV <- (newCString "IntGiv") >>= enumerate
    givensV <- (newCString "Givens") >>= enumerate
    mainLoop rdfd wrfd Enumeration {
    -- Sideband
@@ -804,6 +810,7 @@ main = do
    {-writeOp = writeOpV,-}
    bindOp = bindOpV,
    {-readOp = readOpV,-}
+   planeOp = planeOpV,
    keyOp = keyOpV,
    {-scriptOp = scripOpV,-}
    -- Update
@@ -833,7 +840,7 @@ main = do
    pierceOp = pierceOpV,
    normalOp = normalOpV,
    tagbitsOp = tagbitsOpV,
-   planeOp = planeOpV,
+   {-planeOp = planeOpV,-}
    -- Format
    cursorOp = cursorOpV,
    affineOp = affineOpV,
@@ -1061,4 +1068,6 @@ main = do
    floatsGiv = floatsGivV,
    intsGiv = intsGivV,
    charsGiv = charsGivV,
+   charGiv = charGivV,
+   intGiv = intGivV,
    givens = givensV} emptyState

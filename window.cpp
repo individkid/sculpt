@@ -38,13 +38,14 @@ extern "C" {
 
 void Window::connect(Script *ptr)
 {
+    req2script = &ptr->window2req;
     rsp2script = &ptr->window2rsp;
 }
 
 void Window::connect(int i, Write *ptr)
 {
     if (i < 0 || i >= nfile) error("connect",i,__FILE__,__LINE__);
-    object[i].req2write = &ptr->window2req;
+    req2write[i] = &ptr->window2req;
 }
 
 void Window::connect(Polytope *ptr)
@@ -56,7 +57,7 @@ void Window::connect(Polytope *ptr)
 void Window::init()
 {
     if (rsp2script == 0) error("unconnected rsp2script",0,__FILE__,__LINE__);
-    for (int i = 0; i < nfile; i++) if (object[i].req2write == 0) error("unconnected req2write",i,__FILE__,__LINE__);
+    for (int i = 0; i < nfile; i++) if (req2write[i] == 0) error("unconnected req2write",i,__FILE__,__LINE__);
     if (req2polytope == 0) error("unconnected req2polytope",0,__FILE__,__LINE__);
     if (rsp2polytope == 0) error("unconnected rsp2polytope",0,__FILE__,__LINE__);
     if (sizeof(GLenum) != sizeof(MYenum)) error("sizeof enum",sizeof(GLenum),__FILE__,__LINE__);
@@ -93,12 +94,13 @@ void Window::init()
 
 void Window::call()
 {
-    processQueues(polytope);
-    processCommands(polytope2req,polytope);
+    processQueries(script2rsp);
     processDatas(polytope2rsp);
     processStates(write2rsp);
-    processQueues(read);
-    processCommands(script2req,read);
+    processQueues(polytope);
+    processCommands(polytope2req,polytope);
+    processQueues(script);
+    processCommands(script2req,script);
 }
 
 void Window::wait()
@@ -117,35 +119,69 @@ void Window::done()
 {
     processQueues(polytope);
     processCommands(polytope2req,polytope);
-    processQueues(read);
-    processCommands(script2req,read);
+    processQueues(script);
+    processCommands(script2req,script);
     glfwTerminate(); window = 0;
 }
 
 Window::Window(int n) : Thread(1),
-    object(new Object[n]), rsp2polytope(0), req2polytope(0),
+    req2write(new Message<State>*[n]),
+    script2rsp(this,"Window<-Query<-Script"),
     script2req(this,"Script->Command->Window"),
     write2rsp(this,"Window<-State<-Write"),
     polytope2req(this,"Polytope->Command->Window"),
     polytope2rsp(this,"Window<-Data<-Polytope"),
-    window(0), finish(0), nfile(n)
+    window(0), object(new Object[n]), finish(0), nfile(n)
 {
     Object obj = {0}; for (int i = 0; i < n; i++) object[i] = obj;
-    Queues que = {0}; polytope = que;
-}
-
-Window::~Window()
-{
-    if (window) error("done not called",0,__FILE__,__LINE__);
-    processDatas(polytope2rsp);
-    processStates(write2rsp);
+    Queues que = {0}; polytope = que; script = que;
 }
 
 extern Window *window;
 
+static Power<char> chars(__FILE__,__LINE__);
 static Pool<State> states(__FILE__,__LINE__);
 static Power<float> floats(__FILE__,__LINE__);
 static Pool<Data> datas(__FILE__,__LINE__);
+static Pool<Query> queries(__FILE__,__LINE__);
+static std::map<char,char*> hotkey;
+static std::map<int,std::map<int,char*> > macro;
+
+Window::~Window()
+{
+    if (window) error("done not called",0,__FILE__,__LINE__);
+    processQueries(script2rsp);
+    processDatas(polytope2rsp);
+    processStates(write2rsp);
+    for (std::map<char,char*>::iterator i = hotkey.begin(); i != hotkey.end(); i++)
+        chars.put(strlen((*i).second)+1,(*i).second);
+    hotkey.clear();
+    for (std::map<int,std::map<int,char*> >::iterator i = macro.begin(); i != macro.end(); i++) {
+        for (std::map<int,char*>::iterator j = (*i).second.begin(); j != (*i).second.end(); j++)
+            chars.put(strlen((*j).second)+1,(*j).second);
+        (*i).second.clear();}
+    macro.clear();
+}
+
+extern "C" void sendMacro(int file, int plane)
+{
+    const char *script = "";
+    if (macro.find(file) != macro.end() && macro[file].find(plane) != macro[file].end()) script = macro[file][plane];
+    Query *query = queries.get(); query->script = chars.get(strlen(script)+1);
+    query->file = file; query->plane = plane; query->given = IntGiv;
+    strcpy(query->script,script);
+    window->sendScript(query);
+}
+
+extern "C" void sendHotkey(char key)
+{
+    const char *script = "";
+    if (hotkey.find(key) != hotkey.end()) script = hotkey[key];
+    Query *query = queries.get(); query->script = chars.get(strlen(script)+1);
+    query->key = key; query->given = CharGiv;
+    strcpy(query->script,script);
+    window->sendScript(query);
+}
 
 extern "C" void sendState(int file, enum Change change, float *matrix)
 {
@@ -218,9 +254,14 @@ extern "C" int decodeClick(int button, int action, int mods)
     return -1;
 }
 
+void Window::sendScript(Query *query)
+{
+    req2script->put(query);
+}
+
 void Window::sendWrite(State *state)
 {
-    object[state->file].req2write->put(state);
+    req2write[state->file]->put(state);
 }
 
 void Window::sendPolytope(Data *data)
@@ -419,13 +460,40 @@ void Window::processQueue(Queue &queue, Queues &queues)
 void Window::processCommands(Message<Command> &message, Queues &queues)
 {
     Command *command; while (message.get(command)) {
-        if (command->source != PolytopeSrc) {
-            changeState(command);}
-        if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
-        if (!command->finish) startCommand(*command);
-        if (command->finish) finishCommand(*command,queues);
-        if (command->finish) {
-            if (&message == &polytope2req) enque(polytope.query.first,polytope.query.last,command);}}
+        if (command->source == MacroSrc) {
+            std::map<int,std::map<int,char*> >::iterator i = macro.find(command->file);
+            if (i != macro.end()) {
+                std::map<int,char*>::iterator j = (*i).second.find(command->plane);
+                if (j != (*i).second.end()) chars.put(strlen((*j).second)+1,(*j).second);}
+            char *temp = chars.get(strlen(command->script)+1);
+            strcpy(temp,command->script);
+            macro[command->file][command->plane] = temp;}
+        else if (command->source == HotkeySrc) {
+            std::map<char,char*>::iterator i = hotkey.find(command->key);
+            if (i != hotkey.end()) chars.put(strlen((*i).second)+1,(*i).second);
+            char *temp = chars.get(strlen(command->script)+1);
+            strcpy(temp,command->script);
+            hotkey[command->key] = temp;}
+        else changeState(command);
+        if (command->source == PolytopeSrc) {
+            if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
+            if (!command->finish) startCommand(*command);
+            if (command->finish) finishCommand(*command,queues);
+            if (command->finish) {
+                if (&message == &polytope2req) enque(polytope.query.first,polytope.query.last,command);}}
+        else if (&message == &script2req) {
+            rsp2script->put(command);}
+        else if (&message == &polytope2req) {
+            rsp2polytope->put(command);}
+        else error("invalid message",0,__FILE__,__LINE__);
+    }
+}
+
+void Window::processQueries(Message<Query> &message)
+{
+    Query *query; while (message.get(query)) {
+        chars.put(strlen(query->script)+1,query->script);
+        queries.put(query);}
 }
 
 void Window::processDatas(Message<Data> &message)
@@ -437,7 +505,6 @@ void Window::processDatas(Message<Data> &message)
         case (RefineConf): floats.put(3,data->pierce); break;
         case (ManipConf): floats.put(16,data->matrix); break;
         case (PressConf): break;
-        case (ClickConf): break;
         case (AdditiveConf): break;
         case (SubtractiveConf): break;
         default: error("invalid conf",data->conf,__FILE__,__LINE__);}

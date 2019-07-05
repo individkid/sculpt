@@ -356,7 +356,7 @@ void triggerAction()
 	case (RelativeMode): sendRelative(current.file,current.plane,mode.topology,current.pierce); break;	
 	case (AbsoluteMode): sendAbsolute(current.file,current.plane,mode.topology); break;
 	default: displayError(mode.fixed,"invalid mode.fixed");}
-	case (PerformMode): sendSculpt(current.file,current.plane,ClickConf); break;
+	case (PerformMode): sendMacro(current.file,current.plane); break;
 	case (TransformMode): changeClick(PierceMode); break;
 	case (SuspendMode): case (PierceMode): changeClick(TransformMode); break;
 	default: displayError(mode.click,"invalid mode.click");}

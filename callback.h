@@ -50,6 +50,8 @@ struct Mode
 
 void warpCursor(float *cursor);
 int decodeClick(int button, int action, int mods);
+void sendMacro(int file, int plane);
+void sendHotkey(char key);
 void sendState(int file, enum Change change, float *matrix);
 void sendSculpt(int file, int plane, enum Configure conf);
 void sendRefine(int file, int plane, float *pierce);

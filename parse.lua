@@ -1,5 +1,5 @@
-/*
-*    object.hpp initialize per file information
+--[[
+*    parse.lue script for parsing double dash files
 *    Copyright (C) 2019  Paul Coelho
 *
 *    This program is free software: you can redistribute it and/or modify
@@ -14,32 +14,4 @@
 *
 *    You should have received a copy of the GNU General Public License
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include "message.hpp"
-
-class Write;
-class Polytope;
-class Read;
-struct Handle
-{
-	MYenum target;
-	MYenum unit;
-	MYuint handle;
-	MYenum usage;
-	MYuint index;
-};
-
-struct Object
-{
-	Handle handle[Buffers];
-	MYuint vao[Programs];
-	void initFile(int first);
-	void initHandle(enum Buffer buffer, int first, Handle &handle);
-	void initVao(enum Buffer buffer, enum Program program, MYuint vao, MYuint handle);
-	void initVao3f(MYuint index, MYuint handle);
-	void initVao2f(MYuint index, MYuint handle);
-	void initVao3u(MYuint index, MYuint handle);
-	void initVao2u(MYuint index, MYuint handle);
-	void initVao1u(MYuint index, MYuint handle);
-};
+--]]

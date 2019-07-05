@@ -45,7 +45,7 @@ Polytope::Polytope(int n, const char *path) : Thread(),
 	if (close(t2p[1]) < 0) error("close failed",errno,__FILE__,__LINE__); t2p[1] = -1;
 	char *argv[4];
 	char buffer[strlen(path)+1];
-	if (asprintf(&argv[0],"%s/haskell",dirname_r(path,buffer)) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
+	if (asprintf(&argv[0],"%s/sculpt.hsx",dirname_r(path,buffer)) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
 	if (asprintf(&argv[1],"%d",t2p[0]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
 	if (asprintf(&argv[2],"%d",p2t[1]) < 0) error("asprintf failed",errno,__FILE__,__LINE__);
 	argv[3] = 0;
