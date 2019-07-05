@@ -351,6 +351,8 @@ data Enumeration = Enumeration {
    floatsOp :: CInt,
    intsOp :: CInt,
    charsOp :: CInt,
+   {-keyOp :: CInt,-}
+   {-planeOp :: CInt,-}
    opcodes :: CInt,
    -- Source
    configureSrc :: CInt,
@@ -639,6 +641,8 @@ main = do
    floatsOpV <- (newCString "FloatsOp") >>= enumerate
    intsOpV <- (newCString "IntsOp") >>= enumerate
    charsOpV <- (newCString "CharsOp") >>= enumerate
+   {-keyOpV <- (newCString "KeyOp") >>= enumerate-}
+   {-planeOpV <- (newCString "PlaneOp") >>= enumerate-}
    opcodesV <- (newCString "Opcodes") >>= enumerate
    -- Source
    configureSrcV <- (newCString "ConfigureSrc") >>= enumerate
@@ -923,6 +927,8 @@ main = do
    floatsOp = floatsOpV,
    intsOp = intsOpV,
    charsOp = charsOpV,
+   {-keyOp = keyOpV,-}
+   {-planeOp = planeOpV,-}
    opcodes = opcodesV,
    -- Source
    configureSrc = configureSrcV,

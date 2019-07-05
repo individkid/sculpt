@@ -196,6 +196,8 @@ const char *enamerate(enum Opcode opcode)
 	case (FloatsOp): return "FloatsOp";
 	case (IntsOp): return "IntsOp";
 	case (CharsOp): return "CharsOp";
+	/*case (KeyOp): return "KeyOp";*/
+	/*case (PlaneOp): return "PlaneOp";*/
 	case (Opcodes): return "Opcodes";
 	default: fatal("unknown opcode",opcode,__FILE__,__LINE__);}
 	return 0;
@@ -353,6 +355,8 @@ int enumerate(char *name)
 	if (strcmp(name,"FloatsOp") == 0) return FloatsOp;
 	if (strcmp(name,"IntsOp") == 0) return IntsOp;
 	if (strcmp(name,"CharsOp") == 0) return CharsOp;
+	/*if (strcmp(name,"KeyOp") == 0) return KeyOp;*/
+	/*if (strcmp(name,"PlaneOp") == 0) return PlaneOp;*/
 	if (strcmp(name,"Opcodes") == 0) return Opcodes;
 	// Source
 	if (strcmp(name,"ConfigureSrc") == 0) return ConfigureSrc;

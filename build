@@ -1,5 +1,5 @@
 clang -g -DDEBUG=0 -I ../gl3w/include/ -I ../libpqueue/src -c ../gl3w/src/gl3w.c ../libpqueue/src/pqueue.c arithmetic.c callback.c haskell.c
 
-clang++ -o sculpt -g -DDEBUG=0 -I ../gl3w/include/ -I ../libpqueue/src -I /usr/local/include/lua -I /usr/local/Cellar/portaudio/19.6.0/include -L /usr/local/Cellar/portaudio/19.6.0/lib main.cpp message.cpp window.cpp microcode.cpp object.cpp write.cpp polytope.cpp stream.cpp file.cpp read.cpp pools.cpp system.cpp script.cpp gl3w.o pqueue.o arithmetic.o callback.o haskell.o -llua -lportaudio -lglfw3 -framework Cocoa -framework IOKit -framework OpenGL -framework CoreVideo
+clang++ -o sculpt -g -DDEBUG=0 -I ../gl3w/include/ -I ../libpqueue/src -I /usr/local/include/lua -I /usr/local/Cellar/portaudio/19.6.0/include -L /usr/local/Cellar/portaudio/19.6.0/lib main.cpp message.cpp window.cpp microcode.cpp object.cpp write.cpp polytope.cpp stream.cpp file.cpp read.cpp system.cpp script.cpp gl3w.o pqueue.o arithmetic.o callback.o haskell.o -llua -lportaudio -lglfw3 -framework Cocoa -framework IOKit -framework OpenGL -framework CoreVideo
 
 ghc -v0 -o haskell Main.hs Naive.hs haskell.o

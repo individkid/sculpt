@@ -352,7 +352,8 @@ struct Query
 	float *floats; // for request from Polytope
 	int *ints; // for request from Polytope
 	char *chars; // for request from Read
-	char key;}; // for request from Window
+	char key; // for request from Window
+	int plane;}; // for request from Window
 };
 
 enum Opcode {
@@ -430,6 +431,8 @@ enum Opcode {
 	FloatsOp,
 	IntsOp,
 	CharsOp,
+	/*KeyOp,*/
+	/*PlaneOp,*/
 	Opcodes};
 
 #endif
