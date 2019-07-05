@@ -110,7 +110,7 @@ int Parse::get(const char *&ptr, int file, Command *&command)
 
 #define CONF_SCULPT(ULPTS,MODES,ULPT,MODE) \
 	if (literal(ptr,"--sculpt") && literal(ptr,#ULPTS) && literal(ptr,#MODES) && \
-	alloc(command)) {command->file = file; command->source = ModeSource; \
+	alloc(command)) {command->file = file; command->source = ModeSrc; \
 	command->sculpt = ULPT##Ulpt; command->ULPTS = MODE##Mode; return 1;} \
 	else {ptr = sav;}
 
@@ -143,10 +143,10 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&data, Sound
 	CONF_SCULPT(fixed,absolute,Fixed,Absolute)
 
 	if (literal(ptr,"--global") && alloc(command) && scalars(ptr,16,command->matrix)) {
-	command->file = file; command->source = GlobalSource; return 1;}
+	command->file = file; command->source = GlobalSrc; return 1;}
 	else {deloc(16,command->matrix); deloc(command); ptr = sav;}
 	if (literal(ptr,"--matrix") && alloc(command) && scalars(ptr,16,command->matrix)) {
-	command->file = file; command->source = MatrixSource; return 1;}
+	command->file = file; command->source = MatrixSrc; return 1;}
 	else {deloc(16,command->matrix); deloc(command); ptr = sav;}
 	if (literal(ptr,"--plane") && alloc(data) && identifier(ptr,data->plane,planes) &&
 	number(ptr,data->versor) && scalars(ptr,3,data->vector)) {
@@ -176,7 +176,7 @@ int Parse::get(const char *&ptr, int file, Command *&command, Data *&data, Sound
 	else {ptr = sav;}
 	if (literal(ptr,"--configure") && alloc(command) &&
 	subconf(ptr,command->subconf) && scalar(ptr,command->setting)) {
-	command->file = file; command->source = ConfigureSource; return 1;}
+	command->file = file; command->source = ConfigureSrc; return 1;}
 	else {deloc(command); ptr = sav;}
 
 	if (ptr[0] == '-' && ptr[1] == '-') ptr += 2;

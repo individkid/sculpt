@@ -45,11 +45,13 @@ typedef unsigned MYuint;
 
 // Command
 enum Source {
-	ConfigureSource,
-	ModeSource,
-	MatrixSource,
-	GlobalSource,
-	PolytopeSource,
+	ConfigureSrc,
+	ModeSrc,
+	MatrixSrc,
+	GlobalSrc,
+	PolytopeSrc,
+	MacroSrc,
+	HotkeySrc,
 	Sources};
 enum Subconf {
 	StartSub,
@@ -170,9 +172,9 @@ struct Command // (Polytope,Script) -> Window
 	struct Command *next; int file;
 	enum Source source;
 	union {
-	// Script->ConfigureSource->Window
+	// Script->ConfigureSrc->Window
 	struct {enum Subconf subconf; float setting;};
-	// Script->ModeSource->Window
+	// Script->ModeSrc->Window
 	struct {enum Sculpt sculpt; union {
 	enum ClickMode click;
 	enum MouseMode mouse;
@@ -180,14 +182,16 @@ struct Command // (Polytope,Script) -> Window
 	enum TargetMode target;
 	enum TopologyMode topology;
 	enum FixedMode fixed;};};
-	// Script->(MatrixSource,GlobalSource)->Window
+	// Script->(MatrixSrc,GlobalSrc)->Window
 	float *matrix;
-	// (Script,Polytope)->PolytopeSource->Window
+	// (Script,Polytope)->PolytopeSrc->Window
  	struct {int feedback; int finish;
  	struct Update *update[Fields];
 	struct Render *render;
 	struct Command *redraw;
-	struct Command *pierce;};};
+	struct Command *pierce;};
+	// Script->(MacroSrc,HotkeySrc)->Window
+	struct {char key; char *script;};};
 };
 
 // Data
@@ -364,6 +368,7 @@ enum Opcode {
 	MatrixOp,
 	FeedbackOp, FinishOp,
 	AllocOp, /*WriteOp,*/ BindOp, /*ReadOp,*/
+	KeyOp, /*ScriptOp,*/
 	// Update
 	/*FileOp,*/ /*FinishOp,*/
 	BufferOp,
@@ -388,7 +393,7 @@ enum Opcode {
 	SideOp, InsidesOp, OutsidesOp, InsideOp, OutsideOp,
 	VersorOp, VectorOp,
 	FilenameOp,
-	KeyOp, FuncOp, /*CountOp,*/ SpecifyOp, /*ScriptOp,*/
+	FuncOp, /*CountOp,*/ SpecifyOp, /*ScriptOp,*/
 	/*FixedOp,*/ RelativeOp,
 	AbsoluteOp,
 	/*PierceOp,*/

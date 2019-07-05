@@ -66,11 +66,11 @@ void Pools::put(Command *command)
 {
 	while (command) {
 	switch (command->source) {
-	case (ConfigureSource): break;
-	case (ModeSource): break;
-	case (MatrixSource): floats.put(16,command->matrix); break;
-	case (GlobalSource): floats.put(16,command->matrix); break;
-	case (PolytopeSource): {
+	case (ConfigureSrc): break;
+	case (ModeSrc): break;
+	case (MatrixSrc): floats.put(16,command->matrix); break;
+	case (GlobalSrc): floats.put(16,command->matrix); break;
+	case (PolytopeSrc): {
 	for (int i = 0; i < Fields; i++) {
 	Update *update = command->update[i];
 	while (update) {updates.put(update); update = update->next;}}

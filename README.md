@@ -11,51 +11,50 @@ Initially before blocking on read from the unnamed pipe, Read sends location/pid
 Before sending data to the io thread, the window thread saves what it sends. When fields from the middle of the file are sent, the window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
 
 The -- commands and messages between threads are as follows. Note that only messages from the thread that reads files from the command line has side effects.  
---sculpt click additive (add region over clicked faced) Read->ModeSource->Window  
---sculpt click subtractive (remove region under clicked faced) Read->ModeSource->Window  
---sculpt click refine (add random plane through clicked point on facet) Read->ModeSource->Window  
---sculpt click tweak (randomize clicked facet plane) Read->ModeSource->Window  
---sculpt click perform (trigger script of clicked facet) Read->ModeSource->Window  
---sculpt click transform (click starts transformation) Read->ModeSource->Window  
---sculpt click suspend (stop transformation by mouse motion) Read->ModeSource->Window  
---sculpt click pierce (click changes fixed pierce point) Read->ModeSource->Window  
---sculpt mouse rotate (rotate about fixed pierce point) Read->ModeSource->Window  
---sculpt mouse tangent (translate parallel to fixed facet) Read->ModeSource->Window  
---sculpt mouse translate (translate parallel to picture plane) Read->ModeSource->Window  
---sculpt roller cylinder (rotate with rotated fixed axis) Read->ModeSource->Window  
---sculpt roller clock (rotate with fixed normal to picture plane) Read->ModeSource->Window  
---sculpt roller normal (rotate with fixed normal to facet) Read->ModeSource->Window  
---sculpt roller parallel (translate with fixed normal to facet) Read->ModeSource->Window  
---sculpt roller scale (scale with fixed pierce point) Read->ModeSource->Window  
---sculpt target session (transform display) Read->ModeSource->Window  
---sculpt target polytope (transform clicked polytope) Read->ModeSource->Window  
---sculpt target facet (transform clicked facet) Read->ModeSource->Window  
---sculpt topology numeric (tweak holds nothing invariant) Read->ModeSource->Window  
---sculpt topology invariant (tweak holds polytope invariant) Read->ModeSource->Window  
---sculpt topology symbolic (tweak holds space invariant) Read->ModeSource->Window  
---sculpt fixed relative (tweak holds pierce point fixed) Read->ModeSource->Window  
---sculpt fixed absolute (tweak holds nothing fixed) Read->ModeSource->Window  
---configure (change constants like focal length) Read->ConfigureSource->Window  
---command (send microcode buffers and triggers) Read->PolytopeSource->Window  
---global (change transformation of display) Read->GlobalSource->Window  
---matrix (change transformation of polytope) Read->MatrixSource->Window  
---plane (add and classify plane from vector) Read->PlaneConf->Polytope  
---space (add planes sampled from sidednesses) Read->SpaceConf->Polytope  
---region (change whether region in polytope) Read->RegionConf->Polytope  
---inflate (change polytope regions to all inside) Read->InflateConf->Polytope  
---polytope (add planes and regions sampled from polyants) Read->PolytopeConf->Polytope  
---picture (decorate plane with texture from file) Read->PictureConf->Polytope  
---once (send script to with data from polytope) Read->OnceConf->Polytope  
---change (send script for change of polytopr) Read->ChangeConf->Polytope  
---macro (send script to execute upon click) Read->MacroConf->Polytope  
---hotkey (send script to execute upon keypress) Read->HotkeyConf->Polytope  
---start (start stock and flow system) Read->StartEvent->System  
---stop (stop stock and flow system) Read->StopEvent->System  
---sound (add stock and flows to system) Read->SoundEvent->System  
---metric (send script and parameter indices for volatile stock) Read->ScriptEvent->System  
---script (send script to execute) Read->Query->Script  
-(send window transformation change to other processes) Window->GlobalChange->Write  
-(send polytope transformation change to other processes) Window->MatrixChange->Write  
-(send facet transformation for plane to other processses) Polytope->PlaneChange->Write  
-(send region opacity change for other processes) Polytope->RegionChange->Write
-(request topology information) Script->MacroConf->Polytope  
+--sculpt click additive (add region over clicked faced) ModeSource->Window  
+--sculpt click subtractive (remove region under clicked faced) ModeSource->Window  
+--sculpt click refine (add random plane through clicked point on facet) ModeSource->Window  
+--sculpt click tweak (randomize clicked facet plane) ModeSource->Window  
+--sculpt click perform (trigger script of clicked facet) ModeSource->Window  
+--sculpt click transform (click starts transformation) ModeSource->Window  
+--sculpt click suspend (stop transformation by mouse motion) ModeSource->Window  
+--sculpt click pierce (click changes fixed pierce point) ModeSource->Window  
+--sculpt mouse rotate (rotate about fixed pierce point) ModeSource->Window  
+--sculpt mouse tangent (translate parallel to fixed facet) ModeSource->Window  
+--sculpt mouse translate (translate parallel to picture plane) ModeSource->Window  
+--sculpt roller cylinder (rotate with rotated fixed axis) ModeSource->Window  
+--sculpt roller clock (rotate with fixed normal to picture plane) ModeSource->Window  
+--sculpt roller normal (rotate with fixed normal to facet) ModeSource->Window  
+--sculpt roller parallel (translate with fixed normal to facet) ModeSource->Window  
+--sculpt roller scale (scale with fixed pierce point) ModeSource->Window  
+--sculpt target session (transform display) ModeSource->Window  
+--sculpt target polytope (transform clicked polytope) ModeSource->Window  
+--sculpt target facet (transform clicked facet) ModeSource->Window  
+--sculpt topology numeric (tweak holds nothing invariant) ModeSource->Window  
+--sculpt topology invariant (tweak holds polytope invariant) ModeSource->Window  
+--sculpt topology symbolic (tweak holds space invariant) ModeSource->Window  
+--sculpt fixed relative (tweak holds pierce point fixed) ModeSource->Window  
+--sculpt fixed absolute (tweak holds nothing fixed) ModeSource->Window  
+--configure (change constants like focal length) ConfigureSource->Window  
+--command (send microcode buffers and triggers) PolytopeSource->Window  
+--global (change transformation of display) GlobalSource->Window  
+--matrix (change transformation of polytope) MatrixSource->Window  
+--plane (add and classify plane from vector) PlaneConf->Polytope  
+--space (add planes sampled from sidednesses) SpaceConf->Polytope  
+--region (change whether region in polytope) RegionConf->Polytope  
+--inflate (change polytope regions to all inside) InflateConf->Polytope  
+--polytope (add planes and regions sampled from polyants) PolytopeConf->Polytope  
+--picture (decorate plane with texture from file) PictureConf->Polytope  
+--once (send script to with data from polytope) OnceConf->Polytope  
+--notify (send script for change of polytope) NotifyConf->Polytope  
+--macro (send script to execute upon click) MacroConf->Window  
+--hotkey (send script to execute upon keypress) HotkeyConf->Window  
+--start (start stock and flow system) StartEvent->System  
+--stop (stop stock and flow system) StopEvent->System  
+--sound (add stock and flows to system) SoundEvent->System  
+--metric (send script and parameter indices for volatile stock) NotifyEvent->System  
+--script (send script to execute) Query->Script  
+(send window transformation change to other processes) GlobalChange->Write  
+(send polytope transformation change to other processes) MatrixChange->Write  
+(send facet transformation for plane to other processses) PlaneChange->Write  
+(send region opacity change for other processes) RegionChange->Write

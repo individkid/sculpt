@@ -72,6 +72,8 @@ const char *enamerate(enum Opcode opcode)
 	/*case (WriteOp): return "WriteOp";*/
 	case (BindOp): return "BindOp";
 	/*case (ReadOp): return "ReadOp";*/
+	case (KeyOp): return "KeyOp";
+	/*case (ScriptOp): return "ScriptOp";*/
 	// Update
 	/*case (FileOp): return "FileOp";*/
 	/*case (FinishOp): return "FinishOp";*/
@@ -129,7 +131,6 @@ const char *enamerate(enum Opcode opcode)
 	case (VersorOp): return "VersorOp";
 	case (VectorOp): return "VectorOp";
 	case (FilenameOp): return "FilenameOp";
-	case (KeyOp): return "KeyOp";
 	case (FuncOp): return "FuncOp";
 	/*case (CountOp): return "CountOp";*/
 	case (SpecifyOp): return "SpecifyOp";
@@ -229,6 +230,8 @@ int enumerate(char *name)
 	/*if (strcmp(name,"WriteOp") == 0) return WriteOp;*/
 	if (strcmp(name,"BindOp") == 0) return BindOp;
 	/*if (strcmp(name,"ReadOp") == 0) return ReadOp;*/
+	if (strcmp(name,"KeyOp") == 0) return KeyOp;
+	/*if (strcmp(name,"ScriptOp") == 0) return ScriptOp;*/
 	// Update
 	/*if (strcmp(name,"FileOp") == 0) return FileOp;*/
 	/*if (strcmp(name,"FinishOp") == 0) return FinishOp;*/
@@ -284,7 +287,6 @@ int enumerate(char *name)
 	if (strcmp(name,"VersorOp") == 0) return VersorOp;
 	if (strcmp(name,"VectorOp") == 0) return VectorOp;
 	if (strcmp(name,"FilenameOp") == 0) return FilenameOp;
-	if (strcmp(name,"KeyOp") == 0) return KeyOp;
 	if (strcmp(name,"FuncOp") == 0) return FuncOp;
 	/*if (strcmp(name,"CountOp") == 0) return CountOp;*/
 	if (strcmp(name,"SpecifyOp") == 0) return SpecifyOp;
@@ -353,11 +355,13 @@ int enumerate(char *name)
 	if (strcmp(name,"CharsOp") == 0) return CharsOp;
 	if (strcmp(name,"Opcodes") == 0) return Opcodes;
 	// Source
-	if (strcmp(name,"ConfigureSource") == 0) return ConfigureSource;
-	if (strcmp(name,"ModeSource") == 0) return ModeSource;
-	if (strcmp(name,"MatrixSource") == 0) return MatrixSource;
-	if (strcmp(name,"GlobalSource") == 0) return GlobalSource;
-	if (strcmp(name,"PolytopeSource") == 0) return PolytopeSource;
+	if (strcmp(name,"ConfigureSrc") == 0) return ConfigureSrc;
+	if (strcmp(name,"ModeSrc") == 0) return ModeSrc;
+	if (strcmp(name,"MatrixSrc") == 0) return MatrixSrc;
+	if (strcmp(name,"GlobalSrc") == 0) return GlobalSrc;
+	if (strcmp(name,"PolytopeSrc") == 0) return PolytopeSrc;
+	if (strcmp(name,"MacroSrc") == 0) return MacroSrc;
+	if (strcmp(name,"HotkeySrc") == 0) return HotkeySrc;
 	if (strcmp(name,"Sources") == 0) return Sources;
 	// Subconf
 	if (strcmp(name,"StartSub") == 0) return StartSub;

@@ -321,7 +321,7 @@ void changeFixed(enum FixedMode mod)
 void changeState(struct Command *command)
 {
 	switch (command->source) {
-	case (ModeSource): switch (command->sculpt) {
+	case (ModeSrc): switch (command->sculpt) {
 	case (ClickUlpt): changeClick(command->click); break;
 	case (MouseUlpt): changeMouse(command->mouse); break;
 	case (RollerUlpt): changeRoller(command->roller); break;
@@ -329,11 +329,11 @@ void changeState(struct Command *command)
 	case (TopologyUlpt): changeTopology(command->topology); break;
 	case (FixedUlpt): changeFixed(command->fixed); break;
 	default: displayError(command->sculpt,"invalid command->sculpt");}
-	case (MatrixSource): {
+	case (MatrixSrc): {
 	float invert[16]; invmat(copymat(invert,last.polytope[command->file],4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.polytope[command->file],4),invert,4);
 	timesmat(copymat(matrix.polytope[command->file],command->matrix,4),delta,4); break;}
-	case (GlobalSource): {
+	case (GlobalSrc): {
 	float invert[16]; invmat(copymat(invert,last.session,4),4);
 	float delta[16]; timesmat(copymat(delta,matrix.session,4),invert,4);
 	timesmat(copymat(matrix.session,command->matrix,4),delta,4); break;}

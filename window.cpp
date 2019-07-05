@@ -419,7 +419,7 @@ void Window::processQueue(Queue &queue, Queues &queues)
 void Window::processCommands(Message<Command> &message, Queues &queues)
 {
     Command *command; while (message.get(command)) {
-        if (command->source != PolytopeSource) {
+        if (command->source != PolytopeSrc) {
             changeState(command);}
         if (command->next != 0) error("unsupported next",command->next,__FILE__,__LINE__);
         if (!command->finish) startCommand(*command);

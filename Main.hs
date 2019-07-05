@@ -228,6 +228,8 @@ data Enumeration = Enumeration {
    {-writeOp :: CInt,-}
    bindOp :: CInt,
    {-readOp :: CInt,-}
+   keyOp :: CInt,
+   {-scriptOp :: CInt,-}
    -- Update
    {-fileOp :: CInt,-}
    {-finishOp :: CInt,-}
@@ -283,7 +285,6 @@ data Enumeration = Enumeration {
    versorOp :: CInt,
    vectorOp :: CInt,
    filenameOp :: CInt,
-   keyOp :: CInt,
    funcOp :: CInt,
    {-countOp :: CInt,-}
    specifyOp :: CInt,
@@ -352,11 +353,13 @@ data Enumeration = Enumeration {
    charsOp :: CInt,
    opcodes :: CInt,
    -- Source
-   configureSource :: CInt,
-   modeSource :: CInt,
-   matrixSource :: CInt,
-   globalSource :: CInt,
-   polytopeSource :: CInt,
+   configureSrc :: CInt,
+   modeSrc :: CInt,
+   matrixSrc :: CInt,
+   globalSrc :: CInt,
+   polytopeSrc :: CInt,
+   macroSrc :: CInt,
+   hotkeySrc :: CInt,
    sources :: CInt,
    -- Subconf
    startSub :: CInt,
@@ -513,6 +516,8 @@ main = do
    {-writeOpV <- (newCString "WriteOp") >>= enumerate-}
    bindOpV <- (newCString "BindOp") >>= enumerate
    {-readOpV <- (newCString "ReadOp") >>= enumerate-}
+   keyOpV <- (newCString "keyOp") >>= enumerate
+   {-scriptOpV <- (newCString "scriptOp") >>= enumerate-}
    -- Update
    {-fileOpV <- (newCString "FileOp") >>= enumerate-}
    {-finishOpV <- (newCString "FinishOp") >>= enumerate-}
@@ -568,7 +573,6 @@ main = do
    versorOpV <- (newCString "VersorOp") >>= enumerate
    vectorOpV <- (newCString "VectorOp") >>= enumerate
    filenameOpV <- (newCString "FilenameOp") >>= enumerate
-   keyOpV <- (newCString "KeyOp") >>= enumerate
    funcOpV <- (newCString "FuncOp") >>= enumerate
    {-countOpV <- (newCString "CountOp") >>= enumerate-}
    specifyOpV <- (newCString "SpecifyOp") >>= enumerate
@@ -637,11 +641,13 @@ main = do
    charsOpV <- (newCString "CharsOp") >>= enumerate
    opcodesV <- (newCString "Opcodes") >>= enumerate
    -- Source
-   configureSourceV <- (newCString "ConfigureSource") >>= enumerate
-   modeSourceV <- (newCString "ModeSource") >>= enumerate
-   matrixSourceV <- (newCString "MatrixSource") >>= enumerate
-   globalSourceV <- (newCString "GlobalSource") >>= enumerate
-   polytopeSourceV <- (newCString "PolytopeSource") >>= enumerate
+   configureSrcV <- (newCString "ConfigureSrc") >>= enumerate
+   modeSrcV <- (newCString "ModeSrc") >>= enumerate
+   matrixSrcV <- (newCString "MatrixSrc") >>= enumerate
+   globalSrcV <- (newCString "GlobalSrc") >>= enumerate
+   polytopeSrcV <- (newCString "PolytopeSrc") >>= enumerate
+   macroSrcV <- (newCString "MacroSrc") >>= enumerate
+   hotkeySrcV <- (newCString "HotkeySrc") >>= enumerate
    sourcesV <- (newCString "Sources") >>= enumerate
    -- Subconf
    startSubV <- (newCString "StartSub") >>= enumerate
@@ -794,6 +800,8 @@ main = do
    {-writeOp = writeOpV,-}
    bindOp = bindOpV,
    {-readOp = readOpV,-}
+   keyOp = keyOpV,
+   {-scriptOp = scripOpV,-}
    -- Update
    {-fileOp = fileOpV,-}
    {-finishOp = finishOpV,-}
@@ -849,7 +857,6 @@ main = do
    versorOp = versorOpV,
    vectorOp = vectorOpV,
    filenameOp = filenameOpV,
-   keyOp = keyOpV,
    funcOp = funcOpV,
    {-countOp = countOpV,-}
    specifyOp = specifyOpV,
@@ -918,11 +925,13 @@ main = do
    charsOp = charsOpV,
    opcodes = opcodesV,
    -- Source
-   configureSource = configureSourceV,
-   modeSource = modeSourceV,
-   matrixSource = matrixSourceV,
-   globalSource = globalSourceV,
-   polytopeSource = polytopeSourceV,
+   configureSrc = configureSrcV,
+   modeSrc = modeSrcV,
+   matrixSrc = matrixSrcV,
+   globalSrc = globalSrcV,
+   polytopeSrc = polytopeSrcV,
+   macroSrc = macroSrcV,
+   hotkeySrc = hotkeySrcV,
    sources = sourcesV,
    -- Subconf
    startSub = startSubV,
