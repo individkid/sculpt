@@ -19,23 +19,29 @@
 #ifndef STREAM_HPP
 #define STREAM_HPP
 
-#include "pools.hpp"
+#include "message.hpp"
 
-class Stream : public Pools
+class Stream
 {
 private:
 	void get(int fd, Command *&command);
 	void get(int fd, Update *&update);
 	void get(int fd, Render *&render);
 	void get(int fd, Query *&query);
+	void get(int fd, State *&state);
 	void get(int fd, Data *&data);
 public:
-	Stream(const char *file, int line) : Pools(file,line) {}
-	Opcode get(int fd, Data *&data, Query *&query, Command *&command);
+	Stream(const char *file, int line) {}
+	Opcode get(int fd, Data *&data, State *&state,
+		Query *&query, Command *&command);
 	void put(int fd, Opcode opcode, Command *command);
 	void put(int fd, Opcode opcode, Query *query);
 	void put(int fd, Opcode opcode, State *state);
 	void put(int fd, Opcode opcode, Data *data);
+	void put(Command *command);
+	void put(Query *query);
+	void put(State *state);
+	void put(Data *data);
 };
 
 #endif

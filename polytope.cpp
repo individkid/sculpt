@@ -57,9 +57,9 @@ Polytope::Polytope(int n, const char *path) : Thread(),
 Polytope::~Polytope()
 {
 	Command *command; Query *query; State *state;
-	while (write2rsp.get(state)) stream.Pools::put(state);
-	while (script2rsp.get(query)) stream.Pools::put(query);
-	while (window2rsp.get(command)) stream.Pools::put(command);
+	while (write2rsp.get(state)) stream.put(state);
+	while (script2rsp.get(query)) stream.put(query);
+	while (window2rsp.get(command)) stream.put(command);
 }
 
 void Polytope::connect(int i, Write *ptr)
@@ -103,9 +103,9 @@ void Polytope::init()
 
 void Polytope::call()
 {
-	Data *data; Query *query; State *state; Command *command;
+	Data *data; State *state; Query *query; Command *command;
 	if (iss) {iss = 0;
-	Opcode opcode = stream.get(p2t[0],data,query,command);
+	Opcode opcode = stream.get(p2t[0],data,state,query,command);
 	switch (opcode) {
 	case (ReadOp): rsp2script->put(data); break;
 	case (WriteOp): req2write[state->file]->put(state); break;
