@@ -117,7 +117,7 @@ Program = {
 	"Side2",
 	"Programs",
 }
--- {name,type,{field={values}},nil(field)|{int}(array)|{}(pointer)|int(alloc)|Enum(array)|field(array)}
+-- {name,type,{field={values}},nil(field)|{int}(array)|{}(opaque)|int(alloc)|0(string)|Enum(array)|field(array)}
 Format = {
 	{"cursor","float",{},{2}},
 	{"affine","float",{},{16}},
@@ -151,9 +151,9 @@ Update = {
 	{"height","int",{"buffer"={"Texture0"=true,"Texture1"=true}},nil},
 	{"format","Format",{"buffer"={"Update"=true}},1},
 	{"feedback","Feedback",{"buffer"={"Feedback"=true}},1},
-	{"query","MYuint",{"buffer"={"Inquery"=true}},{}},
+	{"query","MYuint*",{"buffer"={"Inquery"=true}},nil},
 	{"data","char",{"buffer"=allbefore(Buffer,"Texture0")},"size"},
-	{"function","MYfunc",{},{}},
+	{"function","MYfunc*",{},nil},
 }
 Render = {
 	{"next","Render",{},1},
@@ -209,8 +209,7 @@ enum Function {
 	"AttachedFunc",
 	"Functions",
 }
-struct Data
-{
+Data = {
 	{"next","Data",{},1},
 	{"file","int",{},nil},
 	{"plane","int",{},nil},
@@ -219,8 +218,6 @@ struct Data
 	{"regions","int",{"conf"={"SpaceConf"=true}},nil},
 	{"planes","int",{"conf"={"SpaceConf"=true}},"boundaries"},
 	{"sides","int",{"conf"={"SpaceConf"=true}},{"boundaries","regions"}},
-	// Script->RegionConf->Polytope
-	struct {
 	{"side","int",{"conf"={"RegionConf"=true}},nil},
 	{"insides","int",{"conf"={"RegionConf"=true}},nil},
 	{"outsides","int",{"conf"={"RegionConf"=true}},nil},
@@ -228,21 +225,121 @@ struct Data
 	{"outside","int",{"conf"={"RegionConf"=true}},"outsides"},
 	{"versor","int",{"conf"={"PlaneConf"=true}},nil},
 	{"vector","float",{"conf"={"PlaneConf"=true}},3},
-	// Script->PictureConf->Polytope
-	char *filename;
-	// Script->(OnceConf,NotifyConf)->Polytope
-	struct {enum Function func; int count; int *specify; char *script;};
-	// (Script,Window)->RelativeConf->Polytope
-	struct {float *fixed; enum TopologyMode relative;};
-	// (Script,Window)->AbsoluteConf->Polytope
-	enum TopologyMode absolute;
-	// (Script,Window)->RefineConf->Polytope
-	float *pierce;
-	// (Script,Window)->ManipConf->Poltope
-	float *matrix;
-	// (Script,Window)->PressConf->Polytope
-	char press;};
-	// (Script,Window)->ClickConf->Polytope
-	// (Script,Window)->AdditiveConf->Polytope
-	// (Script,Window)->SubtractiveConf->Polytope
-};
+	{"filename","char",{"conf"={"PictureConf"=true}},0},
+	{"func","Function",{"conf"={"OnceConf"=true,"NotifyConf"=true}},nil},
+	{"count","int",{"conf"={"OnceConf"=true,"NotifyConf"=true}},nil},
+	{"specify","int",{"conf"={"OnceConf"=true,"NotifyConf"=true}},"count"},
+	{"script","char",{"conf"={"OnceConf"=true,"NotifyConf"=true}},0},
+	{"fixed","float",{"conf"={"RelativeConf"=true}},3},
+	{"relative","TopologyMode",{"conf"={"RelativeConf"}},nil},
+	{"absolute","TopologyMode",{"conf"={"AbsoluteConf"}},nil},
+	{"pierce","float",{"conf"={"RefineConf"=true}},3},
+	{"matrix","float",{"conf"={"ManipConf"=true}},16},
+	{"press","char",{"conf"={"PressConf"=true}},nil},
+}
+Event = {
+	"StartEvent",
+	"StopEvent",
+	"SoundEvent",
+	"OnceEvent",
+	"NotifyEvent",
+	"UpdateEvent",
+	"Events",
+}
+Equate = {
+	"ValueEqu",
+	"DelayEqu",
+	"SchedEqu",
+	"LeftEqu",
+	"RightEqu",
+	"Equates",
+}
+Factor = {
+	"ConstFactor",
+	"VaryFactor",
+	"SquareFactor",
+	"CompFactor",
+	"Factors",
+}
+Term = {
+	{"coef","double",{},nil},
+	{"factor","Factor",{},nil},
+	{"id","int",{0=1},"factor"},
+	{"ptr","double*",{0=2},"factor")},
+}
+Sum = {
+	{"count","int",{},nil},
+	{"term","Term",{},"count"},
+}
+Equ = {
+	{"numer","Sum",{},nil},
+	{"denom","Sum",{},nil},
+}
+Sound = {
+	{"next","Sound",{},1},
+	{"done","int",{},nil},
+	{"ident","int",{},nil},
+	{"value","double",{},nil},
+	{"event","Event",{},nil},
+	{"equ","Equ",{"event"={"SoundEvent"=true}},"Equate"},
+	{"sched","Equ",{"event"={"OnceEvent"=true,"NotifyEvent"=true}},nil},
+	{"count","int",{"event"={"OnceEvent"=true,"NotifyEvent"=true}},nil},
+	{"ids","int",{"event"={"OnceEvent"=true,"NotifyEvent"=true},0=1},"count"},
+	{"ptrs","double*",{"event"={"OnceEvent"=true,"NotifyEvent"=true},0=2},"count"},
+	{"script","char",{"event"={"OnceEvent"=true,"NotifyEvent"=true}},0},
+	{"id","int",{"event"={"UpdateEvent"=true}},nil},
+	{"update","double*",{"event"={"UpdateEvent"=true}},nil},
+}
+Change = {
+	"SculptChange",
+	"GlobalChange",
+	"MatrixChange",
+	"PlaneChange",
+	"RegionChange",
+	"TextChange",
+	"Changes",
+}
+State = {
+	{"next","State",{},1},
+	{"file","int",{},nil},
+	{"plane","int",{},nil},
+	{"change","Change",{},nil},
+	{"sculpt","Sculpt",{"change"={"SculptChange"=true}},nil},
+	{"click","ClickMode",{"change"={"SculptChange"=true},"sculpt"={"ClickUlpt"=true}},nil},
+	{"mouse","MouseMode",{"change"={"SculptChange"=true},"sculpt"={"MouseUlpt"=true}},nil},
+	{"roller","RollerMode",{"change"={"SculptChange"=true},"sculpt"={"RollerUlpt"=true}},nil},
+	{"target","TargetMode",{"change"={"SculptChange"=true},"sculpt"={"TargetUlpt"=true}},nil},
+	{"topology","TopologyMode",{"change"={"SculptChange"=true},"sculpt"={"TopologyUlpt"=true}},nil},
+	{"fixed","FixedMode",{"change"={"SculptChange"=true},"sculpt"={"FixedUlpt"=true}},nil},
+	{"side","int",{"change"={"RegionChange"=true}},nil},
+	{"insides","int",{"change"={"RegionChange"=true}},nil},
+	{"outsides","int",{"change"={"RegionChange"=true}},nil},
+	{"inside","int",{"change"={"RegionChange"=true}},"insides"},
+	{"outside","int",{"change"={"RegionChange"=true}},"outsides"},
+	{"matrix","float",{"change"={"MatrixChange"=true,"GlobalChange"=true}}}
+	{"versor","int",{"change"={"PlaneChange"=true}},nil},
+	{"vector","float",{"change"={"PlaneChange"=true}},3},
+	{"text","char",{"change"={"TextChange"=true}},0},
+}
+Given = {
+	"DoublesGiv",
+	"FloatsGiv",
+	"IntsGiv",
+	"CharsGiv",
+	"CharGiv",
+	"IntGiv",
+	"Givens",
+}
+Query = {
+	{"next","Query",{},1},
+	{"script","char",{},0},
+	{"given","Given",{},nil},
+	{"file","int",{"given"={"IntGiv"=true}},nil},
+	{"length","int",{"given"=allexcept({"CharGiv"=true,"IntGiv"=true})},nil},
+	{"doubles","double",{"given"={"DoublesGiv"=true}},"length"},
+	{"floats","float",{"given"={"FloatsGiv"=true}},"length"},
+	{"ints","int",{"given"={"IntsGiv"=true}},"length"},
+	{"chars","char",{"given"={"CharsGiv"=true}},"length"},
+	{"key","char",{"given"={"CharGiv"=true}},nil},
+	{"plane","int",{"given"={"IntGiv"=true}},nil},
+}

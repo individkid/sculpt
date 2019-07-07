@@ -121,8 +121,7 @@ Script::Script(int n, const char *path) :
 	window2rsp(this,"Script<-Command<-Window"),
 	polytope2rsp(this,"Script<-Data<-Polytope"),
 	system2rsp(this,"Script<-Sound<-System"),
-	state(0), nfile(n), cleanup(0),
-	query(0), state(0), command(0), data(0), sound(0)
+	state(0), nfile(n), cleanup(0), query(0)
 {
 	state = luaL_newstate();
 	char *argv;
