@@ -121,7 +121,8 @@ Script::Script(int n, const char *path) :
 	window2rsp(this,"Script<-Command<-Window"),
 	polytope2rsp(this,"Script<-Data<-Polytope"),
 	system2rsp(this,"Script<-Sound<-System"),
-	state(0), nfile(n), cleanup(0)
+	state(0), nfile(n), cleanup(0),
+	query(0), state(0), command(0), data(0), sound(0)
 {
 	state = luaL_newstate();
 	char *argv;
@@ -178,12 +179,13 @@ const char *reader(lua_State *L, void *data, size_t *size)
 
 void Script::processQueries(Message<Query> &message)
 {
-	Query *query; while (message.get(query)) {
+	while (message.get(query)) {
 	if (!cleanup) execute(query->script,reader);
 	if (&message == &window2req) rsp2window->put(query);
 	if (&message == &polytope2req) rsp2polytope->put(query);
 	if (&message == &system2req) rsp2system->put(query);
-	if (&message == &read2req) rsp2read[query->file]->put(query);}
+	if (&message == &read2req) rsp2read[query->file]->put(query);
+	query = 0;}
 }
 
 void Script::processStates(Message<State> &message)

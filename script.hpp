@@ -63,6 +63,7 @@ public:
 private:
 	lua_State *state;
 	int nfile; int cleanup;
+	Query *query; State *state; Command *command; Data *data; Sound *sound;
 private:
 	void processQueries(Message<Query> &message);
 	void processStates(Message<State> &message);

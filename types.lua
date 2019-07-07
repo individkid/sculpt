@@ -15,65 +15,234 @@
 *    You should have received a copy of the GNU General Public License
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --]]
-invSource = {"ConfigureSrc","ModeSrc","MatrixSrc","GlobalSrc","PolytopeSrc","MacroSrc","HotkeySrc","Sources"}
-Source = inverse(invSource)
-invSubconf = {"StartSub","StopSub","Subconfs"}
-Subconf = inverse(invSubconf)
-invSculpt = {"ClickUlpt","MouseUlpt","RollerUlpt","TargetUlpt","TopologyUlpt","FixedUlpt","Sculpts"}
-Sculpt = inverse(invSculpt)
-invClickMode = {"AdditiveMode","SubtractiveMode","RefineMode","TweakMode","PerformMode","TransformMode","SuspendMode","PierceMode","ClickModes"}
-ClickMode = inverse(invClickMode)
-invMouseMode = {"RotateMode","TangentMode","TranslateMode","MouseModes"}
-MouseMode = inverse(invMouseMode)
-invRollerMode = {"CylinderMode","ClockMode","NormalMode","ParallelMode","ScaleMode","RollerModes"}
-RollerMode = inverse(invRollerMode)
-invTargetMode = {"SessionMode","PolytopeMode","FacetMode","TargetModes"}
-TargetMode = inverse(invTargetMode)
-invTopologyMode = {"NumericMode","InvariantMode","SymbolicMode","TopologyModes"}
-TopologyMode = inverse(invTopologyMode)
-invFixedMode = {"RelativeMode","AbsoluteMode","FixedModes"}
-FixedMode = inverse(invFixedMode)
-invField = {"AllocField","WriteField","BindField","ReadField","Fields"}
-Field = inverse(invField)
-invBuffer = {"Point0","Versor","Point1","Normal","Coordinate","Color","Weight","Tag","Point2","Face1","Triple0","Triple1","Texture0","Texture1","Uniform","Feedback","Inquery","Buffers"}
-Buffer = inverse(invBuffer)
-invProgram = {"Draw","Pierce","Sect0","Sect1","Side1","Side2","Programs"}
-Program = inverse(invProgram)
+Source = {
+	"ConfigureSrc",
+	"ModeSrc",
+	"MatrixSrc",
+	"GlobalSrc",
+	"PolytopeSrc",
+	"MacroSrc",
+	"HotkeySrc",
+	"Sources",
+}
+Subconf = {
+	"StartSub",
+	"StopSub",
+	"Subconfs",
+}
+Sculpt = {
+	"ClickUlpt",
+	"MouseUlpt",
+	"RollerUlpt",
+	"TargetUlpt",
+	"TopologyUlpt",
+	"FixedUlpt",
+	"Sculpts",
+}
+ClickMode = {
+	"AdditiveMode",
+	"SubtractiveMode",
+	"RefineMode",
+	"TweakMode",
+	"PerformMode",
+	"TransformMode",
+	"SuspendMode",
+	"PierceMode",
+	"ClickModes",
+}
+MouseMode = {
+	"RotateMode",
+	"TangentMode",
+	"TranslateMode",
+	"MouseModes",
+}
+RollerMode = {
+	"CylinderMode",
+	"ClockMode",
+	"NormalMode",
+	"ParallelMode",
+	"ScaleMode",
+	"RollerModes",
+}
+TargetMode = {
+	"SessionMode",
+	"PolytopeMode",
+	"FacetMode",
+	"TargetModes",
+}
+TopologyMode = {
+	"NumericMode",
+	"InvariantMode",
+	"SymbolicMode",
+	"TopologyModes",
+}
+FixedMode = {
+	"RelativeMode",
+	"AbsoluteMode",
+	"FixedModes",
+}
+Field = {
+	"AllocField",
+	"WriteField",
+	"BindField",
+	"ReadField",
+	"Fields",
+}
+Buffer = {
+	"Point0",
+	"Versor",
+	"Point1",
+	"Normal",
+	"Coordinate",
+	"Color",
+	"Weight",
+	"Tag",
+	"Point2",
+	"Face1",
+	"Triple0",
+	"Triple1",
+	"Texture0",
+	"Texture1",
+	"Uniform",
+	"Feedback",
+	"Inquery",
+	"Buffers",
+}
+Program = {
+	"Draw",
+	"Pierce",
+	"Sect0",
+	"Sect1",
+	"Side1",
+	"Side2",
+	"Programs",
+}
+-- {name,type,{field={values}},nil(field)|{int}(array)|{}(pointer)|int(alloc)|Enum(array)|field(array)}
 Format = {
-	{"cursor","float",nil,"array",{2}},
-	{"affine","float",nil,"array",{16}},
-	{"perplane","float",nil,"array",{16}},
-	{"basis","float",nil,"array",{9,3}},
-	{"cutoff","float",nil,"field",nil},
-	{"slope","float",nil,"field",nil},
-	{"aspect","float",nil,"field",nil},
-	{"feather","float",nil,"array",{3}},
-	{"arrow","float",nil,"array",{3}},
-	{"enable","MYuint",nil,"field",nil},
-	{"filler1","char",nil,"array",{0}},
-	{"tagplane","MYuint",nil,"field",nil},
-	{"filler2","char",nil,"array",{0}},
-	{"taggraph","MYuint",nil,"field",nil},
-};
+	{"cursor","float",{},{2}},
+	{"affine","float",{},{16}},
+	{"perplane","float",{},{16}},
+	{"basis","float",{},{9,3}},
+	{"cutoff","float",{},nil},
+	{"slope","float",{},nil},
+	{"aspect","float",{},nil},
+	{"feather","float",{},{3}},
+	{"arrow","float",{},{3}},
+	{"enable","MYuint",{},nil},
+	{"filler1","char",{},{0}},
+	{"tagplane","MYuint",{},nil},
+	{"filler2","char",{},{0}},
+	{"taggraph","MYuint",{},nil},
+}
 Feedback = {
-	{"pierce","float",function (s) return true end,"array",3},
-	{"normal","float",nil,"array",3},
-	{"tagbits","int",nil,"field",nil},
-	{"plane","int",nil,"field",nil},
+	{"pierce","float",{},{3}},
+	{"normal","float",{},{3}},
+	{"tagbits","int",{},nil},
+	{"plane","int",{},nil},
 }
-
 Update = {
-	{"next","Update",function (s) return true end,"link",nil},
-	{"file","int",nil,"field",nil},
-	{"finish","int",nil,"field",nil},
-	{"buffer","Buffer",nil,"field",nil},
-	{"offset","int",function (s) return s.buffer ~= Buffer.Texture0 and s.buffer ~= Buffer.Texture1 end,"field",nil},
-	{"width","int",function (s) return s.buffer == Buffer.Texture0 or s.buffer == Buffer.Texture1 end,"field",nil},
-	{"size","int",function (s) return s.buffer ~= Buffer.Texture0 and s.buffer ~= Buffer.Texture1 end,"field",nil},
-	{"height","int",function (s) return s.buffer == Buffer.Texture0 or s.buffer == Buffer.Texture1 end,"field",nil},
-	{"format","Format",function (s) return s.buffer == Buffer.Update end,"struct",nil},
-	{"feedback","Feedback",function (s) return s.buffer == Buffer.Feedback,"struct",nil},
-	{"query","MYuint",function (s) return s.buffer == Buffer.Inquery end,"opaque",nil},
-	{"data","void",function (s) return s.buffer < Buffer.Texture0 end,"scalars","size"},
-	{"function","MYfunc",function (s) return true end,"opaque",nil},
+	{"next","Update",{},1},
+	{"file","int",{},nil},
+	{"finish","int",{},nil},
+	{"buffer","Buffer",{},nil},
+	{"offset","int",{"buffer"=allexcept(Buffer,{"Texture0"=true,"Texture1"=true})},nil},
+	{"width","int",{"buffer"={"Texture0"=true,"Texture1"=true}},nil},
+	{"size","int",{"buffer"=allexcept(Buffer,{"Texture0"=true,"Texture1"=true})},nil},
+	{"height","int",{"buffer"={"Texture0"=true,"Texture1"=true}},nil},
+	{"format","Format",{"buffer"={"Update"=true}},1},
+	{"feedback","Feedback",{"buffer"={"Feedback"=true}},1},
+	{"query","MYuint",{"buffer"={"Inquery"=true}},{}},
+	{"data","char",{"buffer"=allbefore(Buffer,"Texture0")},"size"},
+	{"function","MYfunc",{},{}},
 }
+Render = {
+	{"next","Render",{},1},
+	{"file","int",{},nil},
+	{"program","Program",{},nil},
+	{"base","int",{},nil},
+	{"count","int",{},nil},
+	{"size","int",{},nil},
+}
+Command = {
+	{"next","Command",{},1},
+	{"file","int",{},nil},
+	{"source","Source",{},nil},
+	{"subconf","Subconf",{"source"={"ConfigureSrc"=true}},nil},
+	{"setting","float",{"source"={"ConfigureSrc"=true}},nil},
+	{"sculpt","Sculpt",{"source"={"ModeSrc"=true}},nil},
+	{"click","ClickMode",{"source"={"ModeSrc"=true},"sculpt"={"ClickUlpt"=true}},nil},
+	{"mouse","MouseMode",{"source"={"ModeSrc"=true},"sculpt"={"MouseUlpt"=true}},nil},
+	{"roller","RollerMode",{"source"={"ModeSrc"=true},"sculpt"={"RollerUlpt"=true}},nil},
+	{"target","TargetMode",{"source"={"ModeSrc"=true},"sculpt"={"TargetUlpt"=true}},nil},
+	{"topology","TopologyMode",{"source"={"ModeSrc"=true},"sculpt"={"TopologyUlpt"=true}},nil},
+	{"fixed","FixedMode",{"source"={"ModeSrc"=true},"sculpt"={"FixedUlpt"=true}},nil},
+	{"matrix","float",{"source"={"MatrixSrc"=true,"GlobalSrc"=true}},16},
+	{"feedback","int",{"source"={"PolytopeSrc"=true}},nil},
+	{"finish","int",{"source"={"PolytopeSrc"=true}},nil},
+	{"update","Update",{"source"={"PolytopeSrc"=true}},"Field"},
+	{"render","Render",{"source"={"PolytopeSrc"=true}},1},
+	{"redraw","Command",{"source"={"PolytopeSrc"=true}},1},
+	{"pierce","Command",{"source"={"PolytopeSrc"=true}},1},
+	{"plane","int",{"source"={"MacroSrc"=true}},nil},
+	{"key","char",{"source"={"HotkeySrc"=true}},nil},
+	{"script","char",{"source"={"MacroSrc"=true,"HotkeySrc"=true}},0},
+}
+Configure = {
+	"InflateConf",
+	"SpaceConf",
+	"RegionConf",
+	"PlaneConf",
+	"PictureConf",
+	"OnceConf",
+	"NotifyConf",
+	"RelativeConf",
+	"AbsoluteConf",
+	"RefineConf",
+	"ManipConf",
+	"PressConf",
+	"ClickConf",
+	"AdditiveConf",
+	"SubtractiveConf",
+	"Configures",
+}
+enum Function {
+	"AttachedFunc",
+	"Functions",
+}
+struct Data
+{
+	{"next","Data",{},1},
+	{"file","int",{},nil},
+	{"plane","int",{},nil},
+	{"conf","Configure",{},nil},
+	{"boundaries","int",{"conf"={"SpaceConf"=true}},nil},
+	{"regions","int",{"conf"={"SpaceConf"=true}},nil},
+	{"planes","int",{"conf"={"SpaceConf"=true}},"boundaries"},
+	{"sides","int",{"conf"={"SpaceConf"=true}},{"boundaries","regions"}},
+	// Script->RegionConf->Polytope
+	struct {
+	{"side","int",{"conf"={"RegionConf"=true}},nil},
+	{"insides","int",{"conf"={"RegionConf"=true}},nil},
+	{"outsides","int",{"conf"={"RegionConf"=true}},nil},
+	{"inside","int",{"conf"={"RegionConf"=true}},"insides"},
+	{"outside","int",{"conf"={"RegionConf"=true}},"outsides"},
+	{"versor","int",{"conf"={"PlaneConf"=true}},nil},
+	{"vector","float",{"conf"={"PlaneConf"=true}},3},
+	// Script->PictureConf->Polytope
+	char *filename;
+	// Script->(OnceConf,NotifyConf)->Polytope
+	struct {enum Function func; int count; int *specify; char *script;};
+	// (Script,Window)->RelativeConf->Polytope
+	struct {float *fixed; enum TopologyMode relative;};
+	// (Script,Window)->AbsoluteConf->Polytope
+	enum TopologyMode absolute;
+	// (Script,Window)->RefineConf->Polytope
+	float *pierce;
+	// (Script,Window)->ManipConf->Poltope
+	float *matrix;
+	// (Script,Window)->PressConf->Polytope
+	char press;};
+	// (Script,Window)->ClickConf->Polytope
+	// (Script,Window)->AdditiveConf->Polytope
+	// (Script,Window)->SubtractiveConf->Polytope
+};
