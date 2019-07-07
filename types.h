@@ -42,6 +42,8 @@
 struct GLFWwindow;
 typedef unsigned MYenum;
 typedef unsigned MYuint;
+struct Update;
+typedef void MYfunc(struct Update *);
 
 // Command
 enum Source {
@@ -116,7 +118,7 @@ enum Buffer {
 	Face1, // corners of facets, rewritten when polytope changes
 	Triple0, // every triple in Point0, is only appended to
 	Triple1, // triples of threat points of boundary to sample
-	Feedback, Uniform, Inquery, Texture0, Texture1, Buffers};
+	Texture0, Texture1, Uniform, Feedback, Inquery, Buffers};
 enum Program {
     Draw, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> display
     Pierce, // Point1,Normal*3,Coordinate*3,Weight*3,Color*3,Tag*3,Face1 -> Pierce,Normal,Color,Plane,Tagbits
@@ -152,11 +154,18 @@ struct Update
 	struct Update *next;
 	int file, finish;
 	enum Buffer buffer;
-	union {int offset; int width;};
-	union {int size; int height;};
-	union {void *data; char *text; float *scalar; MYuint *query;
-	struct Format *format; struct Feedback *feedback; int datas;};
-	union {void (*function)(struct Update *); int functions;};
+	union {
+		int offset;
+		int width;}; // Texture0 Texture1
+	union {
+		int size;
+		int height;}; // Texture0 Texture1
+	union {
+		struct Format *format; // Uniform
+		struct Feedback *feedback; // Feedback
+		MYuint *query; // Inquery
+		void *data;};
+	MYfunc *function;
 };
 struct Render
 {
