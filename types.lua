@@ -357,9 +357,87 @@ Query = {
 }
 Enums = {["Event"]=true,["Equate"]=true,["Factor"]=true,["Change"]=true,["Given"]=true,["Configure"]=true,["Function"]=true}
 Structs = {["Term"]=true,["Sum"]=true,["Equ"]=true,["Sound"]=true,["State"]=true,["Query"]=true,["Data"]=true}
+function interSet(lhs,rhs)
+	result = {}
+	for k,v in lhs do
+	if rhs[k] then result[k] = true end
+	return result
+end
+function interSet(lhs,rhs)
+	result = {}
+	for k,v in lhs do
+	if not rhs[k] then result[k] = true end
+	return result
+end
 function printstruct(name,struct)
+	-- find where dimensions pushed and popped
+	--  first pop in order pushed to shared subset
+	--  then push in any order to get to new set of dimensions
+	unionOpens = {}
+	unionCloses = {}
+	for key,val in ipairs(struct) do
+		old = {} if struct[key-1] then
+		for k,v in pairs(struct[key-1][3]) do old[k] = true end end
+		new = {} for k,v in pairs(val[3]) do new[k] = true end
+		sub = interSet(old,new)
+		dif = differSet(old,new)
+		unionCloses[#unionCloses+1] = 0
+		for k,v in pairs(dif) do
+			unionCloses[#unionCloses] = unionCloses[#unionCloses] + 1
+		end
+		dif = differSet(new,sub)
+		unionOpens[#unionOpens+1] = 0
+		for k,v in pairs(dif) do
+			unionOpens[#unionOpens] = unionOpens[#unionOpens] + 1
+		end
+	end
+	-- within each push-pop find each before-after disjoint
+	--  at each of unionCloses, pop from stacks
+	--  at each of unionOpens, push empty to stackBefore
+	--  at each of unionOpens, push all til next of unionCloses to stackAfter
+	--  at each of struct, add to stackBefore top and remove from stackAfter top
+	--  in structDisjoint, record whether stack* top are disjoint
+	disjointBefore = {}
+	disjointAfter = {}
+	stackBefore = {}
+	stackAfter = {}
+	for key,val in ipairs(struct) do
+		disjointBefore[key] = compDimSet(stackBefore[#stackBefore],stackAfter[#stackAfter]) == 0
+		i = 0
+		while i < unionCloses[key] do
+			-- TODO add/subtract top from/to next to top
+			stackBefore[#stackBefore] = nil
+			stackAfter[#stackAfter] = nil
+			i = i + 1
+		end
+		i = 0
+		while i < unionOpens[key] do
+			stackBefore[#stackBefore+1] = {}
+			allDimSet = {}
+			j = key + 1
+			-- TODO track number of opens, and go until negative
+			while unionCloses[j] == 0 do
+				allDimSet = unionDimSet(allDimSet,struct[j][3])
+				j = j + 1
+			end
+			stackAfter[#stackAfter+1] = allDimSet
+			i = i + 1
+		end
+		stackBefore[#stackBefore] = unionDimSet(stackBefore[#stackBefore],val[3])
+		stackAfter[#stackAfter] = diffDimSet(stackAfter[#stackAfter],val[3])
+		disjointAfter[key] = compDimSet(stackBefore[#stackBefore],stackAfter[#stackAfter]) == 0
+	end
+	-- collect together into struct conjoint sequences delimited by union*
+	structOpens = {}
+	structCloses= {}
+	for key,val in ipairs(struct) do
+		if disjointBefore[key] and not disjointAfter[key]
+		then structOpens[key] = 1 else structOpens[key] = 0 end
+		if not disjointBefore[key] and disjointAfter[key]
+		then structCloses[key] = 1 else structCloses[key] = 0 end
+	end
 	print("struct "..name.." {")
-	for key,val in pairs(struct) do
+	for key,val in ipairs(struct) do
 		if (Enums[val[2]]~=nil) then
 			decl = "enum "..val[2]
 		elseif (Structs[val[2]]~=nil) then
@@ -380,6 +458,6 @@ function printstruct(name,struct)
 		end
 		print("    "..decl.." "..ident..";")
 	end
-print("};")
+	print("};")
 end
 printstruct("Query",Query)
