@@ -17,16 +17,57 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --]]
 
-function allexcept(enum,set)
+function allOf(enum)
 	all = {}
 	for key,val in pairs(enum) do all[val]=true end
+	return all
+end
+function allExcept(enum,set)
+	all = allOf(enum)
 	for key,val in pairs(set) do all[key]=nil end
 	return all
 end
-function allbefore(enum,lim)
+function allBefore(enum,lim)
 	all = {}
 	for key,val in pairs(enum) do if val == lim then break end all[val]=true end
 	return all
+end
+function interSet(lhs,rhs)
+	result = {}
+	for k,v in lhs do
+	if rhs[k] then result[k] = true end
+	return result
+end
+function diffSet(lhs,rhs)
+	result = {}
+	for k,v in lhs do
+	if not rhs[k] then result[k] = true end
+	return result
+end
+function unionSet(lhs,rhs)
+	result = lhs
+	for k,v in rhs do result[k] = v end
+	return result
+end
+function unionDimSet(lhs,rhs)
+	if lhs == {} or rhs == {} then return {}
+	result = {}
+	for k,v in lhs do
+		if rhs[k] then result[k] = interSet(v,rhs[k])
+		if result[k] == {} then result[k] = nil end
+	end
+	if 
+	return result
+end
+function interDimSet(lhs,rhs)
+	if lhs == {""={}} or rhs == {""={}} then return {""={}} end
+	result = lhs
+	for k,v in rhs do
+		if result[k] then result[k] = unionSet(result[k],v)
+		else result[k] = v end
+	end
+	if result == {} then return {""={}} end
+	return result
 end
 Source = {
 	"ConfigureSrc",
@@ -157,14 +198,14 @@ Update = {
 	{"file","int",{},{}},
 	{"finish","int",{},{}},
 	{"buffer","Buffer",{},{}},
-	{"offset","int",{["buffer"]=allexcept(Buffer,{["Texture0"]=true,["Texture1"]=true})},{}},
+	{"offset","int",{["buffer"]=allExcept(Buffer,{["Texture0"]=true,["Texture1"]=true})},{}},
 	{"width","int",{["buffer"]={["Texture0"]=true,["Texture1"]=true}},{}},
-	{"size","int",{["buffer"]=allexcept(Buffer,{["Texture0"]=true,["Texture1"]=true})},{}},
+	{"size","int",{["buffer"]=allExcept(Buffer,{["Texture0"]=true,["Texture1"]=true})},{}},
 	{"height","int",{["buffer"]={["Texture0"]=true,["Texture1"]=true}},{}},
 	{"format","Format",{["buffer"]={["Update"]=true}},1},
 	{"feedback","Feedback",{["buffer"]={["Feedback"]=true}},1},
 	{"query","MYuint*",{["buffer"]={["Inquery"]=true}},{}},
-	{"data","char",{["buffer"]=allbefore(Buffer,"Texture0")},"size"},
+	{"data","char",{["buffer"]=allBefore(Buffer,"Texture0")},"size"},
 	{"function","MYfunc*",{},{}},
 }
 Render = {
@@ -347,7 +388,7 @@ Query = {
 	{"script","char",{},0},
 	{"given","Given",{},{}},
 	{"file","int",{["given"]={["IntGiv"]=true}},{}},
-	{"length","int",{["given"]=allexcept(Given,{["CharGiv"]=true,["IntGiv"]=true})},{}},
+	{"length","int",{["given"]=allExcept(Given,{["CharGiv"]=true,["IntGiv"]=true})},{}},
 	{"doubles","double",{["given"]={["DoublesGiv"]=true}},"length"},
 	{"floats","float",{["given"]={["FloatsGiv"]=true}},"length"},
 	{"ints","int",{["given"]={["IntsGiv"]=true}},"length"},
@@ -357,41 +398,33 @@ Query = {
 }
 Enums = {["Event"]=true,["Equate"]=true,["Factor"]=true,["Change"]=true,["Given"]=true,["Configure"]=true,["Function"]=true}
 Structs = {["Term"]=true,["Sum"]=true,["Equ"]=true,["Sound"]=true,["State"]=true,["Query"]=true,["Data"]=true}
-function interSet(lhs,rhs)
-	result = {}
-	for k,v in lhs do
-	if rhs[k] then result[k] = true end
-	return result
+function enumOf(str)
+	if str == "Event" then return Event end
+	if str == "Equate" then return Equate end
+	if str == "Factor" then return Factor end
+	if str == "Change" then return Change end
+	if str == "Given" then return Given end
+	if str == "Configure" then return Configure end
+	if str == "Function" then return Function end
+	return {}
 end
-function diffSet(lhs,rhs)
-	result = {}
-	for k,v in lhs do
-	if not rhs[k] then result[k] = true end
-	return result
-end
-function unionSet(lhs,rhs)
-	result = lhs
-	for k,v in rhs do result[k] = v end
-	return result
-end
-function unionDimSet(lhs,rhs)
-	result = {}
-	for k,v in lhs do
-		if rhs[k] then result[k] = interSet(v,rhs[k])
+function structDimSet(struct)
+	structAll = {""={}}
+	enumAll = {}
+	for key,val in ipairs(struct) do
+		for k,v in pairs(val[3]) do
+			enumAll[k] = true
+		end
 	end
-	return result
-end
-function interDimSet(lhs,rhs)
-	if lhs == {""={}} or rhs == {""={}} then return {""={}} end
-	result = {}
-	for k,v in lhs do result[k] = v end
-	for k,v in rhs do
-		if result[k] then result[k] = unionSet(result[k],v)
-		else result[k] = v end
+	for key,val in ipairs(struct) do
+		if enumAll[val[0]] then
+			structAll = unionDimSet(structAll,{val[0]=allOf(enumOf(val[1]))})
+		end
 	end
-	return result
+	return structAll
 end
 function printStruct(name,struct)
+	structAll = structDimSet(struct)
 	-- find where dimensions pushed and popped
 	--  first pop in order pushed to shared subset
 	--  then push in any order to get to new set of dimensions
@@ -442,8 +475,10 @@ function printStruct(name,struct)
 			stackAfter = unionDimSet(stackAfter,struct[i][3])
 			i = i + 1
 		end
-		disjointBefore[key] = interDimSet(val[3],stackBefore[#stackBefore]) == {""={}}
-		disjointAfter[key] = interDimSet(val[3],stackAfter) == {""={}}
+		before = interDimSet(val[3],stackBefore[#stackBefore])
+		after = interDimSet(val[3],stackAfter)
+		disjointBefore[key] = before == {""={}} or before == structAll
+		disjointAfter[key] = after == {""={}} or after == structAll
 		stackBefore[#stackBefore] = unionDimSet(stackBefore[#stackBefore],val[3])
 	end
 	-- collect together into struct conjoint sequences delimited by union*
