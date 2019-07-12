@@ -363,13 +363,35 @@ function interSet(lhs,rhs)
 	if rhs[k] then result[k] = true end
 	return result
 end
-function interSet(lhs,rhs)
+function diffSet(lhs,rhs)
 	result = {}
 	for k,v in lhs do
 	if not rhs[k] then result[k] = true end
 	return result
 end
-function printstruct(name,struct)
+function unionSet(lhs,rhs)
+	result = lhs
+	for k,v in rhs do result[k] = v end
+	return result
+end
+function unionDimSet(lhs,rhs)
+	result = {}
+	for k,v in lhs do
+		if rhs[k] then result[k] = interSet(v,rhs[k])
+	end
+	return result
+end
+function interDimSet(lhs,rhs)
+	if lhs == {""={}} or rhs == {""={}} then return {""={}} end
+	result = {}
+	for k,v in lhs do result[k] = v end
+	for k,v in rhs do
+		if result[k] then result[k] = unionSet(result[k],v)
+		else result[k] = v end
+	end
+	return result
+end
+function printStruct(name,struct)
 	-- find where dimensions pushed and popped
 	--  first pop in order pushed to shared subset
 	--  then push in any order to get to new set of dimensions
@@ -399,33 +421,30 @@ function printstruct(name,struct)
 	--  in structDisjoint, record whether stack* top are disjoint
 	disjointBefore = {}
 	disjointAfter = {}
-	stackBefore = {}
-	stackAfter = {}
+	stackBefore = {1={""={}}}
 	for key,val in ipairs(struct) do
-		disjointBefore[key] = compDimSet(stackBefore[#stackBefore],stackAfter[#stackAfter]) == 0
 		i = 0
 		while i < unionCloses[key] do
-			-- TODO add/subtract top from/to next to top
+			stackBefore[#stackBefore-1] = unionDimSet(stackBefore[#stackBefore-1],stackBefore[#stackBefore])
 			stackBefore[#stackBefore] = nil
-			stackAfter[#stackAfter] = nil
 			i = i + 1
 		end
 		i = 0
 		while i < unionOpens[key] do
-			stackBefore[#stackBefore+1] = {}
-			allDimSet = {}
-			j = key + 1
-			-- TODO track number of opens, and go until negative
-			while unionCloses[j] == 0 do
-				allDimSet = unionDimSet(allDimSet,struct[j][3])
-				j = j + 1
-			end
-			stackAfter[#stackAfter+1] = allDimSet
+			stackBefore[#stackBefore+1] = {""={}}
 			i = i + 1
 		end
+		stackAfter = {""={}}
+		count = 0
+		i = key + 1
+		while count >= 0 && unionOpens[i] && unionCloses[i] do
+			count = count + unionOpens[i] - unionCloses[i]
+			stackAfter = unionDimSet(stackAfter,struct[i][3])
+			i = i + 1
+		end
+		disjointBefore[key] = interDimSet(val[3],stackBefore[#stackBefore]) == {""={}}
+		disjointAfter[key] = interDimSet(val[3],stackAfter) == {""={}}
 		stackBefore[#stackBefore] = unionDimSet(stackBefore[#stackBefore],val[3])
-		stackAfter[#stackAfter] = diffDimSet(stackAfter[#stackAfter],val[3])
-		disjointAfter[key] = compDimSet(stackBefore[#stackBefore],stackAfter[#stackAfter]) == 0
 	end
 	-- collect together into struct conjoint sequences delimited by union*
 	structOpens = {}
@@ -460,4 +479,4 @@ function printstruct(name,struct)
 	end
 	print("};")
 end
-printstruct("Query",Query)
+printStruct("Query",Query)
