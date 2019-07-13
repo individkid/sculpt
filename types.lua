@@ -34,39 +34,40 @@ function allBefore(enum,lim)
 end
 function interSet(lhs,rhs)
 	result = {}
-	for k,v in lhs do
-	if rhs[k] then result[k] = true end
+	for k,v in pairs(lhs) do
+		if rhs[k] then result[k] = true end
+	end
 	return result
 end
 function diffSet(lhs,rhs)
 	result = {}
-	for k,v in lhs do
-	if not rhs[k] then result[k] = true end
+	for k,v in pairs(lhs) do
+		if not rhs[k] then result[k] = true end
+	end
 	return result
 end
 function unionSet(lhs,rhs)
 	result = lhs
-	for k,v in rhs do result[k] = v end
+	for k,v in pairs(rhs) do result[k] = v end
 	return result
 end
 function unionDimSet(lhs,rhs)
-	if lhs == {} or rhs == {} then return {}
+	if lhs == {} or rhs == {} then return {} end
 	result = {}
-	for k,v in lhs do
-		if rhs[k] then result[k] = interSet(v,rhs[k])
+	for k,v in pairs(lhs) do
+		if rhs[k] then result[k] = interSet(v,rhs[k]) end
 		if result[k] == {} then result[k] = nil end
 	end
-	if 
 	return result
 end
 function interDimSet(lhs,rhs)
-	if lhs == {""={}} or rhs == {""={}} then return {""={}} end
+	if lhs == {[""]={}} or rhs == {[""]={}} then return {[""]={}} end
 	result = lhs
-	for k,v in rhs do
+	for k,v in pairs(rhs) do
 		if result[k] then result[k] = unionSet(result[k],v)
 		else result[k] = v end
 	end
-	if result == {} then return {""={}} end
+	if result == {} then return {[""]={}} end
 	return result
 end
 Source = {
@@ -396,20 +397,57 @@ Query = {
 	{"key","char",{["given"]={["CharGiv"]=true}},{}},
 	{"plane","int",{["given"]={["IntGiv"]=true}},{}},
 }
-Enums = {["Event"]=true,["Equate"]=true,["Factor"]=true,["Change"]=true,["Given"]=true,["Configure"]=true,["Function"]=true}
-Structs = {["Term"]=true,["Sum"]=true,["Equ"]=true,["Sound"]=true,["State"]=true,["Query"]=true,["Data"]=true}
+Enums = {
+	["Source"]=true,["Subconf"]=true,["Sculpt"]=true,["ClickMode"]=true,["MouseMode"]=true,["RollerMode"]=true,
+	["TargetMode"]=true,["TopologyMode"]=true,["FixedMode"]=true,["Field"]=true,["Buffer"]=true,["Program"]=true,
+	["Configure"]=true,["Function"]=true,["Event"]=true,["Equate"]=true,["Factor"]=true,["Change"]=true,["Given"]=true,
+}
+Structs = {
+	["Format"]=true,["Feedback"]=true,["Update"]=true,["Render"]=true,["Command"]=true,["Data"]=true,
+	["Term"]=true,["Sum"]=true,["Equ"]=true,["Sound"]=true,["State"]=true,["Query"]=true,
+}
+Order = {
+	"Format","Feedback","Update","Render","Command","Data","Term","Sum","Equ","Sound","State","Query",
+}
 function enumOf(str)
+	if str == "Source" then return Source end
+	if str == "Subconf" then return Subconf end
+	if str == "Sculpt" then return Sculpt end
+	if str == "ClickMode" then return ClickMode end
+	if str == "MouseMode" then return MouseMode end
+	if str == "RollerMode" then return RollerMode end
+	if str == "TargetMode" then return TargetMode end
+	if str == "TopologyMode" then return TopologyMode end
+	if str == "FixedMode" then return FixedMode end
+	if str == "Field" then return Field end
+	if str == "Buffer" then return Buffer end
+	if str == "Program" then return Program end
+	if str == "Configure" then return Configure end
+	if str == "Function" then return Function end
 	if str == "Event" then return Event end
 	if str == "Equate" then return Equate end
 	if str == "Factor" then return Factor end
 	if str == "Change" then return Change end
 	if str == "Given" then return Given end
-	if str == "Configure" then return Configure end
-	if str == "Function" then return Function end
+	return {}
+end
+function structOf(str)
+	if str == "Format" then return Format end
+	if str == "Feedback" then return Feedback end
+	if str == "Update" then return Update end
+	if str == "Render" then return Render end
+	if str == "Command" then return Command end
+	if str == "Data" then return Data end
+	if str == "Term" then return Term end
+	if str == "Sum" then return Sum end
+	if str == "Equ" then return Equ end
+	if str == "Sound" then return Sound end
+	if str == "State" then return State end
+	if str == "Query" then return Query end
 	return {}
 end
 function structDimSet(struct)
-	structAll = {""={}}
+	structAll = {[""]={}}
 	enumAll = {}
 	for key,val in ipairs(struct) do
 		for k,v in pairs(val[3]) do
@@ -418,7 +456,7 @@ function structDimSet(struct)
 	end
 	for key,val in ipairs(struct) do
 		if enumAll[val[0]] then
-			structAll = unionDimSet(structAll,{val[0]=allOf(enumOf(val[1]))})
+			structAll = unionDimSet(structAll,{[val[0]]=allOf(enumOf(val[1]))})
 		end
 	end
 	return structAll
@@ -435,12 +473,12 @@ function printStruct(name,struct)
 		for k,v in pairs(struct[key-1][3]) do old[k] = true end end
 		new = {} for k,v in pairs(val[3]) do new[k] = true end
 		sub = interSet(old,new)
-		dif = differSet(old,new)
+		dif = diffSet(old,new)
 		unionCloses[#unionCloses+1] = 0
 		for k,v in pairs(dif) do
 			unionCloses[#unionCloses] = unionCloses[#unionCloses] + 1
 		end
-		dif = differSet(new,sub)
+		dif = diffSet(new,sub)
 		unionOpens[#unionOpens+1] = 0
 		for k,v in pairs(dif) do
 			unionOpens[#unionOpens] = unionOpens[#unionOpens] + 1
@@ -454,7 +492,7 @@ function printStruct(name,struct)
 	--  in structDisjoint, record whether stack* top are disjoint
 	disjointBefore = {}
 	disjointAfter = {}
-	stackBefore = {1={""={}}}
+	stackBefore = {[1]={[""]={}}}
 	for key,val in ipairs(struct) do
 		i = 0
 		while i < unionCloses[key] do
@@ -464,21 +502,21 @@ function printStruct(name,struct)
 		end
 		i = 0
 		while i < unionOpens[key] do
-			stackBefore[#stackBefore+1] = {""={}}
+			stackBefore[#stackBefore+1] = {[""]={}}
 			i = i + 1
 		end
-		stackAfter = {""={}}
+		stackAfter = {[""]={}}
 		count = 0
 		i = key + 1
-		while count >= 0 && unionOpens[i] && unionCloses[i] do
+		while count >= 0 and unionOpens[i] and unionCloses[i] do
 			count = count + unionOpens[i] - unionCloses[i]
 			stackAfter = unionDimSet(stackAfter,struct[i][3])
 			i = i + 1
 		end
 		before = interDimSet(val[3],stackBefore[#stackBefore])
 		after = interDimSet(val[3],stackAfter)
-		disjointBefore[key] = before == {""={}} or before == structAll
-		disjointAfter[key] = after == {""={}} or after == structAll
+		disjointBefore[key] = before == {[""]={}} or before == structAll
+		disjointAfter[key] = after == {[""]={}} or after == structAll
 		stackBefore[#stackBefore] = unionDimSet(stackBefore[#stackBefore],val[3])
 	end
 	-- collect together into struct conjoint sequences delimited by union*
@@ -514,4 +552,6 @@ function printStruct(name,struct)
 	end
 	print("};")
 end
-printStruct("Query",Query)
+for key,val in ipairs(Order) do
+	printStruct(val,structOf(val))
+end
