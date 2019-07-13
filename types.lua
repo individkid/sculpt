@@ -406,7 +406,12 @@ Structs = {
 	["Format"]=true,["Feedback"]=true,["Update"]=true,["Render"]=true,["Command"]=true,["Data"]=true,
 	["Term"]=true,["Sum"]=true,["Equ"]=true,["Sound"]=true,["State"]=true,["Query"]=true,
 }
-Order = {
+EnumOrder = {
+	"Source","Subconf","Sculpt","ClickMode","MouseMode","RollerMode",
+	"TargetMode","TopologyMode","FixedMode","Field","Buffer","Program",
+	"Configure","Function","Event","Equate","Factor","Change","Given",
+}
+StructOrder = {
 	"Format","Feedback","Update","Render","Command","Data","Term","Sum","Equ","Sound","State","Query",
 }
 function enumOf(str)
@@ -461,6 +466,20 @@ function structDimSet(struct)
 	end
 	return structAll
 end
+function printEnum(name,enum)
+	print("enum "..name.." = {")
+	for key,val in ipairs(enum) do
+		print("    "..val..",")
+	end
+	print("};")
+end
+function printSet(str,set)
+	string = ""
+	for key,val in pairs(set) do
+		string = string..","..key
+	end
+	print(str..string)
+end
 function printStruct(name,struct)
 	structAll = structDimSet(struct)
 	-- find where dimensions pushed and popped
@@ -474,6 +493,11 @@ function printStruct(name,struct)
 		new = {} for k,v in pairs(val[3]) do new[k] = true end
 		sub = interSet(old,new)
 		dif = diffSet(old,new)
+		--print(name.."."..val[1])
+		--printSet("old",old)
+		--printSet("new",new)
+		--printSet("sub",sub)
+		--printSet("dif",dif)
 		unionCloses[#unionCloses+1] = 0
 		for k,v in pairs(dif) do
 			unionCloses[#unionCloses] = unionCloses[#unionCloses] + 1
@@ -529,7 +553,22 @@ function printStruct(name,struct)
 		then structCloses[key] = 1 else structCloses[key] = 0 end
 	end
 	print("struct "..name.." {")
+	depth = 0
 	for key,val in ipairs(struct) do
+		count = 0
+		while count < unionCloses[key] do
+			depth = depth - 1
+			indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
+			print(indent.."};")
+			count = count + 1
+		end
+		count = 0
+		while count < unionOpens[key] do
+			indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
+			print(indent.."union {")
+			depth = depth + 1
+			count = count + 1
+		end
 		if (Enums[val[2]]~=nil) then
 			decl = "enum "..val[2]
 		elseif (Structs[val[2]]~=nil) then
@@ -548,10 +587,19 @@ function printStruct(name,struct)
 				ident = ident.."["..v.."]"
 			end
 		end
-		print("    "..decl.." "..ident..";")
+		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
+		print(indent..decl.." "..ident..";")
+	end
+	while depth > 0 do
+		depth = depth - 1
+		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
+		print(indent.."};")
 	end
 	print("};")
 end
-for key,val in ipairs(Order) do
+for key,val in ipairs(EnumOrder) do
+	printEnum(val,enumOf(val))
+end
+for key,val in ipairs(StructOrder) do
 	printStruct(val,structOf(val))
 end

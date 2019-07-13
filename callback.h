@@ -39,6 +39,7 @@ struct Matrix
 };
 struct Mode
 {
+	int file;
 	int toggle;
 	enum ClickMode click;
 	enum TargetMode target;
