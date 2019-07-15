@@ -480,6 +480,34 @@ function printSet(str,set)
 	end
 	print(str..string)
 end
+function pushDisjoint(i,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
+	stackAfter = {[""]={}}
+	while unionOpens[i] and unionCloses[i] do
+		stackAfter = unionDimSet(stackAfter,struct[i][3])
+		i = i + 1
+	end
+	before = interDimSet(val[3],stackBefore[#stackBefore])
+	after = interDimSet(val[3],stackAfter)
+	disjointBefore[#disjointBefore+1] = before == {[""]={}} or before == structAll
+	disjointAfter[#disjointAfter+1] = after == {[""]={}} or after == structAll
+end
+function printDisjoint(depth,index,structOpens,structCloses)
+	count = 0
+	while count < structCloses[index] do
+		depth = depth - 1
+		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
+		print(indent.."};")
+		count = count + 1
+	end
+	count = 0
+	while count < structOpens[index] do
+		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
+		print(indent.."struct {")
+		depth = depth + 1
+		count = count + 1
+	end
+	return depth
+end
 function printStruct(name,struct)
 	structAll = structDimSet(struct)
 	-- find where dimensions pushed and popped
@@ -522,31 +550,22 @@ function printStruct(name,struct)
 		while i < unionCloses[key] do
 			stackBefore[#stackBefore-1] = unionDimSet(stackBefore[#stackBefore-1],stackBefore[#stackBefore])
 			stackBefore[#stackBefore] = nil
+			pushDisjoint(key+1,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
 			i = i + 1
 		end
 		i = 0
 		while i < unionOpens[key] do
 			stackBefore[#stackBefore+1] = {[""]={}}
+			pushDisjoint(key+1,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
 			i = i + 1
 		end
-		stackAfter = {[""]={}}
-		count = 0
-		i = key + 1
-		while count >= 0 and unionOpens[i] and unionCloses[i] do
-			count = count + unionOpens[i] - unionCloses[i]
-			stackAfter = unionDimSet(stackAfter,struct[i][3])
-			i = i + 1
-		end
-		before = interDimSet(val[3],stackBefore[#stackBefore])
-		after = interDimSet(val[3],stackAfter)
-		disjointBefore[key] = before == {[""]={}} or before == structAll
-		disjointAfter[key] = after == {[""]={}} or after == structAll
+		pushDisjoint(key+1,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
 		stackBefore[#stackBefore] = unionDimSet(stackBefore[#stackBefore],val[3])
 	end
 	-- collect together into struct conjoint sequences delimited by union*
 	structOpens = {}
 	structCloses= {}
-	for key,val in ipairs(struct) do
+	for key,val in ipairs(disjointBefore) do
 		if disjointBefore[key] and not disjointAfter[key]
 		then structOpens[key] = 1 else structOpens[key] = 0 end
 		if not disjointBefore[key] and disjointAfter[key]
@@ -554,12 +573,15 @@ function printStruct(name,struct)
 	end
 	print("struct "..name.." {")
 	depth = 0
+	index = 1;
 	for key,val in ipairs(struct) do
 		count = 0
 		while count < unionCloses[key] do
 			depth = depth - 1
 			indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
 			print(indent.."};")
+			depth = printDisjoint(depth,index,structOpens,structCloses)
+			index = index + 1
 			count = count + 1
 		end
 		count = 0
@@ -567,6 +589,8 @@ function printStruct(name,struct)
 			indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
 			print(indent.."union {")
 			depth = depth + 1
+			depth = printDisjoint(depth,index,structOpens,structCloses)
+			index = index + 1
 			count = count + 1
 		end
 		if (Enums[val[2]]~=nil) then
@@ -589,6 +613,8 @@ function printStruct(name,struct)
 		end
 		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
 		print(indent..decl.." "..ident..";")
+		depth = printDisjoint(depth,index,structOpens,structCloses)
+		index = index + 1
 	end
 	while depth > 0 do
 		depth = depth - 1
