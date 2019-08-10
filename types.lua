@@ -23,51 +23,74 @@ function allOf(enum)
 	return all
 end
 function allExcept(enum,set)
-	all = allOf(enum)
-	for key,val in pairs(set) do all[key]=nil end
+	all = {}
+	for key,val in pairs(enum) do all[val] = not set[key] end
 	return all
 end
 function allBefore(enum,lim)
 	all = {}
-	for key,val in pairs(enum) do if val == lim then break end all[val]=true end
+	for key,val in pairs(enum) do all[val] = val < lim end
 	return all
 end
 function interSet(lhs,rhs)
 	result = {}
 	for k,v in pairs(lhs) do
-		if rhs[k] then result[k] = true end
+		result[k] = v and rhs[k]
 	end
 	return result
 end
-function diffSet(lhs,rhs)
+function differSet(lhs,rhs)
 	result = {}
 	for k,v in pairs(lhs) do
-		if not rhs[k] then result[k] = true end
+		result[k] = v and not rhs[k]
 	end
 	return result
 end
 function unionSet(lhs,rhs)
-	result = lhs
-	for k,v in pairs(rhs) do result[k] = v end
+	result = {}
+	for k,v in pairs(lhs) do
+		result[k] = v or rhs[k]
+	end
+	for k,v in pairs(rhs) do
+		result[k] = v or lhs[k]
+	end
 	return result
 end
 function unionDimSet(lhs,rhs)
-	if lhs == {} or rhs == {} then return {} end
 	result = {}
+	count = 0
 	for k,v in pairs(lhs) do
-		if rhs[k] then result[k] = interSet(v,rhs[k]) end
-		if result[k] == {} then result[k] = nil end
+		if rhs[k] then result[k] = unionSet(v,rhs[k])
+		if result[k] == {} then count = count + 1
 	end
+	if count+1 == #result then return {} end
+	if count > 0 then return {[""]={}} end
 	return result
 end
 function interDimSet(lhs,rhs)
-	if lhs == {[""]={}} or rhs == {[""]={}} then return {[""]={}} end
-	result = lhs
-	for k,v in pairs(rhs) do
-		if result[k] then result[k] = unionSet(result[k],v)
-		else result[k] = v end
+	result = {}
+	count = 0
+	for k,v in pairs(lhs) do
+		if rhs[k] then result[k] = interSet(v,rhs[k]) else result[k] = v end
+		if result[k] == {} then count = count + 1
 	end
-	if result == {} then return {[""]={}} end
+	for k,v in pairs(rhs) do
+		if lhs[k] then result[k] = interSet(v,lhs[k]) else result[k] = v end
+		if result[k] == {} then count = count + 1
+	end
+	if count+1 == #result then return {} end
+	if count > 0 then return {[""]={}} end
+	return result
+end
+function differDimSet(lhs,rhs)
+	result = {}
+	count = 0
+	for k,v in pairs(lhs) do
+		if rhs[k] then result[k] = differSet(v,rhs[k]) else result[k] = {} end
+		if result[k] == {} then count = count + 1
+	end
+	if count+1 == #result then return {} end
+	if count > 0 then return {[""]={}} end
 	return result
 end
 Source = {
@@ -315,11 +338,18 @@ Factor = {
 	"CompFactor",
 	"Factors",
 }
+Done = {
+	"IdentityDone",
+	"PointerDone",
+	"Dones",
+}
 Term = {
+	{"done","Done",{},{}},
 	{"coef","double",{},{}},
 	{"factor","Factor",{},{}},
-	{"id","int",{[1]=1},"factor"},
-	{"ptr","double*",{[1]=2},"factor"},
+	{"done","Done",{},{}},
+	{"id","int",{["done"]={["IdentityDone"]=true}},"factor"},
+	{"ptr","double*",{["done"]={["PointerDone"]=true}},"factor"},
 }
 Sum = {
 	{"count","int",{},{}},
@@ -331,15 +361,15 @@ Equ = {
 }
 Sound = {
 	{"next","Sound",{},1},
-	{"done","int",{},{}},
+	{"done","Done",{},{}},
 	{"ident","int",{},{}},
 	{"value","double",{},{}},
 	{"event","Event",{},{}},
 	{"equ","Equ",{["event"]={["SoundEvent"]=true}},"Equate"},
 	{"sched","Equ",{["event"]={["OnceEvent"]=true,["NotifyEvent"]=true}},{}},
 	{"count","int",{["event"]={["OnceEvent"]=true,["NotifyEvent"]=true}},{}},
-	{"ids","int",{["event"]={["OnceEvent"]=true,["NotifyEvent"]=true},[1]=1},"count"},
-	{"ptrs","double*",{["event"]={["OnceEvent"]=true,["NotifyEvent"]=true},[1]=2},"count"},
+	{"ids","int",{["event"]={["OnceEvent"]=true,["NotifyEvent"]=true},["done"]={["IdentityDone"]=true}},"count"},
+	{"ptrs","double*",{["event"]={["OnceEvent"]=true,["NotifyEvent"]=true},["done"]={["PointerDone"]=true}},"count"},
 	{"script","char",{["event"]={["OnceEvent"]=true,["NotifyEvent"]=true}},0},
 	{"id","int",{["event"]={["UpdateEvent"]=true}},{}},
 	{"update","double*",{["event"]={["UpdateEvent"]=true}},{}},
@@ -451,21 +481,6 @@ function structOf(str)
 	if str == "Query" then return Query end
 	return {}
 end
-function structDimSet(struct)
-	structAll = {[""]={}}
-	enumAll = {}
-	for key,val in ipairs(struct) do
-		for k,v in pairs(val[3]) do
-			enumAll[k] = true
-		end
-	end
-	for key,val in ipairs(struct) do
-		if enumAll[val[0]] then
-			structAll = unionDimSet(structAll,{[val[0]]=allOf(enumOf(val[1]))})
-		end
-	end
-	return structAll
-end
 function printEnum(name,enum)
 	print("enum "..name.." = {")
 	for key,val in ipairs(enum) do
@@ -473,154 +488,136 @@ function printEnum(name,enum)
 	end
 	print("};")
 end
-function printSet(str,set)
-	string = ""
-	for key,val in pairs(set) do
-		string = string..","..key
-	end
-	print(str..string)
+function stringAny(any)
+	result = ""
+	if type(any) == "nil" then result = "nil"
+	elseif type(any) == "boolean" and not any then result = "false"
+	elseif type(any) == "boolean" and any then result = "true"
+	elseif type(any) == "number" then result = tostring(any)
+	elseif type(any) == "string" then result = "\""..any.."\""
+	elseif type(any) == "table" then
+		result = "{"
+		for key,val in pairs(any) do
+			if result ~= "{" then result = result.."," end
+			result = result.."["..stringAny(key).."]="..stringAny(val)
+		end
+		result = result.."}"
+	else result = type(any) end
+	return result
 end
-function pushDisjoint(i,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
-	stackAfter = {[""]={}}
-	while unionOpens[i] and unionCloses[i] do
-		stackAfter = unionDimSet(stackAfter,struct[i][3])
-		i = i + 1
-	end
-	before = interDimSet(val[3],stackBefore[#stackBefore])
-	after = interDimSet(val[3],stackAfter)
-	disjointBefore[#disjointBefore+1] = before == {[""]={}} or before == structAll
-	disjointAfter[#disjointAfter+1] = after == {[""]={}} or after == structAll
+function stringIndent(depth)
+	indent = ""; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
+	return indent
 end
-function printDisjoint(depth,index,structOpens,structCloses)
-	count = 0
-	while count < structCloses[index] do
-		depth = depth - 1
-		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
-		print(indent.."};")
-		count = count + 1
+function printField(val,depth)
+	if (Enums[val[2]]~=nil) then
+		decl = "enum "..val[2]
+	elseif (Structs[val[2]]~=nil) then
+		decl = "struct "..val[2]
+	else
+		decl = val[2]
 	end
-	count = 0
-	while count < structOpens[index] do
-		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
-		print(indent.."struct {")
-		depth = depth + 1
-		count = count + 1
+	if (type(val[4]) == "number") then
+		decl = decl.."*"
+	elseif (type(val[4]) == "string") then
+		decl = decl.."*"
 	end
-	return depth
+	ident = val[1]
+	if (type(val[4]) == "table") then
+		for k,v in pairs(val[4]) do
+			ident = ident.."["..v.."]"
+		end
+	end
+	print(stringIndent(depth)..decl.." "..ident..";")
 end
 function printStruct(name,struct)
-	structAll = structDimSet(struct)
-	-- find where dimensions pushed and popped
-	--  first pop in order pushed to shared subset
-	--  then push in any order to get to new set of dimensions
-	unionOpens = {}
-	unionCloses = {}
-	for key,val in ipairs(struct) do
-		old = {} if struct[key-1] then
-		for k,v in pairs(struct[key-1][3]) do old[k] = true end end
-		new = {} for k,v in pairs(val[3]) do new[k] = true end
-		sub = interSet(old,new)
-		dif = diffSet(old,new)
-		--print(name.."."..val[1])
-		--printSet("old",old)
-		--printSet("new",new)
-		--printSet("sub",sub)
-		--printSet("dif",dif)
-		unionCloses[#unionCloses+1] = 0
-		for k,v in pairs(dif) do
-			unionCloses[#unionCloses] = unionCloses[#unionCloses] + 1
-		end
-		dif = diffSet(new,sub)
-		unionOpens[#unionOpens+1] = 0
-		for k,v in pairs(dif) do
-			unionOpens[#unionOpens] = unionOpens[#unionOpens] + 1
-		end
+	none = {[""]={}}
+	all = none
+	key = 1
+	while struct[key] do
+		tags = struct[k][3]
+		if tags ~= {} then all = unionDimSet(all,tags)
 	end
-	-- within each push-pop find each before-after disjoint
-	--  at each of unionCloses, pop from stacks
-	--  at each of unionOpens, push empty to stackBefore
-	--  at each of unionOpens, push all til next of unionCloses to stackAfter
-	--  at each of struct, add to stackBefore top and remove from stackAfter top
-	--  in structDisjoint, record whether stack* top are disjoint
-	disjointBefore = {}
-	disjointAfter = {}
-	stackBefore = {[1]={[""]={}}}
-	for key,val in ipairs(struct) do
-		i = 0
-		while i < unionCloses[key] do
-			stackBefore[#stackBefore-1] = unionDimSet(stackBefore[#stackBefore-1],stackBefore[#stackBefore])
-			stackBefore[#stackBefore] = nil
-			pushDisjoint(key+1,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
-			i = i + 1
+	length = 1
+	mode = {"struct"} -- list of block types
+	flds = {0} -- list of pointers to fields
+	idxs = {{}} -- list of pointers to subblocks
+	sizs = {0} -- list of sizes of idxs
+	depth = 1
+	univ = {all} -- stack of nested tag sets
+	stack = {0} -- stack of pointers to open blocks
+	key = 1
+	while struct[key] do
+		tags = struct[key][3]
+		top = stack[depth]
+		join = not isEmptyDimSet(interDimSet(tags,univ[depth]))
+		gain = not isEmptyDimSet(differDimSet(tags,univ[depth]))
+		loss = not isEmptyDimSet(differDimSet(univ[depth],tags))
+		if mode[top] == "struct" and not gain and not loss then
+			length = length + 1
+			mode[length] = "field"
+			flds[length] = key
+			idxs[length] = {}
+			sizs[length] = 0
+			sizs[top] = sizs[top] + 1;
+			idxs[top][sizs[top]] = length
+			key = key + 1
 		end
-		i = 0
-		while i < unionOpens[key] do
-			stackBefore[#stackBefore+1] = {[""]={}}
-			pushDisjoint(key+1,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
-			i = i + 1
+		if mode[top] == "struct" and not gain and loss then
+			length = length + 1
+			mode[length] = "union"
+			flds[length] = 0
+			idxs[length] = {}
+			sizs[length] = 0
+			depth = depth + 1
+			univ[depth] = none
+			stack[depth] = length
 		end
-		pushDisjoint(key+1,val,struct,stackBefore,unionOpens,unionCloses,disjointBefore,disjointAfter)
-		stackBefore[#stackBefore] = unionDimSet(stackBefore[#stackBefore],val[3])
-	end
-	-- collect together into struct conjoint sequences delimited by union*
-	structOpens = {}
-	structCloses= {}
-	for key,val in ipairs(disjointBefore) do
-		if disjointBefore[key] and not disjointAfter[key]
-		then structOpens[key] = 1 else structOpens[key] = 0 end
-		if not disjointBefore[key] and disjointAfter[key]
-		then structCloses[key] = 1 else structCloses[key] = 0 end
+		if mode[top] == "struct" and gain then
+			depth = depth - 1
+		end
+		if mode[top] == "union" and not join then
+			univ[depth] = unionDimSet(univ[depth],tags);
+			length = length + 1
+			mode[length] = "struct"
+			flds[length] = 0
+			idxs[length] = {}
+			sizs[length] = 0
+			depth = depth + 1
+			univ[depth] = tags
+			stack[depth] = length
+		end
+		if mode[top] == "union" and join then
+			depth = depth - 1
+		end
 	end
 	print("struct "..name.." {")
-	depth = 0
-	index = 1;
-	for key,val in ipairs(struct) do
-		count = 0
-		while count < unionCloses[key] do
-			depth = depth - 1
-			indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
-			print(indent.."};")
-			depth = printDisjoint(depth,index,structOpens,structCloses)
-			index = index + 1
-			count = count + 1
-		end
-		count = 0
-		while count < unionOpens[key] do
-			indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
-			print(indent.."union {")
-			depth = depth + 1
-			depth = printDisjoint(depth,index,structOpens,structCloses)
-			index = index + 1
-			count = count + 1
-		end
-		if (Enums[val[2]]~=nil) then
-			decl = "enum "..val[2]
-		elseif (Structs[val[2]]~=nil) then
-			decl = "struct "..val[2]
-		else
-			decl = val[2]
-		end
-		if (type(val[4]) == "number") then
-			decl = decl.."*"
-		elseif (type(val[4]) == "string") then
-			decl = decl.."*"
-		end
-		ident = val[1]
-		if (type(val[4]) == "table") then
-			for k,v in pairs(val[4]) do
-				ident = ident.."["..v.."]"
+		indent = 1
+		depth = 1
+		stack = {sizs[1]}
+		close = {false}
+		index = 2
+		while index <= length do
+			if mode[index] == "struct" or mode[index] == "union" then
+				depth = depth + 1
+				stack[depth] = sizs[index]
+				close[depth] = sizs[index] > 1
+				if close[depth] then
+					print(stringIndent(indent).."struct {")
+					indent = indent + 1
+				end
 			end
+			if mode[index] == "field" then
+				print(stringIndent(indent)..stringAny(flds[index]))
+				stack[depth] = stack[depth] - 1
+				if stack[depth] == 0 and close[depth] then
+					depth = depth - 1
+					indent = indent - 1
+					print(stringIndent(indent).."};")
+				end
+			end
+			index = index + 1
 		end
-		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
-		print(indent..decl.." "..ident..";")
-		depth = printDisjoint(depth,index,structOpens,structCloses)
-		index = index + 1
-	end
-	while depth > 0 do
-		depth = depth - 1
-		indent = "    "; c = 0 while c < depth do c = c + 1; indent = indent.."    " end
-		print(indent.."};")
-	end
 	print("};")
 end
 for key,val in ipairs(EnumOrder) do

@@ -277,9 +277,13 @@ enum Factor {
 	SquareFactor,
 	CompFactor,
 	Factors};
+enum Done {
+	IdentityDone,
+	PointerDone,
+	Dones};
 struct Term
 {
-	double coef; enum Factor factor;
+	enum Done done; double coef; enum Factor factor;
 	union {int *id; double **ptr;};
 };
 struct Sum
@@ -295,7 +299,7 @@ struct Equ
 struct Sound
 {
 	struct Sound *next;
-	int done; // initialize ptrs if not done
+	enum Done done; // initialize ptrs if not done
 	int ident; double value; // tone envelope phrase helper metric
 	enum Event event;
 	// Script->(StartEvent,StopEvent)->System

@@ -10,7 +10,7 @@ Initially before blocking on read from the unnamed pipe, Read sends location/pid
 
 Before sending data to the io thread, the window thread saves what it sends. When fields from the middle of the file are sent, the window thread subtracts or divides the saved data from the current data, and uses that as a delta to modify the received data. Thus, if the window thread gets back the same data it sent, as it in general does, the received data will cause no change. However, if the window thread gets data written by another process, current data will change, but the user changes since the data was last sent will be folded into the changes from the other process.  
 
-The -- commands and messages between threads are as follows. Note that only messages from the thread that reads files from the command line has side effects.  
+The -- commands and messages between threads are as follows.  
 --sculpt click additive (add region over clicked faced) ModeSource->Window  
 --sculpt click subtractive (remove region under clicked faced) ModeSource->Window  
 --sculpt click refine (add random plane through clicked point on facet) ModeSource->Window  
