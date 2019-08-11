@@ -29,8 +29,15 @@ function allExcept(enum,set)
 end
 function allBefore(enum,lim)
 	all = {}
-	for key,val in pairs(enum) do all[val] = val < lim end
+	num = 0
+	for key,val in pairs(enum) do if val == lim then num = key end end
+	for key,val in pairs(enum) do all[val] = key < num end
 	return all
+end
+function equalSet(lhs,rhs)
+	result = true
+	for k,v in pairs(lhs) do result = result and rhs[k] ~= v end
+	return result
 end
 function interSet(lhs,rhs)
 	result = {}
@@ -48,41 +55,53 @@ function unionSet(lhs,rhs)
 	for k,v in pairs(rhs) do result[k] = v or lhs[k] end
 	return result
 end
-function unionDimSet(lhs,rhs)
-	result = {}
-	count = 0
+-- empty is nil
+-- universe is {}
+-- all cannot be nil
+-- all is the universe in a larger universe
+-- all of {} is the largest universe
+-- if all is {} then all sets are {}
+function equalDimSet(lhs,rhs,all)
+	result = true
 	for k,v in pairs(lhs) do
-		if rhs[k] then result[k] = unionSet(v,rhs[k]) end
-		if result[k] == {} then count = count + 1 end
+		result = result and rhs[k]
+		result = result and equalSet(v,all[k]) == equalSet(rhs[k],all[k])
+		result = result and equalSet(v,rhs[k])
 	end
-	if count+1 == #result then return {} end
-	if count > 0 then return {[""]={}} end
+	for k,v in pairs(rhs) do
+		result = result and lhs[k]
+	end
 	return result
 end
-function interDimSet(lhs,rhs)
-	result = {}
-	count = 0
+function unionDimSet(lhs,rhs,all)
+	result = nil
+	for k,v in pairs(lhs) do
+		if rhs[k] then result[k] = unionSet(v,rhs[k]) else result[k] = all[k] end
+		if equalSet(result[k],all[k]) then result[k] = nil end
+	end
+	if result and equalDimSet(result,all) then return {} end
+	return result
+end
+function interDimSet(lhs,rhs,all)
+	result = nil
 	for k,v in pairs(lhs) do
 		if rhs[k] then result[k] = interSet(v,rhs[k]) else result[k] = v end
-		if result[k] == {} then count = count + 1 end
+		if equalSet(result[k],{}) then return nil end
 	end
 	for k,v in pairs(rhs) do
 		if lhs[k] then result[k] = interSet(v,lhs[k]) else result[k] = v end
-		if result[k] == {} then count = count + 1 end
+		if equalSet(result[k],{}) then return nil end
 	end
-	if count+1 == #result then return {} end
-	if count > 0 then return {[""]={}} end
+	if result and equalDimSet(result,all) then return {} end
 	return result
 end
-function differDimSet(lhs,rhs)
-	result = {}
-	count = 0
+function differDimSet(lhs,rhs,all)
+	result = nil
 	for k,v in pairs(lhs) do
-		if rhs[k] then result[k] = differSet(v,rhs[k]) else result[k] = {} end
-		if result[k] == {} then count = count + 1 end
+		if rhs[k] then result[k] = differSet(v,rhs[k]) else return nil end
+		if equalSet(result[k],{}) then return nil end
 	end
-	if count+1 == #result then return {} end
-	if count > 0 then return {[""]={}} end
+	if result and equalDimSet(result,all) then return {} end
 	return result
 end
 Source = {
@@ -523,13 +542,13 @@ function printField(val,depth)
 	print(stringIndent(depth)..decl.." "..ident..";")
 end
 function printStruct(name,struct)
-	none = {[""]={}}
-	all = none
+	all = {}
 	key = 1
 	while struct[key] do
 		tags = struct[key][3]
-		print("name:"..stringAny(name).." field:"..stringAny(struct[key][1]).." key:"..stringAny(key).." tags:"..stringAny(tags).." all:"..stringAny(all))
-		if tags ~= {} then all = unionDimSet(all,tags) end
+		for k,v in pairs(tags) do
+			if all[k] then all[k] = unionSet(all[k],v) else all[k] = v end
+		end
 		key = key + 1
 	end
 	length = 1
@@ -544,9 +563,9 @@ function printStruct(name,struct)
 	while struct[key] do
 		tags = struct[key][3]
 		top = stack[depth]
-		join = interDimSet(tags,univ[depth]) ~= none
-		gain = differDimSet(tags,univ[depth]) ~= none
-		loss = differDimSet(univ[depth],tags) ~= none
+		join = interDimSet(tags,univ[depth],all) ~= nil
+		gain = differDimSet(tags,univ[depth],all) ~= nil
+		loss = differDimSet(univ[depth],tags,all) ~= nil
 		print("name:"..stringAny(name).." key:"..stringAny(key).." field:"..stringAny(struct[key][1]).." tags:"..stringAny(tags).." univ:"..stringAny(univ[depth]).." depth:"..stringAny(depth).." top:"..stringAny(top).." join:"..stringAny(join).." gain:"..stringAny(gain).." loss:"..stringAny(loss))
 		if mode[top] == "struct" and not gain and not loss then
 			length = length + 1
@@ -572,7 +591,7 @@ function printStruct(name,struct)
 			depth = depth - 1
 		end
 		if mode[top] == "union" and not join then
-			univ[depth] = unionDimSet(univ[depth],tags);
+			univ[depth] = unionDimSet(univ[depth],tags,all);
 			length = length + 1
 			mode[length] = "struct"
 			flds[length] = 0
