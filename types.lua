@@ -34,34 +34,26 @@ function allBefore(enum,lim)
 end
 function interSet(lhs,rhs)
 	result = {}
-	for k,v in pairs(lhs) do
-		result[k] = v and rhs[k]
-	end
+	for k,v in pairs(lhs) do result[k] = v and rhs[k] end
 	return result
 end
 function differSet(lhs,rhs)
 	result = {}
-	for k,v in pairs(lhs) do
-		result[k] = v and not rhs[k]
-	end
+	for k,v in pairs(lhs) do result[k] = v and not rhs[k] end
 	return result
 end
 function unionSet(lhs,rhs)
 	result = {}
-	for k,v in pairs(lhs) do
-		result[k] = v or rhs[k]
-	end
-	for k,v in pairs(rhs) do
-		result[k] = v or lhs[k]
-	end
+	for k,v in pairs(lhs) do result[k] = v or rhs[k] end
+	for k,v in pairs(rhs) do result[k] = v or lhs[k] end
 	return result
 end
 function unionDimSet(lhs,rhs)
 	result = {}
 	count = 0
 	for k,v in pairs(lhs) do
-		if rhs[k] then result[k] = unionSet(v,rhs[k])
-		if result[k] == {} then count = count + 1
+		if rhs[k] then result[k] = unionSet(v,rhs[k]) end
+		if result[k] == {} then count = count + 1 end
 	end
 	if count+1 == #result then return {} end
 	if count > 0 then return {[""]={}} end
@@ -72,11 +64,11 @@ function interDimSet(lhs,rhs)
 	count = 0
 	for k,v in pairs(lhs) do
 		if rhs[k] then result[k] = interSet(v,rhs[k]) else result[k] = v end
-		if result[k] == {} then count = count + 1
+		if result[k] == {} then count = count + 1 end
 	end
 	for k,v in pairs(rhs) do
 		if lhs[k] then result[k] = interSet(v,lhs[k]) else result[k] = v end
-		if result[k] == {} then count = count + 1
+		if result[k] == {} then count = count + 1 end
 	end
 	if count+1 == #result then return {} end
 	if count > 0 then return {[""]={}} end
@@ -87,7 +79,7 @@ function differDimSet(lhs,rhs)
 	count = 0
 	for k,v in pairs(lhs) do
 		if rhs[k] then result[k] = differSet(v,rhs[k]) else result[k] = {} end
-		if result[k] == {} then count = count + 1
+		if result[k] == {} then count = count + 1 end
 	end
 	if count+1 == #result then return {} end
 	if count > 0 then return {[""]={}} end
@@ -535,8 +527,10 @@ function printStruct(name,struct)
 	all = none
 	key = 1
 	while struct[key] do
-		tags = struct[k][3]
-		if tags ~= {} then all = unionDimSet(all,tags)
+		tags = struct[key][3]
+		print("name:"..stringAny(name).." field:"..stringAny(struct[key][1]).." key:"..stringAny(key).." tags:"..stringAny(tags).." all:"..stringAny(all))
+		if tags ~= {} then all = unionDimSet(all,tags) end
+		key = key + 1
 	end
 	length = 1
 	mode = {"struct"} -- list of block types
@@ -550,9 +544,10 @@ function printStruct(name,struct)
 	while struct[key] do
 		tags = struct[key][3]
 		top = stack[depth]
-		join = not isEmptyDimSet(interDimSet(tags,univ[depth]))
-		gain = not isEmptyDimSet(differDimSet(tags,univ[depth]))
-		loss = not isEmptyDimSet(differDimSet(univ[depth],tags))
+		join = interDimSet(tags,univ[depth]) ~= none
+		gain = differDimSet(tags,univ[depth]) ~= none
+		loss = differDimSet(univ[depth],tags) ~= none
+		print("name:"..stringAny(name).." key:"..stringAny(key).." field:"..stringAny(struct[key][1]).." tags:"..stringAny(tags).." univ:"..stringAny(univ[depth]).." depth:"..stringAny(depth).." top:"..stringAny(top).." join:"..stringAny(join).." gain:"..stringAny(gain).." loss:"..stringAny(loss))
 		if mode[top] == "struct" and not gain and not loss then
 			length = length + 1
 			mode[length] = "field"
